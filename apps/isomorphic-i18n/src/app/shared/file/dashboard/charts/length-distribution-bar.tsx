@@ -115,7 +115,9 @@ export default function LengthDistributionBar({
   const { data: speciesData, isLoading: isSpeciesLoading, error: speciesError } = api.taxaSummaries.getDistrictTaxaSummaries.useQuery(
     {
       districts: selectedDistricts,
-      metrics: ["mean_length", "catch_kg", "n_individuals"],
+      // STAGE 2 STEP 2.7: Live portal audits confirm only mean_length, catch_kg,
+      // and price_kg exist in taxa_summaries; n_individuals was schema-only.
+      metrics: ["mean_length", "catch_kg"],
       months,
     },
     {
@@ -224,15 +226,16 @@ export default function LengthDistributionBar({
             name: typedItem.catch_taxon,
             scientific_name: typedItem.scientific_name,
             lengths: [],
+            // STAGE 2 STEP 2.7: Keep only production-backed supporting metrics.
             total_catch: 0,
-            total_individuals: 0,
           });
         }
 
         const species = speciesMap.get(typedItem.catch_taxon);
         species.lengths.push(typedItem.mean_length);
+        // STAGE 2 STEP 2.7: catch_kg is the only additive production-backed
+        // supporting quantity used by this chart.
         if (typedItem.catch_kg) species.total_catch += typedItem.catch_kg;
-        if (typedItem.n_individuals) species.total_individuals += typedItem.n_individuals;
       }
     });
 
@@ -264,8 +267,9 @@ export default function LengthDistributionBar({
           max: Number(max.toFixed(1)),
           districts: sortedLengths.length,
           scientific_name: species.scientific_name,
+          // STAGE 2 STEP 2.7: Do not expose a fabricated/always-zero individuals
+          // statistic now that the live contract has been corrected.
           total_catch: species.total_catch,
-          total_individuals: species.total_individuals,
         };
       })
       .sort((a, b) => b.total_catch - a.total_catch);

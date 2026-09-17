@@ -1,0 +1,1560 @@
+# STAGE 2 STEP 2.7.1: Human-readable mirror of the executable AskFish/Peskas semantic catalog.
+# Production portal contracts were audited directly in Mozambique, Kenya, and Zanzibar on 2026-08-26.
+# The executable source remains apps/isomorphic-i18n/src/askfish/semantic-catalog.json.
+# Live gear/taxa time fields and measure sets are corrected, and production grain-verifier evidence is now recorded; upstream derivation/weighting remains fail-closed.
+# Native-app and pipeline sources remain discovery-only until Stage 3 activation gates pass.
+#
+catalogVersion: 0.5.0
+contractVersion: '1.0'
+status: production_portal_plus_kenya_native_source_grain
+sourceEvidence:
+  repository: peskas.dashboard.app-dev
+  liveMetadataAsOf: '2026-08-26'
+  limitations:
+  - Production portal schemas were audited directly in Mozambique, Kenya, and Zanzibar on 2026-08-26;
+    governed queries define an analytical row as a complete declared source grain with a numeric requested
+    measure, excluding the collection metadata/schema record plus null or incomplete observations.
+  - The Stage 2.7 production grain verifier confirmed zero duplicate groups for gear_summaries, taxa_summaries,
+    and grid_summaries in all three deployments. monthly_summaries and districts_summaries contain versioned
+    duplicate grain rows in Kenya and Mozambique, so newest-timestamp-then-ObjectId canonicalization is mandatory
+    before analysis.
+  - Portal field/grain evidence is verified at the collection-contract level, but upstream derivation
+    and statistically correct weighting for mean/rate rollups remain unverified until pipeline/source-code
+    reconciliation is completed.
+  - Native-app and pipeline sources remain discovery-only and are not planner-queryable in this catalog
+    version.
+scopeModes:
+  restricted:
+    pageDatasetsHard: true
+    dashboardFiltersHard: true
+    questionCanOverrideDashboardFilters: false
+    pageContextIsHint: false
+    description: Use only datasets mapped to the current Peskas page and keep active dashboard filters
+      as hard constraints.
+  unrestricted:
+    pageDatasetsHard: false
+    dashboardFiltersHard: false
+    questionCanOverrideDashboardFilters: true
+    pageContextIsHint: true
+    description: Interpret the question first, then select any queryable dataset in the active Peskas
+      country; explicit question filters take precedence.
+countries:
+  TZ:
+    name: Zanzibar
+    iso3: TZA
+    currencyCode: TZS
+  KE:
+    name: Kenya
+    iso3: KEN
+    currencyCode: KES
+  MZ:
+    name: Mozambique
+    iso3: MOZ
+    currencyCode: MZN
+pageScopes:
+  catch:
+    datasets:
+    - monthly_district_summary
+    - gear_summary_district
+    contextFilters:
+    - country
+    - districts
+    - time_range
+    - metric
+    description: Catch rate, estimated catch, and catch-by-gear analytics.
+  revenue:
+    datasets:
+    - monthly_district_summary
+    - gear_summary_district
+    contextFilters:
+    - country
+    - districts
+    - time_range
+    - metric
+    description: Revenue per unit effort, estimated revenue, and revenue-by-gear analytics.
+  catch_composition:
+    datasets:
+    - taxa_summary_district
+    contextFilters:
+    - country
+    - districts
+    - time_range
+    - metric
+    description: Species/taxa composition and district-species analytics with production-verified monthly
+      time filtering.
+  map:
+    datasets:
+    - grid_summary
+    - district_summary
+    contextFilters:
+    - country
+    - time_range
+    - metric
+    description: Spatial grid activity plus district-level indicator context.
+  home:
+    datasets:
+    - district_summary
+    - grid_summary
+    contextFilters:
+    - country
+    - time_range
+    - metric
+    description: Homepage indicator cards, district summaries, and map context.
+datasets:
+  monthly_district_summary:
+    queryable: true
+    lineage: district
+    collection: monthly_summaries
+    grain:
+    - district
+    - month
+    - metric
+    layout: long
+    timeField: date
+    geographyKey: gaul_2_name
+    pageScopes:
+    - catch
+    - revenue
+    access:
+      applicationRoute: public
+      dataClassification: aggregate_non_personal
+      classificationStatus: provisional
+    derivationStatus: upstream_unverified
+    dimensions:
+      district:
+        field: gaul_2_name
+        aliases:
+        - district
+        - county
+        - area
+      month:
+        field: date
+        aliases:
+        - month
+        - date
+        - period
+      metric:
+        field: metric
+        aliases:
+        - measure
+        - indicator
+        - metric
+    measures:
+      mean_cpue:
+        label: Catch rate
+        aliases:
+        - cpue
+        - catch rate
+        - catch per unit effort
+        - fishing productivity
+        kind: rate
+        unit:
+          value: kg/fisher/hour
+          status: repo_confirmed
+        nativeGrain:
+        - district
+        - month
+        derivationStatus: upstream_unverified
+        rollups:
+          acrossDistrict:
+            status: dashboard_compatible
+            method: unweighted_mean
+            note: Matches current dashboard behavior; not a statistically weighted global CPUE.
+          acrossTime:
+            status: dashboard_compatible
+            method: unweighted_mean
+            note: Descriptive mean of monthly district summaries; do not present as weighted CPUE.
+          sum:
+            status: forbidden
+            note: Rates must never be summed.
+      mean_rpue:
+        label: Revenue per unit effort
+        aliases:
+        - rpue
+        - revenue per unit effort
+        - fisher revenue rate
+        kind: rate
+        unit:
+          value: '{currency}/fisher/hour'
+          status: repo_confirmed
+        nativeGrain:
+        - district
+        - month
+        derivationStatus: upstream_unverified
+        rollups:
+          acrossDistrict:
+            status: dashboard_compatible
+            method: unweighted_mean
+            note: Matches current dashboard behavior; weighting is not verified.
+          acrossTime:
+            status: dashboard_compatible
+            method: unweighted_mean
+            note: Descriptive mean only; weighting is not verified.
+          sum:
+            status: forbidden
+            note: Rates must never be summed.
+      mean_price_kg:
+        label: Price per kilogram
+        aliases:
+        - price
+        - price per kg
+        - fish price
+        kind: rate
+        unit:
+          value: '{currency}/kg'
+          status: repo_confirmed
+        nativeGrain:
+        - district
+        - month
+        derivationStatus: upstream_unverified
+        rollups:
+          acrossDistrict:
+            status: dashboard_compatible
+            method: unweighted_mean
+            note: Unweighted summary mean; transaction/catch weighting is not verified.
+          acrossTime:
+            status: dashboard_compatible
+            method: unweighted_mean
+            note: Unweighted summary mean; weighting is not verified.
+          sum:
+            status: forbidden
+      mean_catch_kg:
+        label: Mean catch
+        aliases:
+        - mean catch
+        - average catch
+        - catch per trip
+        kind: rate
+        unit:
+          value: kg
+          status: repo_field_only
+        nativeGrain:
+        - district
+        - month
+        derivationStatus: upstream_unverified
+        rollups:
+          acrossDistrict:
+            status: blocked_pending_derivation
+          acrossTime:
+            status: blocked_pending_derivation
+          sum:
+            status: forbidden
+      mean_catch_price:
+        label: Mean catch value
+        aliases:
+        - mean catch price
+        - average catch value
+        kind: rate
+        unit:
+          value: '{currency}'
+          status: inferred_from_name
+        nativeGrain:
+        - district
+        - month
+        derivationStatus: upstream_unverified
+        rollups:
+          acrossDistrict:
+            status: blocked_pending_derivation
+          acrossTime:
+            status: blocked_pending_derivation
+          sum:
+            status: forbidden
+      estimated_fishing_trips:
+        label: Estimated fishing trips
+        aliases:
+        - fishing trips
+        - estimated trips
+        - trip effort
+        kind: count
+        unit:
+          value: trips
+          status: repo_confirmed
+        nativeGrain:
+        - district
+        - month
+        derivationStatus: upstream_unverified
+        rollups:
+          acrossDistrict:
+            status: allowed
+            method: sum
+          acrossTime:
+            status: allowed
+            method: sum
+      estimated_catch_tn:
+        label: Estimated catch
+        aliases:
+        - estimated catch
+        - total catch
+        - landings
+        - catch tonnes
+        kind: total
+        unit:
+          value: tonnes
+          status: repo_confirmed
+        nativeGrain:
+        - district
+        - month
+        derivationStatus: upstream_unverified
+        rollups:
+          acrossDistrict:
+            status: allowed
+            method: sum
+            note: Canonicalize duplicate/versioned district-month rows before summing.
+          acrossTime:
+            status: allowed
+            method: sum
+            note: Canonicalize duplicate/versioned district-month rows before summing.
+      estimated_revenue:
+        label: Estimated revenue
+        aliases:
+        - revenue
+        - estimated revenue
+        - earnings
+        - income
+        kind: total
+        unit:
+          value: '{currency}'
+          status: repo_confirmed
+        nativeGrain:
+        - district
+        - month
+        derivationStatus: upstream_unverified
+        rollups:
+          acrossDistrict:
+            status: allowed
+            method: sum
+            note: Canonicalize duplicate/versioned district-month rows before summing.
+          acrossTime:
+            status: allowed
+            method: sum
+            note: Canonicalize duplicate/versioned district-month rows before summing.
+    bindings:
+      TZ:
+        database: portal-prod
+        collection: monthly_summaries
+        status: available
+        observedDocuments: 1673
+      KE:
+        database: portal-prod
+        collection: monthly_summaries
+        status: available
+        observedDocuments: 4201
+      MZ:
+        database: portal-prod
+        collection: monthly_summaries
+        status: available
+        observedDocuments: 2017
+    queryPolicy:
+      maxRows: 10000
+      timeFilterStatus: supported
+      canonicalKey:
+      - district
+      - month
+      - metric
+      duplicateResolution: newest_timestamp_then_objectid
+    caveats:
+    - Production portal audits confirm the same eight monthly metrics and dated district schema across
+      Mozambique, Kenya, and Zanzibar.
+    - Stage 2.7 verification observed versioned duplicates at the declared district-month-metric grain in
+      Mozambique (56 duplicate groups, up to 4 records per group) and Kenya (61 duplicate groups, up to 2);
+      Zanzibar had zero duplicate groups. Canonicalize before any analysis and never sum versions.
+    - Only rows with the complete canonical grain and a numeric requested value are analytical; this excludes
+      the collection metadata/schema record plus null or incomplete observations.
+    - This is already a monthly district summary and cannot answer trip/fisher/species-grain questions.
+    - Missing district-months are absent observations, not zero.
+    - Mean/rate rollups reproduce dashboard behavior but are not statistically weighted unless explicitly
+      marked otherwise.
+  district_summary:
+    queryable: true
+    lineage: district
+    collection: districts_summaries
+    grain:
+    - district
+    - indicator
+    - date
+    layout: long
+    timeField: date
+    geographyKey: gaul_2_name
+    pageScopes:
+    - home
+    - map
+    access:
+      applicationRoute: public
+      dataClassification: aggregate_non_personal
+      classificationStatus: provisional
+    derivationStatus: upstream_unverified
+    dimensions:
+      district:
+        field: gaul_2_name
+        aliases:
+        - district
+        - county
+        - area
+      date:
+        field: date
+        aliases:
+        - date
+        - period
+        - month
+      indicator:
+        field: indicator
+        aliases:
+        - indicator
+        - measure
+        - metric
+      period:
+        field: metadata.period
+        aliases:
+        - period grain
+        - frequency
+    measures:
+      n_submissions:
+        label: Submissions
+        aliases:
+        - submissions
+        - records
+        - survey submissions
+        kind: count
+        unit:
+          value: submissions
+          status: repo_confirmed
+        nativeGrain:
+        - district
+        - date
+        derivationStatus: upstream_unverified
+        rollups:
+          acrossDistrict:
+            status: allowed
+            method: sum
+          acrossTime:
+            status: allowed
+            method: sum
+      n_fishers:
+        label: Fishers
+        aliases:
+        - fishers
+        - number of fishers
+        - fisher count
+        kind: count
+        unit:
+          value: fishers
+          status: repo_confirmed
+        nativeGrain:
+        - district
+        - date
+        derivationStatus: upstream_unverified
+        rollups:
+          acrossDistrict:
+            status: blocked_pending_identity_semantics
+            note: The same fisher may be represented in more than one district.
+          acrossTime:
+            status: forbidden
+            note: Summing repeated period counts would double-count fishers.
+      trip_duration_hrs:
+        label: Trip duration
+        aliases:
+        - trip duration hours
+        - trip hours
+        - fishing duration
+        kind: rate
+        unit:
+          value: hours
+          status: repo_confirmed
+        nativeGrain:
+        - district
+        - date
+        derivationStatus: upstream_unverified
+        rollups:
+          acrossDistrict:
+            status: dashboard_compatible
+            method: unweighted_mean
+          acrossTime:
+            status: dashboard_compatible
+            method: unweighted_mean
+          sum:
+            status: forbidden
+      mean_cpue:
+        label: Catch rate
+        aliases:
+        - cpue
+        - catch rate
+        - catch per unit effort
+        kind: rate
+        unit:
+          value: kg/fisher/hour
+          status: repo_confirmed
+        nativeGrain:
+        - district
+        - date
+        derivationStatus: upstream_unverified
+        rollups:
+          acrossDistrict:
+            status: dashboard_compatible
+            method: unweighted_mean
+          acrossTime:
+            status: dashboard_compatible
+            method: unweighted_mean
+          sum:
+            status: forbidden
+      mean_rpue:
+        label: Revenue per unit effort
+        aliases:
+        - rpue
+        - revenue per unit effort
+        kind: rate
+        unit:
+          value: '{currency}/fisher/hour'
+          status: repo_confirmed
+        nativeGrain:
+        - district
+        - date
+        derivationStatus: upstream_unverified
+        rollups:
+          acrossDistrict:
+            status: dashboard_compatible
+            method: unweighted_mean
+          acrossTime:
+            status: dashboard_compatible
+            method: unweighted_mean
+          sum:
+            status: forbidden
+      mean_price_kg:
+        label: Price per kilogram
+        aliases:
+        - price per kg
+        - fish price
+        kind: rate
+        unit:
+          value: '{currency}/kg'
+          status: repo_confirmed
+        nativeGrain:
+        - district
+        - date
+        derivationStatus: upstream_unverified
+        rollups:
+          acrossDistrict:
+            status: dashboard_compatible
+            method: unweighted_mean
+          acrossTime:
+            status: dashboard_compatible
+            method: unweighted_mean
+          sum:
+            status: forbidden
+      estimated_revenue:
+        label: Estimated revenue
+        aliases:
+        - revenue
+        - estimated revenue
+        - earnings
+        kind: total
+        unit:
+          value: '{currency}'
+          status: repo_confirmed
+        nativeGrain:
+        - district
+        - date
+        derivationStatus: upstream_unverified
+        rollups:
+          acrossDistrict:
+            status: allowed
+            method: sum
+          acrossTime:
+            status: allowed
+            method: sum
+      estimated_catch_tn:
+        label: Estimated catch
+        aliases:
+        - estimated catch
+        - landings
+        - catch tonnes
+        kind: total
+        unit:
+          value: tonnes
+          status: repo_confirmed
+        nativeGrain:
+        - district
+        - date
+        derivationStatus: upstream_unverified
+        rollups:
+          acrossDistrict:
+            status: allowed
+            method: sum
+          acrossTime:
+            status: allowed
+            method: sum
+    bindings:
+      TZ:
+        database: portal-prod
+        collection: districts_summaries
+        status: available
+        observedDocuments: 1673
+      KE:
+        database: portal-prod
+        collection: districts_summaries
+        status: available
+        observedDocuments: 4201
+      MZ:
+        database: portal-prod
+        collection: districts_summaries
+        status: available
+        observedDocuments: 2017
+    queryPolicy:
+      maxRows: 10000
+      timeFilterStatus: supported
+      canonicalKey:
+      - district
+      - indicator
+      - date
+      duplicateResolution: newest_timestamp_then_objectid
+    caveats:
+    - Production portal audits confirm a date field on every analytical district-summary row in all three
+      deployments.
+    - Stage 2.7 verification observed versioned duplicates at the declared district-date-indicator grain in
+      Mozambique (46 duplicate groups, up to 4 records per group) and Kenya (71 duplicate groups, up to 2);
+      Zanzibar had zero duplicate groups. Canonicalize before any analysis and never sum versions.
+    - Only rows with the complete canonical grain and a numeric requested value are analytical; null/incomplete
+      observations and the collection metadata/schema record are excluded.
+    - Counts and rates have different legal rollups; do not apply a single aggregation rule to all indicators.
+    - n_fishers must not be summed across time.
+  gear_summary_district:
+    queryable: true
+    lineage: district
+    collection: gear_summaries
+    grain:
+    - district
+    - month
+    - gear
+    - indicator
+    layout: long
+    timeField: date
+    geographyKey: gaul_2_name
+    pageScopes:
+    - catch
+    - revenue
+    access:
+      applicationRoute: public
+      dataClassification: aggregate_non_personal
+      classificationStatus: provisional
+    derivationStatus: upstream_unverified
+    dimensions:
+      district:
+        field: gaul_2_name
+        aliases:
+        - district
+        - county
+        - area
+      month:
+        field: date
+        aliases:
+        - month
+        - date
+        - period
+      gear:
+        field: gear
+        aliases:
+        - gear
+        - fishing gear
+        - gear type
+      indicator:
+        field: indicator
+        aliases:
+        - indicator
+        - measure
+        - metric
+    measures:
+      n_submissions:
+        label: Submissions
+        aliases:
+        - submissions
+        - records
+        kind: count
+        unit:
+          value: submissions
+          status: repo_confirmed
+        nativeGrain:
+        - district
+        - month
+        - gear
+        derivationStatus: upstream_unverified
+        rollups:
+          acrossDistrict:
+            status: allowed
+            method: sum
+          acrossGear:
+            status: allowed
+            method: sum
+          acrossTime:
+            status: allowed
+            method: sum
+      cpue:
+        label: Catch rate by gear
+        aliases:
+        - cpue by gear
+        - gear catch rate
+        - catch rate by gear
+        kind: rate
+        unit:
+          value: kg/fisher/hour
+          status: repo_semantic_match
+        nativeGrain:
+        - district
+        - month
+        - gear
+        derivationStatus: upstream_unverified
+        rollups:
+          acrossDistrict:
+            status: dashboard_compatible
+            method: unweighted_mean
+            note: Matches the current Peskas gear.byGear descriptive average; weighting is not verified.
+          acrossGear:
+            status: blocked_pending_derivation
+          sum:
+            status: forbidden
+          acrossTime:
+            status: dashboard_compatible
+            method: unweighted_mean
+            note: Matches the current Peskas gear.byGear descriptive average over dated source-grain rows;
+              weighting is not verified.
+      rpue:
+        label: Revenue rate by gear
+        aliases:
+        - rpue by gear
+        - gear revenue rate
+        - revenue per effort by gear
+        kind: rate
+        unit:
+          value: '{currency}/fisher/hour'
+          status: repo_semantic_match
+        nativeGrain:
+        - district
+        - month
+        - gear
+        derivationStatus: upstream_unverified
+        rollups:
+          acrossDistrict:
+            status: dashboard_compatible
+            method: unweighted_mean
+            note: Matches the current Peskas gear.byGear descriptive average; weighting is not verified.
+          acrossGear:
+            status: blocked_pending_derivation
+          sum:
+            status: forbidden
+          acrossTime:
+            status: dashboard_compatible
+            method: unweighted_mean
+            note: Matches the current Peskas gear.byGear descriptive average over dated source-grain rows;
+              weighting is not verified.
+    bindings:
+      TZ:
+        database: portal-prod
+        collection: gear_summaries
+        status: available
+        observedDocuments: 8152
+      KE:
+        database: portal-prod
+        collection: gear_summaries
+        status: available
+        observedDocuments: 30721
+      MZ:
+        database: portal-prod
+        collection: gear_summaries
+        status: available
+        observedDocuments: 7624
+    queryPolicy:
+      maxRows: 20000
+      timeFilterStatus: supported
+      canonicalKey:
+      - district
+      - month
+      - gear
+      - indicator
+      duplicateResolution: newest_timestamp_then_objectid
+    caveats:
+    - Production portal audits confirm date, district, gear, indicator, and numeric value fields across
+      Mozambique, Kenya, and Zanzibar.
+    - Stage 2.7 verification found zero duplicate groups at district-month-gear-indicator grain in Mozambique,
+      Kenya, and Zanzibar.
+    - The live production indicator set is cpue, rpue, and n_submissions; unsupported historical-schema
+      measures are intentionally excluded.
+    - Only rows with complete district/month/gear grain and a numeric requested value are analytical; rows
+      without a gear value, null values, and the collection metadata/schema record are excluded.
+    - CPUE/RPUE reductions are dashboard-compatible descriptive unweighted means, not verified weighted
+      estimators.
+  taxa_summary_district:
+    queryable: true
+    lineage: district
+    collection: taxa_summaries
+    grain:
+    - district
+    - month
+    - taxon
+    - metric
+    layout: long
+    timeField: date
+    geographyKey: gaul_2_name
+    pageScopes:
+    - catch_composition
+    access:
+      applicationRoute: public
+      dataClassification: aggregate_non_personal
+      classificationStatus: provisional
+    derivationStatus: upstream_unverified
+    dimensions:
+      district:
+        field: gaul_2_name
+        aliases:
+        - district
+        - county
+        - area
+      month:
+        field: date
+        aliases:
+        - month
+        - date
+        - period
+      taxon:
+        field: catch_taxon
+        aliases:
+        - species
+        - taxon
+        - fish
+        - species group
+      metric:
+        field: metric
+        aliases:
+        - metric
+        - measure
+        - indicator
+    measures:
+      catch_kg:
+        label: Catch by taxon
+        aliases:
+        - species catch
+        - catch composition
+        - catch kg
+        kind: total
+        unit:
+          value: kg
+          status: repo_confirmed
+        nativeGrain:
+        - district
+        - month
+        - taxon
+        derivationStatus: upstream_unverified
+        rollups:
+          acrossDistrict:
+            status: allowed
+            method: sum
+          acrossTaxon:
+            status: allowed
+            method: sum
+          acrossTime:
+            status: allowed
+            method: sum
+      mean_length:
+        label: Mean length
+        aliases:
+        - mean length
+        - average fish length
+        - fish length
+        kind: rate
+        unit:
+          value: unknown
+          status: unverified
+        nativeGrain:
+        - district
+        - month
+        - taxon
+        derivationStatus: upstream_unverified
+        rollups:
+          acrossDistrict:
+            status: blocked_pending_derivation
+          acrossTaxon:
+            status: forbidden
+          sum:
+            status: forbidden
+          acrossTime:
+            status: blocked_pending_derivation
+            note: Monthly means are source-grain observations; statistically valid cross-time weighting
+              remains unverified.
+      price_kg:
+        label: Taxon price per kilogram
+        aliases:
+        - species price
+        - price per kg
+        - taxon price
+        kind: rate
+        unit:
+          value: '{currency}/kg'
+          status: repo_semantic_match
+        nativeGrain:
+        - district
+        - month
+        - taxon
+        derivationStatus: upstream_unverified
+        rollups:
+          acrossDistrict:
+            status: blocked_pending_derivation
+          acrossTaxon:
+            status: blocked_pending_derivation
+          sum:
+            status: forbidden
+          acrossTime:
+            status: blocked_pending_derivation
+            note: Monthly taxon prices are source-grain observations; weighting across time remains unverified.
+    bindings:
+      TZ:
+        database: portal-prod
+        collection: taxa_summaries
+        status: available
+        observedDocuments: 6519
+      KE:
+        database: portal-prod
+        collection: taxa_summaries
+        status: available
+        observedDocuments: 14466
+      MZ:
+        database: portal-prod
+        collection: taxa_summaries
+        status: available
+        observedDocuments: 1590
+    queryPolicy:
+      maxRows: 25000
+      timeFilterStatus: supported
+      canonicalKey:
+      - district
+      - month
+      - taxon
+      - metric
+      duplicateResolution: newest_timestamp_then_objectid
+    caveats:
+    - Production portal audits confirm monthly date, district, taxon, metric, and numeric value fields
+      across Mozambique, Kenya, and Zanzibar.
+    - Stage 2.7 verification found zero duplicate groups at district-month-taxon-metric grain in Mozambique,
+      Kenya, and Zanzibar.
+    - The live production metric set is catch_kg, mean_length, and price_kg; historical schema-only n_individuals/total_value
+      measures are intentionally excluded.
+    - Only rows with complete district/month/taxon grain and a numeric requested value are analytical; rows
+      without a taxon value, null values, and the collection metadata/schema record are excluded.
+    - catch_kg may be summed across district and time after canonicalization; mean_length and price_kg
+      rollups remain blocked pending derivation/weighting verification.
+  grid_summary:
+    queryable: true
+    lineage: spatial_grid
+    collection: grid_summaries
+    grain:
+    - lat_grid_1km
+    - lng_grid_1km
+    layout: wide
+    timeField: null
+    geographyKey: null
+    pageScopes:
+    - map
+    - home
+    access:
+      applicationRoute: public
+      dataClassification: aggregate_spatial
+      classificationStatus: provisional
+    derivationStatus: upstream_unverified
+    dimensions:
+      lat_grid_1km:
+        field: lat_grid_1km
+        aliases:
+        - latitude grid
+        - grid latitude
+      lng_grid_1km:
+        field: lng_grid_1km
+        aliases:
+        - longitude grid
+        - grid longitude
+    measures:
+      avg_speed:
+        label: Average speed
+        aliases:
+        - speed
+        - average speed
+        kind: rate
+        unit:
+          value: unknown
+          status: unverified
+        nativeGrain:
+        - grid_cell
+        derivationStatus: upstream_unverified
+        rollups:
+          acrossGrid:
+            status: blocked_pending_weights
+          sum:
+            status: forbidden
+      avg_range:
+        label: Average range
+        aliases:
+        - range
+        - average range
+        kind: rate
+        unit:
+          value: unknown
+          status: unverified
+        nativeGrain:
+        - grid_cell
+        derivationStatus: upstream_unverified
+        rollups:
+          acrossGrid:
+            status: blocked_pending_weights
+          sum:
+            status: forbidden
+      total_visits:
+        label: Total visits
+        aliases:
+        - visits
+        - grid visits
+        kind: count
+        unit:
+          value: visits
+          status: repo_confirmed
+        nativeGrain:
+        - grid_cell
+        derivationStatus: upstream_unverified
+        rollups:
+          acrossGrid:
+            status: allowed
+            method: sum
+      original_cells:
+        label: Original cells
+        aliases:
+        - original cells
+        - source cells
+        kind: count
+        unit:
+          value: cells
+          status: repo_confirmed
+        nativeGrain:
+        - grid_cell
+        derivationStatus: upstream_unverified
+        rollups:
+          acrossGrid:
+            status: allowed
+            method: sum
+      total_points:
+        label: Total points
+        aliases:
+        - points
+        - tracking points
+        kind: count
+        unit:
+          value: points
+          status: repo_confirmed
+        nativeGrain:
+        - grid_cell
+        derivationStatus: upstream_unverified
+        rollups:
+          acrossGrid:
+            status: allowed
+            method: sum
+      avg_time_hours:
+        label: Average time
+        aliases:
+        - time
+        - average time
+        - time hours
+        kind: rate
+        unit:
+          value: hours
+          status: repo_confirmed
+        nativeGrain:
+        - grid_cell
+        derivationStatus: upstream_unverified
+        rollups:
+          acrossGrid:
+            status: blocked_pending_weights
+          sum:
+            status: forbidden
+    bindings:
+      TZ:
+        database: portal-prod
+        collection: grid_summaries
+        status: available
+        observedDocuments: 2226
+      KE:
+        database: portal-prod
+        collection: grid_summaries
+        status: available
+        observedDocuments: 2564
+      MZ:
+        database: portal-prod
+        collection: grid_summaries
+        status: available
+        observedDocuments: 5714
+    queryPolicy:
+      maxRows: 10000
+      timeFilterStatus: unsupported
+      canonicalKey:
+      - lat_grid_1km
+      - lng_grid_1km
+      duplicateResolution: newest_timestamp_then_objectid
+    caveats:
+    - Production portal audits confirm the same 1 km grid fields across Mozambique, Kenya, and Zanzibar.
+    - Stage 2.7 verification found zero duplicate groups at lat_grid_1km × lng_grid_1km grain in Mozambique,
+      Kenya, and Zanzibar.
+    - This is an aggregated 1 km spatial grid, not raw GPS tracks.
+    - Only rows with both declared grid coordinates and a numeric requested measure are analytical; incomplete
+      rows and the collection metadata/schema record are excluded.
+    - Average metrics cannot be safely rolled up across cells until weighting semantics are verified.
+  # STAGE 3 STEP 3.3: Kenya-native BMU sources are executable only at verified source grain.
+  kenya_bmu_monthly:
+    queryable: true
+    lineage: kenya_bmu
+    collection: catch_monthly
+    grain:
+    - bmu
+    - month
+    layout: wide
+    timeField: date
+    geographyKey: BMU
+    pageScopes: []
+    geographicFrame: &id001
+      level: bmu
+      namespace: kenya_bmu
+      parentMappingStatus: unverified
+      note: BMU is a separate Kenya geographic frame; no implicit BMU-to-district/GAUL-2
+        mapping is permitted.
+    access: &id002
+      applicationRoute: public
+      dataClassification: aggregate_non_personal
+      classificationStatus: stage32_source_grain_approved
+    derivationStatus: upstream_unverified_source_grain_only
+    dimensions:
+      bmu:
+        field: BMU
+        aliases:
+        - bmu
+        - beach management unit
+        - management unit
+      month:
+        field: date
+        aliases:
+        - month
+        - date
+        - period
+    measures:
+      mean_effort:
+        label: Mean effort
+        aliases:
+        - mean effort
+        - effort
+        - fishing effort
+        kind: rate
+        unit:
+          value: source effort units
+          status: stage31b_field_confirmed_unit_unverified
+        nativeGrain:
+        - bmu
+        - month
+        derivationStatus: upstream_unverified_source_grain_only
+        rollups:
+          acrossBmu:
+            status: forbidden_source_grain_only
+            note: Stage 3.2 did not verify weights/denominators for reducing this stored
+              mean/rate across BMUs.
+          acrossTime:
+            status: forbidden_source_grain_only
+            note: Stage 3.2 approved exact monthly source-grain observations only; one-number
+              reductions across months remain blocked.
+          sum:
+            status: forbidden
+            note: Stored mean/rate values must never be summed.
+      mean_cpue:
+        label: Mean CPUE
+        aliases:
+        - mean cpue
+        - cpue
+        - catch rate
+        - catch per unit effort
+        kind: rate
+        unit:
+          value: source CPUE units
+          status: stage31b_field_confirmed_unit_unverified
+        nativeGrain:
+        - bmu
+        - month
+        derivationStatus: upstream_unverified_source_grain_only
+        rollups:
+          acrossBmu:
+            status: forbidden_source_grain_only
+            note: Stage 3.2 did not verify weights/denominators for reducing this stored
+              mean/rate across BMUs.
+          acrossTime:
+            status: forbidden_source_grain_only
+            note: Stage 3.2 approved exact monthly source-grain observations only; one-number
+              reductions across months remain blocked.
+          sum:
+            status: forbidden
+            note: Stored mean/rate values must never be summed.
+      mean_cpua:
+        label: Mean CPUA
+        aliases:
+        - mean cpua
+        - cpua
+        - catch per unit area
+        kind: rate
+        unit:
+          value: source CPUA units
+          status: stage31b_field_confirmed_unit_unverified
+        nativeGrain:
+        - bmu
+        - month
+        derivationStatus: upstream_unverified_source_grain_only
+        rollups:
+          acrossBmu:
+            status: forbidden_source_grain_only
+            note: Stage 3.2 did not verify weights/denominators for reducing this stored
+              mean/rate across BMUs.
+          acrossTime:
+            status: forbidden_source_grain_only
+            note: Stage 3.2 approved exact monthly source-grain observations only; one-number
+              reductions across months remain blocked.
+          sum:
+            status: forbidden
+            note: Stored mean/rate values must never be summed.
+      mean_rpue:
+        label: Mean RPUE
+        aliases:
+        - mean rpue
+        - rpue
+        - revenue rate
+        - revenue per unit effort
+        kind: rate
+        unit:
+          value: source RPUE units ({currency})
+          status: stage31b_field_confirmed_unit_unverified
+        nativeGrain:
+        - bmu
+        - month
+        derivationStatus: upstream_unverified_source_grain_only
+        rollups:
+          acrossBmu:
+            status: forbidden_source_grain_only
+            note: Stage 3.2 did not verify weights/denominators for reducing this stored
+              mean/rate across BMUs.
+          acrossTime:
+            status: forbidden_source_grain_only
+            note: Stage 3.2 approved exact monthly source-grain observations only; one-number
+              reductions across months remain blocked.
+          sum:
+            status: forbidden
+            note: Stored mean/rate values must never be summed.
+      mean_rpua:
+        label: Mean RPUA
+        aliases:
+        - mean rpua
+        - rpua
+        - revenue per unit area
+        kind: rate
+        unit:
+          value: source RPUA units ({currency})
+          status: stage31b_field_confirmed_unit_unverified
+        nativeGrain:
+        - bmu
+        - month
+        derivationStatus: upstream_unverified_source_grain_only
+        rollups:
+          acrossBmu:
+            status: forbidden_source_grain_only
+            note: Stage 3.2 did not verify weights/denominators for reducing this stored
+              mean/rate across BMUs.
+          acrossTime:
+            status: forbidden_source_grain_only
+            note: Stage 3.2 approved exact monthly source-grain observations only; one-number
+              reductions across months remain blocked.
+          sum:
+            status: forbidden
+            note: Stored mean/rate values must never be summed.
+    bindings:
+      KE:
+        database: app
+        collection: catch_monthly
+        status: available
+        observedDocuments: 1541
+    queryPolicy:
+      maxRows: 5000
+      timeFilterStatus: supported
+      canonicalKey:
+      - bmu
+      - month
+      duplicateResolution: verified_unique_source_grain
+    caveats:
+    - Stage 3.1B verified zero duplicate groups at BMU × month grain across 1,540 analytical
+      rows.
+    - Only exact stored monthly observations are activated; upstream formulas/weights
+      for mean/rate fields remain unverified.
+    - Cross-BMU and cross-time reductions are forbidden.
+    - BMU is not district/GAUL-2 and no implicit geographic join is permitted.
+    - This dataset is unrestricted-only until a future Peskas page explicitly operates
+      in the Kenya BMU frame.
+  kenya_bmu_gear_monthly:
+    queryable: true
+    lineage: kenya_bmu
+    collection: gear_summaries
+    grain:
+    - bmu
+    - month
+    - gear
+    layout: wide
+    timeField: date
+    geographyKey: BMU
+    pageScopes: []
+    geographicFrame: *id001
+    access: *id002
+    derivationStatus: upstream_unverified_source_grain_only
+    dimensions:
+      bmu:
+        field: BMU
+        aliases:
+        - bmu
+        - beach management unit
+        - management unit
+      month:
+        field: date
+        aliases:
+        - month
+        - date
+        - period
+      gear:
+        field: gear
+        aliases:
+        - gear
+        - fishing gear
+        - gear type
+    measures:
+      mean_effort:
+        label: Mean effort
+        aliases:
+        - mean effort
+        - effort
+        - fishing effort
+        kind: rate
+        unit:
+          value: source effort units
+          status: stage31b_field_confirmed_unit_unverified
+        nativeGrain:
+        - bmu
+        - month
+        - gear
+        derivationStatus: upstream_unverified_source_grain_only
+        rollups:
+          acrossBmu:
+            status: forbidden_source_grain_only
+            note: Stage 3.2 did not verify weights/denominators for reducing this stored
+              mean/rate across BMUs.
+          acrossTime:
+            status: forbidden_source_grain_only
+            note: Stage 3.2 approved exact monthly source-grain observations only; one-number
+              reductions across months remain blocked.
+          sum:
+            status: forbidden
+            note: Stored mean/rate values must never be summed.
+          acrossGear:
+            status: forbidden_source_grain_only
+            note: Stage 3.2 approved exact BMU × month × gear observations only; reducing
+              stored means/rates across gear is not verified.
+      mean_cpue:
+        label: Mean CPUE
+        aliases:
+        - mean cpue
+        - cpue
+        - catch rate
+        - catch per unit effort
+        kind: rate
+        unit:
+          value: source CPUE units
+          status: stage31b_field_confirmed_unit_unverified
+        nativeGrain:
+        - bmu
+        - month
+        - gear
+        derivationStatus: upstream_unverified_source_grain_only
+        rollups:
+          acrossBmu:
+            status: forbidden_source_grain_only
+            note: Stage 3.2 did not verify weights/denominators for reducing this stored
+              mean/rate across BMUs.
+          acrossTime:
+            status: forbidden_source_grain_only
+            note: Stage 3.2 approved exact monthly source-grain observations only; one-number
+              reductions across months remain blocked.
+          sum:
+            status: forbidden
+            note: Stored mean/rate values must never be summed.
+          acrossGear:
+            status: forbidden_source_grain_only
+            note: Stage 3.2 approved exact BMU × month × gear observations only; reducing
+              stored means/rates across gear is not verified.
+      mean_cpua:
+        label: Mean CPUA
+        aliases:
+        - mean cpua
+        - cpua
+        - catch per unit area
+        kind: rate
+        unit:
+          value: source CPUA units
+          status: stage31b_field_confirmed_unit_unverified
+        nativeGrain:
+        - bmu
+        - month
+        - gear
+        derivationStatus: upstream_unverified_source_grain_only
+        rollups:
+          acrossBmu:
+            status: forbidden_source_grain_only
+            note: Stage 3.2 did not verify weights/denominators for reducing this stored
+              mean/rate across BMUs.
+          acrossTime:
+            status: forbidden_source_grain_only
+            note: Stage 3.2 approved exact monthly source-grain observations only; one-number
+              reductions across months remain blocked.
+          sum:
+            status: forbidden
+            note: Stored mean/rate values must never be summed.
+          acrossGear:
+            status: forbidden_source_grain_only
+            note: Stage 3.2 approved exact BMU × month × gear observations only; reducing
+              stored means/rates across gear is not verified.
+      mean_rpue:
+        label: Mean RPUE
+        aliases:
+        - mean rpue
+        - rpue
+        - revenue rate
+        - revenue per unit effort
+        kind: rate
+        unit:
+          value: source RPUE units ({currency})
+          status: stage31b_field_confirmed_unit_unverified
+        nativeGrain:
+        - bmu
+        - month
+        - gear
+        derivationStatus: upstream_unverified_source_grain_only
+        rollups:
+          acrossBmu:
+            status: forbidden_source_grain_only
+            note: Stage 3.2 did not verify weights/denominators for reducing this stored
+              mean/rate across BMUs.
+          acrossTime:
+            status: forbidden_source_grain_only
+            note: Stage 3.2 approved exact monthly source-grain observations only; one-number
+              reductions across months remain blocked.
+          sum:
+            status: forbidden
+            note: Stored mean/rate values must never be summed.
+          acrossGear:
+            status: forbidden_source_grain_only
+            note: Stage 3.2 approved exact BMU × month × gear observations only; reducing
+              stored means/rates across gear is not verified.
+      mean_rpua:
+        label: Mean RPUA
+        aliases:
+        - mean rpua
+        - rpua
+        - revenue per unit area
+        kind: rate
+        unit:
+          value: source RPUA units ({currency})
+          status: stage31b_field_confirmed_unit_unverified
+        nativeGrain:
+        - bmu
+        - month
+        - gear
+        derivationStatus: upstream_unverified_source_grain_only
+        rollups:
+          acrossBmu:
+            status: forbidden_source_grain_only
+            note: Stage 3.2 did not verify weights/denominators for reducing this stored
+              mean/rate across BMUs.
+          acrossTime:
+            status: forbidden_source_grain_only
+            note: Stage 3.2 approved exact monthly source-grain observations only; one-number
+              reductions across months remain blocked.
+          sum:
+            status: forbidden
+            note: Stored mean/rate values must never be summed.
+          acrossGear:
+            status: forbidden_source_grain_only
+            note: Stage 3.2 approved exact BMU × month × gear observations only; reducing
+              stored means/rates across gear is not verified.
+    bindings:
+      KE:
+        database: app
+        collection: gear_summaries
+        status: available
+        observedDocuments: 12321
+    queryPolicy:
+      maxRows: 15000
+      timeFilterStatus: supported
+      canonicalKey:
+      - bmu
+      - month
+      - gear
+      duplicateResolution: verified_unique_source_grain
+    caveats:
+    - Stage 3.1B verified zero duplicate groups at BMU × month × gear grain.
+    - Only exact stored monthly gear observations are activated; upstream formulas/weights
+      remain unverified.
+    - Cross-BMU, cross-time, and cross-gear reductions of stored mean/rate values are
+      forbidden.
+    - BMU is not district/GAUL-2 and no implicit geographic join is permitted.
+    - This dataset is unrestricted-only until a future Peskas page explicitly operates
+      in the Kenya BMU frame.
+discoveredSources:
+- countryCode: MZ
+  tier: pipeline
+  database: pipeline
+  queryable: false
+  status: field_and_derivation_audit_required
+  collections:
+    raw: 19897
+    preprocessed: 19897
+    validated: 23735
+  reason: Collection names/counts are known, but live fields, row grain, sensitive columns, and pipeline
+    derivations are not yet verified.
+- countryCode: MZ
+  tier: native_app
+  database: mozambique-prod
+  queryable: false
+  status: field_and_derivation_audit_required
+  collections:
+    monthly-metrics: 669
+    taxa-length: 41744
+    taxa-sites: 154
+    surveys-gps: 27344
+    sites-stats: 24
+    geo-indicators: 3
+    gear_habitat_metrics: 2
+  reason: Country-specific source shapes are not yet mapped into the cross-country semantic layer.
+- countryCode: KE
+  tier: native_app
+  database: app
+  queryable: false
+  status: field_and_derivation_audit_required
+  collections:
+    catch_monthly: 1541
+    fish_distribution: 15401
+    individual_stats: 5394
+    individual_gear_stats: 6185
+    individual_fish_distribution: 11309
+    gear_summaries: 12321
+    map_distribution: 37326
+    monthly_stats: 211
+    legacy-metrics: 34695
+  reason: Potentially useful finer-grain data exist, but field-level grain and governance must be verified
+    before planner exposure.
+- countryCode: TZ
+  tier: native_app
+  database: zanzibar-prod
+  queryable: false
+  status: field_and_derivation_audit_required
+  collections:
+    enumerators_stats: 8814
+    surveys_flags: 7658
+  reason: Production native DB currently exposes quality/operations collections; richer dev-only collections
+    are intentionally excluded from planner capability claims.

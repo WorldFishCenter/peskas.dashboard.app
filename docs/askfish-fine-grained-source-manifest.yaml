@@ -1,0 +1,330 @@
+# STAGE 3 STEP 3.1 REVISED: Activation manifest for Peskas sources below the
+# harmonized portal-summary layer. This is an evidence/decision manifest, NOT a
+# queryable semantic catalog; no source is activated by appearing here.
+# STAGE 3 STEP 3.2: Live 3.1B reconciliation has been reviewed; this manifest now records
+# manual promotion decisions for Stage 3.3 without changing the executable semantic catalog.
+auditVersion: '1.2'
+status: stage32_selective_activation_decided
+defaultQueryable: false
+automaticPromotion: false
+
+# STAGE 3 STEP 3.1 REVISED: Track current live-portal holes separately so deep-source
+# discovery cannot distract from contracts that already affect AskFish answers today.
+# STAGE 3 STEP 3.2: Stage 2.7 closed the live portal-contract issues before these
+# deeper-source decisions were made, so they are no longer an activation dependency.
+parallelPortalContractWork:
+  required: false
+  items: []
+  note: Closed by Stage 2.7.x production-contract correction and verification.
+
+# STAGE 3 STEP 3.1 REVISED: Source access and analytical computation are independent
+# gates. Passing the source gate never implies that means/rates may be re-aggregated.
+sourceActivationGates:
+  - production_collection_exists
+  - live_fields_and_types_verified
+  - row_grain_verified
+  - date_semantics_verified_if_applicable
+  - sensitivity_classified_by_human_review
+  - application_access_and_identity_requirement_verified
+  - duplicate_or_version_policy_defined
+  - geographic_frame_named
+  - join_keys_or_parent_mapping_verified_if_needed
+
+# STAGE 3 STEP 3.1 REVISED: Rollup permissions require derivation evidence beyond the
+# metadata audit. Weighted means and stock/flow semantics remain fail-closed by default.
+rollupActivationGates:
+  - measure_definition_verified
+  - unit_and_currency_verified
+  - denominator_or_weight_verified_for_rates_and_means
+  - stock_vs_flow_semantics_verified
+  - allowed_rollup_dimensions_defined
+  - forbidden_rollups_defined
+  - pipeline_or_source_code_evidence_reviewed
+  - numerical_reconciliation_against_production_output_completed
+
+# STAGE 3 STEP 3.1 REVISED: Human review is mandatory for high-risk source families;
+# field-name heuristics are screening signals only and can never auto-clear a source.
+governancePolicy:
+  humanReviewRequiredFor:
+    - individual_level_sources
+    - raw_or_preprocessed_surveys
+    - gps_or_tracker_sources
+    - fisher_or_vessel_level_sources
+    - enumerator_or_operational_sources
+    - free_text_or_nested_record_sources
+  nameBasedSensitivityDetectionIsSufficient: false
+  individualSourceDefault: governance_blocked
+  preciseLocationSourceDefault: governance_blocked
+  auditOutputsClassification: internal_technical_audit
+
+# STAGE 3 STEP 3.1 REVISED: Geographic frames must be explicit. BMU, landing site,
+# district/GAUL-2, and grid cells are parallel frames until a mapping is verified.
+geographicFramePolicy:
+  implicitCrossFrameJoinAllowed: false
+  requiredFields:
+    - level
+    - namespace
+    - parentMappingStatus
+  defaultParentMappingStatus: unverified
+
+# STAGE 3 STEP 3.1 REVISED: Priority says what to investigate first, not what is safe
+# to expose. Every source starts with both access and computation blocked.
+sources:
+  MZ:
+    - database: pipeline
+      collections: [validated, preprocessed, raw]
+      priority: high
+      # STAGE 3 STEP 3.2: Live audit confirmed identifiers/precise coordinates remain in
+      # validated records; 3.1B also failed to establish a safe universal detail grain.
+      sourceAccess:
+        status: governance_blocked
+        queryable: false
+        classification: sensitive_validated_detail
+      computation:
+        status: derivation_blocked
+        defaultRollup: blocked
+      governance:
+        humanReviewRequired: true
+        reason: Raw/preprocessed/validated records may retain identifiers, free text, or precise locations even when field names appear harmless.
+      geographicFrame:
+        level: unknown
+        namespace: unverified
+        parentMappingStatus: unverified
+      expectedValue: Highest-value Mozambique candidates for questions below portal-summary grain.
+      keyUnknowns:
+        - What one document in each pipeline stage represents.
+        - Which identifiers, precise locations, nested fields, or free text survive validation.
+        - Which taxon/gear/time dimensions survive validation.
+        - How validated records feed portal summary derivations.
+        - Which measures are additive versus rates/means requiring weights.
+
+    - database: mozambique-prod
+      collections:
+        - monthly-metrics
+        - taxa-length
+        - taxa-sites
+        - surveys-gps
+        - sites-stats
+        - geo-indicators
+        - gear_habitat_metrics
+      priority: medium
+      # STAGE 3 STEP 3.2: Native Mozambique summary candidates remain non-queryable.
+      # Their physical grains are partly clear, but 3.1B reconciliation did not verify
+      # the candidate formulas or establish safe cross-grain semantics.
+      sourceAccess:
+        status: blocked_pending_derivation_evidence
+        queryable: false
+        classification: native_summary_unverified
+      computation:
+        status: derivation_blocked
+        defaultRollup: blocked
+      governance:
+        humanReviewRequired: true
+        reason: Native country collections include GPS/spatial candidates and may not share portal access semantics.
+      geographicFrame:
+        level: mixed_or_unknown
+        namespace: unverified
+        parentMappingStatus: unverified
+      expectedValue: Country-specific length, habitat, site, and GPS-derived analytical capabilities.
+      keyUnknowns:
+        - Cross-country semantic equivalence.
+        - Whether GPS collections contain precise coordinates or derived aggregates.
+        - Correct grain and safe rollup behavior for every measure.
+
+  KE:
+    - database: app
+      collections: [catch_monthly]
+      priority: highest
+      # STAGE 3 STEP 3.2: 3.1B verified a duplicate-free BMU × month grain and exact
+      # value agreement with monthly_stats on all overlapping rows. Repository access is
+      # public, so the source is approved for Stage 3.3 exact-source-grain exposure only.
+      sourceAccess:
+        status: approved_for_stage33_source_grain_adapter
+        queryable: false
+        classification: aggregate_source_grain_approved
+        repositoryApplicationAccess: public
+      computation:
+        status: source_grain_only
+        defaultRollup: blocked
+        allowedOperations: [filter, source_grain_trend, source_grain_compare, source_grain_rank_single_month]
+        forbiddenReductions: [across_bmu, across_time]
+        measureNotes:
+          mean_effort: exact_stored_values_only_derivation_unverified
+          mean_cpue: exact_stored_values_only_derivation_unverified
+          mean_cpua: exact_stored_values_only_derivation_unverified
+          mean_rpue: exact_stored_values_only_derivation_unverified_currency_KES_verified
+          mean_rpua: exact_stored_values_only_derivation_unverified_currency_KES_verified
+      governance:
+        humanReviewRequired: true
+        reason: Aggregate-looking source still requires live field/sensitivity verification before promotion.
+      geographicFrame:
+        level: bmu
+        namespace: kenya_bmu
+        parentMappingStatus: unverified
+      repositoryEvidence:
+        grainCandidate: [BMU, date]
+        fields: [BMU, date, mean_effort, mean_cpue, mean_cpua, mean_rpue, mean_rpua]
+      expectedValue: BMU-time catch/effort/revenue rates without pretending BMU is equivalent to district.
+      keyUnknowns:
+        - Live duplicate/version behavior at BMU-date grain.
+        - Exact date cadence and missing-period semantics.
+        - Upstream derivation/weighting of all mean/rate measures.
+        - BMU-to-district/GAUL-2 mapping for any cross-source question.
+
+    - database: app
+      collections: [fish_distribution]
+      priority: high
+      # STAGE 3 STEP 3.2: Grain verification and repository read-side SUM evidence are
+      # sufficient for semantics, but the existing application route is protected. AskFish
+      # must propagate Peskas identity/authorization before this source can be activated.
+      sourceAccess:
+        status: blocked_pending_identity_propagation
+        queryable: false
+        classification: semantics_approved_authenticated_source
+        repositoryApplicationAccess: protected
+      computation:
+        status: additive_measure_approved_after_auth
+        defaultRollup: blocked_until_identity_gate_opens
+        measureNotes:
+          total_catch_kg: sum_supported_by_existing_read_side_route_at_verified_grain
+      governance:
+        humanReviewRequired: true
+        reason: Existing application route is protected; AskFish must propagate identity/authorization before use.
+      geographicFrame:
+        level: landing_site
+        namespace: kenya_landing_site
+        parentMappingStatus: unverified
+      repositoryEvidence:
+        grainCandidate: [landing_site, date, fish_category]
+        fields: [landing_site, date, fish_category, total_catch_kg]
+      expectedValue: Time-aware catch composition by landing site.
+      keyUnknowns:
+        - User permission propagation into AskFish.
+        - Live duplicate/version behavior at landing-site/date/category grain.
+        - Landing-site-to-BMU/district mapping.
+        - Whether total_catch_kg can be summed across all requested dimensions.
+
+    - database: app
+      collections:
+        - individual_stats
+        - individual_gear_stats
+        - individual_fish_distribution
+      priority: medium
+      sourceAccess:
+        status: governance_blocked
+        queryable: false
+        classification: individual_level_candidate
+      computation:
+        status: blocked_pending_derivation_review
+        defaultRollup: blocked
+      governance:
+        humanReviewRequired: true
+        automaticPromotionProhibited: true
+        reason: Individual-family collections remain governance-blocked until a human verifies identifiers, free text, joins, and intended audience.
+      geographicFrame:
+        level: unknown
+        namespace: unverified
+        parentMappingStatus: unverified
+      expectedValue: Potential individual/gear/species analytics only if governance and scientific derivation permit.
+
+    # STAGE 3 STEP 3.2: Kenya native gear summaries add BMU-level detail beyond the portal
+    # district gear source. 3.1B verified BMU × month × gear uniqueness, but not the
+    # upstream rate/mean formulas, so only exact source-grain values are approved for 3.3.
+    - database: app
+      collections: [gear_summaries]
+      priority: high
+      sourceAccess:
+        status: approved_for_stage33_source_grain_adapter
+        queryable: false
+        classification: aggregate_source_grain_approved
+        repositoryApplicationAccess: public
+      computation:
+        status: source_grain_only
+        defaultRollup: blocked
+        allowedOperations: [filter, source_grain_trend, source_grain_compare, source_grain_rank_single_month]
+        forbiddenReductions: [across_bmu, across_time]
+        approvedMeasures: [mean_effort, mean_cpue, mean_cpua, mean_rpue, mean_rpua]
+      governance:
+        humanReviewRequired: false
+        reason: Live audit found an aggregate BMU/month/gear source without individual identifiers; no cross-frame join is permitted.
+      geographicFrame:
+        level: bmu
+        namespace: kenya_bmu
+        parentMappingStatus: unverified
+      expectedValue: Fine-grained Kenya gear trends and comparisons at explicit BMU source grain only.
+
+    # STAGE 3 STEP 3.2: monthly_stats is an exact overlapping mirror of catch_monthly and
+    # adds no new semantics; map_distribution remains spatially sensitive; legacy-metrics
+    # is historical/legacy and is not promoted into the current AskFish catalog.
+    - database: app
+      collections: [monthly_stats, map_distribution, legacy-metrics]
+      priority: low
+      sourceAccess:
+        status: not_selected_for_activation
+        queryable: false
+        classification: redundant_sensitive_or_legacy
+      computation:
+        status: not_applicable_or_blocked
+        defaultRollup: blocked
+      governance:
+        humanReviewRequired: true
+      geographicFrame:
+        level: mixed_or_unknown
+        namespace: unverified
+        parentMappingStatus: unverified
+      expectedValue: No Stage 3.3 activation; retain only as internal compatibility, spatial, or historical sources.
+
+  TZ:
+    - database: zanzibar-prod
+      collections: [surveys_flags, enumerators_stats]
+      priority: medium
+      # STAGE 3 STEP 3.2: 3.1B found no approved native analytical source in zanzibar-prod;
+      # the available collections remain operational/QC and are not Stage 3.3 candidates.
+      sourceAccess:
+        status: governance_blocked
+        queryable: false
+        classification: qc_or_operational_not_selected
+      computation:
+        status: not_applicable
+        defaultRollup: blocked
+      governance:
+        humanReviewRequired: true
+        automaticPromotionProhibited: true
+        reason: Survey-quality and enumerator operational collections may expose staff/record-level information even when no obvious PII field name exists.
+      geographicFrame:
+        level: unknown
+        namespace: unverified
+        parentMappingStatus: unverified
+      expectedValue: Potential authenticated data-quality/operations questions rather than general public catch/revenue analytics.
+
+# STAGE 3 STEP 3.2: Manual decisions are now recorded. Runtime queryability still stays
+# false until Stage 3.3 implements an executable adapter/catalog entry and acceptance tests.
+promotionRule:
+  automaticPromotion: false
+  requiredCatalogChange: true
+  requiredHumanDecision: true
+  stage32DecisionComplete: true
+  runtimeActivationDeferredToStage33: true
+  stage33ApprovedSources:
+    - KE/app.catch_monthly
+    - KE/app.gear_summaries
+  blockedPendingIdentity:
+    - KE/app.fish_distribution
+  noNativeActivationThisCycle:
+    - MZ
+    - TZ
+  decisions:
+    sourceAccess:
+      allowedValues:
+        - queryable_aggregate
+        - queryable_authenticated
+        - governance_blocked
+        - not_useful
+        - pending
+    computation:
+      allowedValues:
+        - verified_rollups
+        - partial_verified_rollups
+        - derivation_blocked
+        - not_applicable
+  rule: A source may become readable while specific measures remain aggregation-blocked.

@@ -1,0 +1,162 @@
+# STAGE 3 STEP 3.1B: Evidence registry for derivation/aggregation review.
+# This file is not an executable semantic catalog and activates no source or measure.
+version: '1.0'
+stage: '3.1B'
+# STAGE 3 STEP 3.2: All three requested live reconciliations were received and reviewed.
+status: evidence_collection_complete_reviewed_in_stage32
+automaticPromotion: false
+
+# STAGE 3 STEP 3.1B: Repository evidence is separated into read-side behavior versus upstream derivation.
+# Read-side behavior proves how the dashboard currently combines stored values; it does not prove how those
+# stored values were originally calculated from trips/surveys.
+repositoryEvidence:
+  currency:
+    # STAGE 3 STEP 3.1B: ISO-4217 currency mappings are explicit in the active country configuration.
+    source: apps/isomorphic-i18n/src/config/countryConfig.ts
+    mappings:
+      TZ: TZS
+      KE: KES
+      MZ: MZN
+    confidence: verified_from_repository_config
+
+  portalDistrictReadSideRollups:
+    # STAGE 3 STEP 3.1B: The district-summary API sums totals/counts and averages rate/mean indicators over a date range.
+    source: packages/api/src/router/district-summary.ts
+    behavior:
+      sum: [n_submissions, estimated_catch_tn, estimated_revenue]
+      unweighted_mean: [mean_cpue, mean_rpue, n_fishers, trip_duration_hrs, mean_price_kg]
+    evidenceClass: dashboard_compatible_read_side
+    caveat: This establishes current dashboard behavior only; it does not verify upstream denominators or statistical weighting.
+
+  portalGearReadSideRollups:
+    # STAGE 3 STEP 3.1B: The gear API averages stored cpue/rpue values when grouping across matching portal rows.
+    source: packages/api/src/router/gear.ts
+    behavior:
+      cpue: unweighted_mean
+      rpue: unweighted_mean
+    evidenceClass: dashboard_compatible_read_side
+    caveat: Upstream derivation of each stored gear rate remains unverified.
+
+  kenyaCatchMonthly:
+    # STAGE 3 STEP 3.1B: Kenya catch_monthly is read at BMU × date and the dashboard uses arithmetic means for higher-level displays.
+    schemaSource: packages/nosql/src/schema/catch-monthly.ts
+    readSideSources:
+      - packages/api/src/router/aggregated-catch.ts
+      - packages/api/src/router/monthly-stats.ts
+    sourceGrain: [BMU, date]
+    storedMeasures: [mean_effort, mean_cpue, mean_cpua, mean_rpue, mean_rpua]
+    higherLevelDashboardBehavior: unweighted_mean
+    upstreamDerivationStatus: not_present_in_dashboard_repository
+    activationEffect: none
+
+  kenyaFishDistribution:
+    # STAGE 3 STEP 3.1B: The protected fish-distribution API explicitly sums total_catch_kg across category/time aggregations.
+    schemaSource: packages/nosql/src/schema/fish-distribution.ts
+    readSideSource: packages/api/src/router/fish-distribution.ts
+    sourceGrain: [landing_site, date, fish_category]
+    measure: total_catch_kg
+    readSideAggregation: sum
+    evidenceClass: strong_read_side_additivity_evidence
+    accessStatus: protected_identity_required
+    upstreamDerivationStatus: not_present_in_dashboard_repository
+    activationEffect: none
+
+
+# STAGE 3 STEP 3.2: Manual summary of the live reconciliation evidence. These entries
+# record what was observed; they do not themselves make any runtime source queryable.
+liveReconciliationResults:
+  kenya:
+    catchMonthly:
+      grain: [BMU, date]
+      duplicateGroups: 0
+      analyticalRows: 1540
+      decisionSignal: source_grain_verified
+    monthlyStatsMirror:
+      overlappingGrains: 210
+      exactAgreementMeasures: [mean_effort, mean_cpue, mean_cpua, mean_rpue, mean_rpua]
+      matchRatio: 1.0
+      decisionSignal: redundant_exact_mirror_of_catch_monthly
+    fishDistribution:
+      grain: [landing_site, date, fish_category]
+      duplicateGroups: 0
+      analyticalRowsWithNumericTotalCatchKg: 9035
+      decisionSignal: semantics_supported_but_identity_gate_remains
+    gearSummaries:
+      grain: [BMU, date, gear]
+      duplicateGroups: 0
+      decisionSignal: source_grain_verified_rollups_still_blocked
+  mozambique:
+    validated:
+      analyticalSubmissionGroups: 14242
+      totalCatchVsSummedCatchKgMatchRatio: 0.8737
+      totalCatchVsSummedCatchEstimateMatchRatio: 0.0
+      decisionSignal: no_safe_reconstruction_or_detail_grain_promotion
+    monthlyMetrics:
+      grain: [district, date, metric]
+      duplicateGroups: 0
+      formulaDecisionSignal: candidate_formulas_not_verified
+    taxaSites:
+      grain: [landing_site, catch_taxon]
+      duplicateGroups: 0
+      catchKgReconciliationMatchRatio: 0.0
+      decisionSignal: do_not_activate_without_upstream_scope_derivation_evidence
+    sitesStats:
+      duplicateGroups: 1
+      decisionSignal: do_not_activate
+    taxaLength:
+      duplicateGroups: 506
+      maxDocumentsPerGroup: 1781
+      decisionSignal: observational_distribution_not_aggregate_grain
+  zanzibar:
+    analyticalReconciliation: not_applicable_from_audited_native_sources
+    decisionSignal: no_native_analytical_activation_candidate
+
+# STAGE 3 STEP 3.1B: These derivations are intentionally unresolved; field names or dashboard arithmetic alone
+# are insufficient scientific evidence for AskFish to create new cross-grain calculations.
+unresolvedDerivations:
+  - mean_cpue
+  - mean_rpue
+  - mean_effort
+  - mean_cpua
+  - mean_rpua
+  - estimated_catch_tn
+  - estimated_revenue
+  - catch_estimate
+  - median_cpue
+  - median_rpue
+  - mean_length_across_time
+
+# STAGE 3 STEP 3.2: Required live evidence is complete; retain the expected outputs/checks
+# below as an audit trail for reproducibility.
+requiredLiveEvidence:
+  kenya:
+    commandEntryDatabase: app
+    output: kenya_stage31b_reconciliation.json
+    checks:
+      - catch_monthly BMU × date duplicate verification
+      - monthly_stats versus catch_monthly overlap/value agreement
+      - fish_distribution landing_site × date × fish_category duplicate verification
+      - gear_summaries BMU × date × gear duplicate verification
+  mozambique:
+    commandEntryDatabase: pipeline
+    output: mozambique_stage31b_reconciliation.json
+    checks:
+      - validated submission-level consistency and candidate detail grains
+      - total_catch_kg versus summed catch_kg/catch_estimate
+      - monthly-metrics candidate derivation reconciliation
+      - taxa-sites catch_kg and catch_percent reconciliation
+      - sites-stats candidate derivation reconciliation
+  zanzibar:
+    commandEntryDatabase: zanzibar-prod
+    output: zanzibar_stage31b_reconciliation.json
+    checks:
+      - explicit not-applicable result for analytical native reconciliation
+
+# STAGE 3 STEP 3.1B: Stage 3.2 consumes evidence but remains a manual source-access + computation decision.
+stage32Gate:
+  # STAGE 3 STEP 3.2: Gate review is complete; the decision manifest records the manual outcomes.
+  status: complete
+  decisionManifest: docs/askfish-fine-grained-source-manifest.yaml
+  sourceAccessDecisions: [queryable_aggregate, queryable_authenticated, governance_blocked, not_useful, pending]
+  computationDecisions: [verified_rollups, partial_verified_rollups, derivation_blocked, not_applicable]
+  rule: Numerical agreement can corroborate a formula but cannot auto-promote a source or override governance/access requirements.
