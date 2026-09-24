@@ -48,7 +48,10 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
             (op.direction === "down" && op.result instanceof Error),
         }),
         httpBatchLink({
-          maxURLLength: 750,
+          // Above this, tRPC splits a batch; a single query over it is not
+          // sent at all ("Input is too big for a single dispatch"). 2083 is
+          // the conservative browser-safe limit; Vercel accepts far more.
+          maxURLLength: 2083,
           transformer: SuperJSON,
           url: getBaseUrl() + "/api/trpc",
           async headers() {

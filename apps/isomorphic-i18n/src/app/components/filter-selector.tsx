@@ -86,8 +86,17 @@ const KNOWN_DISTRICTS = new Set(activeCountry.districts);
  */
 function reconcileDistricts(stored: string[]): string[] {
   if (stored.length === 0) return stored;
-  const valid = stored.filter((d) => KNOWN_DISTRICTS.has(d));
+  const valid = dedupe(stored.filter((d) => KNOWN_DISTRICTS.has(d)));
   return valid.length > 0 ? valid : activeCountry.defaultSelectedDistricts;
+}
+
+/**
+ * Selecting a partially selected region appends all of its districts, so
+ * duplicates used to accumulate in storage. Besides doubling chart legends,
+ * they lengthen every query URL until tRPC refuses to send it.
+ */
+function dedupe(districts: string[]): string[] {
+  return Array.from(new Set(districts));
 }
 
 export const districtsAtom = atom(
@@ -97,7 +106,13 @@ export const districtsAtom = atom(
     set,
     update: string[] | ((prev: string[]) => string[]) | typeof RESET
   ) => {
-    set(districtsStorageAtom, update);
+    if (update === RESET) {
+      set(districtsStorageAtom, RESET);
+      return;
+    }
+    set(districtsStorageAtom, (prev) =>
+      dedupe(typeof update === "function" ? update(prev) : update)
+    );
   }
 );
 export const viewModeAtom = atomWithStorage<'district' | 'region'>('viewMode', 'district', undefined, { getOnInit: true });
