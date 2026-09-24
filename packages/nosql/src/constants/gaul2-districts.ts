@@ -1,6 +1,6 @@
 /**
  * District/region data for the API layer, mirroring countryConfig.ts in the app.
- * Selected at build time via the COUNTRY_CODE env var (default: 'TZ').
+ * Selected at build time via the NEXT_PUBLIC_COUNTRY_CODE env var (default: 'TZ').
  *
  * IMPORTANT: district names and region mappings here must stay in sync with
  * countryConfig.districtToRegion in apps/isomorphic-i18n/src/config/countryConfig.ts.

@@ -1,7 +1,7 @@
 # Adding a Country to the Peskas Dashboard
 
 Each country runs as a **separate deployment** pointing to its own MongoDB database.
-Adding a new country requires updating 2 config files and setting 2 env vars — no core code changes.
+Adding a new country requires updating 2 config files, adding locale files and setting the deployment's env vars (Step 4; the full list is in `turbo.json`) — no core code changes.
 
 ---
 
@@ -39,7 +39,7 @@ Add an entry to `COUNTRY_REGISTRY`. Use the Zanzibar config as a template:
 
 ```ts
 const kenyaConfig: CountryConfig = {
-  countryCode: 'KE',                           // matches COUNTRY_CODE env var
+  countryCode: 'KE',                           // matches NEXT_PUBLIC_COUNTRY_CODE env var
   countryName: 'Kenya',                         // used in page titles and map heading
   siteTitle: 'PESKAS | Kenya Fisheries',
   siteDescription: 'Peskas | Kenya Fisheries Dashboard',
@@ -128,6 +128,10 @@ Strings to check: `metric-mean_rpue-unit`, `metric-mean_price_kg-unit` (currency
 ```
 NEXT_PUBLIC_COUNTRY_CODE=KE
 MONGODB_URI=<your-kenya-cluster-connection-string>
+MONGODB_URI_COASTS=<connection-string-of-the-database-holding-wio_gaul2>
+NEXTAUTH_SECRET=<random-secret>
+NEXTAUTH_URL=<the-deployment-public-url>
+NEXT_PUBLIC_MAPBOX_TOKEN=<mapbox-token>
 NEXT_PUBLIC_GA_MEASUREMENT_ID=<the-new-country-GA4-stream>
 ```
 
@@ -148,6 +152,6 @@ See [ANALYTICS.md](./ANALYTICS.md) for the GA4 admin steps.
 - [ ] Region names identical in `districtToRegion` (countryConfig) and `GAUL2_TO_REGION` (nosql)
 - [ ] `regionBreakdown.regions` values match the region names used in `districtToRegion`
 - [ ] Locale files added for each language
-- [ ] `NEXT_PUBLIC_COUNTRY_CODE` and `MONGODB_URI` set in the deployment environment
+- [ ] Step 4 env vars (`NEXT_PUBLIC_COUNTRY_CODE`, `MONGODB_URI`, `MONGODB_URI_COASTS`, `NEXTAUTH_SECRET`, `NEXTAUTH_URL`, `NEXT_PUBLIC_MAPBOX_TOKEN`) set in the deployment environment
 - [ ] GA4 stream created and `NEXT_PUBLIC_GA_MEASUREMENT_ID` set on Production (see ANALYTICS.md)
 - [ ] `npx tsc --noEmit` passes in both `apps/isomorphic-i18n/` and `packages/api/`

@@ -1,17 +1,4 @@
-## Isomorphic Starter Template with Internationalization support
+# Peskas country dashboards app
 
-**Run the following commands from the packages root**
-
-First install the dependencies by running the following command.
-
-```bash
-pnpm install
-```
-
-Now to start the local development server run
-
-```bash
-pnpm i18n:dev
-```
-
-To learn more please follow our [Documentation](https://isomorphic-doc.vercel.app/getting-started/installation)
+This is the Next.js app behind the Peskas Zanzibar, Kenya and Mozambique dashboards.
+Setup, commands and deployment are described in the [root README](../../README.md); to add a country, see [COUNTRY_SETUP.md](COUNTRY_SETUP.md).

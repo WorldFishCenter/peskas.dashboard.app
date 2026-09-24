@@ -1,192 +1,36 @@
-# CLAUDE.md
+# peskas.dashboard
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Multi-country Peskas fisheries portal: a Turborepo (pnpm) monorepo whose only app, `apps/isomorphic-i18n` (Next.js App Router, tRPC, Mongoose, NextAuth), reads the `portal-*` Mongo summaries that `peskas.coasts::export_portal` writes. One codebase, one Vercel project per country.
+Ecosystem context (other repos, data flow, cross-repo contracts): see PESKAS.md, loaded via CLAUDE.local.md.
 
-## Development Commands
+## Commands
 
-This is a Turborepo monorepo with multiple Next.js applications. Use these commands:
+- `pnpm install`, then `pnpm run i18n:dev` (dashboard on port 3001).
+- `pnpm run i18n:lint` / `pnpm run i18n:build`; `pnpm run lint` / `pnpm run build` for the whole workspace.
+- Type-check a package: `pnpm tsc --noEmit` inside it (`packages/nosql` has a `typecheck` script).
+- Check the monthly summaries connection and data: `packages/nosql/src/test-monthly.ts`.
+- Releases: `.github/workflows/release.yml` publishes the top block of `NEWS.md` on push to `dev`.
 
-**Development:**
-- `pnpm install` - Install dependencies
-- `pnpm run dev` - Start all apps in development mode
-- `pnpm run i18n:dev` - Run the dashboard (the only app)
+## Architecture
 
-**Build & Production:**
-- `pnpm run build` - Build all apps
-- `pnpm run start` - Start all apps in production
-- `pnpm run i18n:build` && `pnpm run i18n:start` - Build and run the dashboard
+- `packages/api/src/router/` holds the tRPC routers, `packages/nosql/src/schema/` the Mongoose models, `packages/isomorphic-core` the shared UI. Pages live under `apps/isomorphic-i18n/src/app/[lang]/(hydrogen)/`.
+- Env vars: the build list is in `turbo.json`; examples in `apps/isomorphic-i18n/.env.*.example`. Two Mongo connections:
+  - `MONGODB_URI` is the default connection (`packages/nosql/src/index.ts`): monthly, taxa, districts, gear and grid summaries.
+  - `MONGODB_URI_COASTS` is used only for `wio_gaul2` boundaries, via `packages/nosql/src/portal-db.ts`.
+- `NEXT_PUBLIC_COUNTRY_CODE` (TZ/KE/MZ, default TZ) selects the country at build time from `COUNTRY_REGISTRY` in `apps/isomorphic-i18n/src/config/countryConfig.ts`. That config holds districts, colours, currency, map view state and the language list. Languages are set per country (the first entry is the fallback). Locale files are in `src/app/i18n/locales/<lang>/`.
+- Two layouts exist: Lithium (default, top nav) and Hydrogen (sidebar), switchable from the settings drawer.
+- Adding a country: follow `apps/isomorphic-i18n/COUNTRY_SETUP.md`. For Google Analytics per deployment, see `apps/isomorphic-i18n/ANALYTICS.md`.
+- Decision history: `docs/decisions.md`.
 
-**Linting:**
-- `pnpm run lint` - Lint all apps
-- `pnpm run i18n:lint` - Lint the dashboard
+## Rules
 
-**Cleanup:**
-- `pnpm run clean` - Clean build artifacts and node_modules
+- Make every feature config-driven for all countries. Read country values from `activeCountry` (`countryConfig.ts`), and never hard-code a district, currency or coordinates. Map centre/zoom comes from `activeCountry.mapViewState` / `gridMapViewState`.
+- Fetch domain data in the UI through tRPC procedures, and reuse an existing router before adding aggregation logic.
+- Add a key to every locale folder the active countries use.
+- Keep schema changes in migrations under `packages/nosql/migrations/`.
 
-## Architecture Overview
+## Gotchas
 
-### Monorepo Structure
-- **apps/isomorphic-i18n/** - Multi-country fisheries dashboard (Peskas). The only app; deployed as one Vercel project per country.
-- **packages/api/** - tRPC API layer with routers for fisheries data
-- **packages/nosql/** - MongoDB schemas and migrations for fisheries data
-- **packages/isomorphic-core/** - Shared UI components and utilities
-- **packages/config-tailwind/** - Shared Tailwind configuration
-- **packages/config-typescript/** - TypeScript configurations
-
-### Technology Stack
-- **Framework:** Next.js 14+ with App Router
-- **Build System:** Turborepo for monorepo management
-- **Package Manager:** pnmp 9.1.4
-- **Styling:** Tailwind CSS with multiple layout themes
-- **Database:** MongoDB with custom schemas
-- **API:** tRPC for type-safe API communication
-- **Authentication:** NextAuth.js integration
-- **UI Components:** Custom component library in isomorphic-core
-
-### Key Application Features
-The dashboard provides:
-- Two dashboard layouts (Lithium default, Hydrogen alternative), switchable from the settings drawer
-- Data visualization for fisheries statistics
-- Multi-language support (en / sw / pt)
-- Authentication and user management
-- Export functionality for data
-
-### Database Schema
-Key collections in nosql package:
-- `individual-data.ts` - Individual fisheries catch records
-- `catch-monthly.ts` - Monthly aggregated catch data
-- `district-summary.ts` - District-level summaries
-- `gear-summary.ts` - Fishing gear statistics
-- `bmu.ts` - Beach Management Unit data
-
-### API Architecture
-tRPC routers in packages/api:
-- `aggregated-catch.ts` - Catch aggregation endpoints
-- `fish-distribution.ts` - Fish distribution data
-- `monthly-stats.ts` - Monthly statistics
-- `map-distribution.ts` - Geographic distribution data
-- `gear.ts` - Fishing gear data
-- `district-summary.ts` - District summary endpoints
-
-### Layout System
-- **Lithium** - Default layout (top nav). What users get unless they switch.
-- **Hydrogen** - Alternative layout (sidebar nav).
-
-Both carry the real Peskas nav. The four template layouts that shipped with the
-boilerplate (Carbon, Beryllium, Helium, Boron) were removed.
-
-Each layout includes header, sidebar, and responsive navigation components.
-
-### Environment Variables
-Required for build (defined in turbo.json):
-- `NEXTAUTH_SECRET` - NextAuth secret key
-- `NEXTAUTH_URL` - NextAuth URL
-- `MONGODB_URI` - MongoDB connection string
-- `VERCEL_URL` - Vercel deployment URL (optional)
-
-## Claude Code Configuration
-
-This project uses a structured Claude Code setup for the monorepo (apps/isomorphic-i18n, packages). Configuration lives at the repo root.
-
-### Quick Commands
-
-- `/plan` - Create implementation plan for new features (uses Architect agent)
-- `/code-review` - Code quality and consistency review (uses Code Reviewer agent)
-- `/build-fix` - Fix TypeScript/ESLint errors
-- `/document` - Document significant changes (updates memory)
-
-### Documentation
-
-- `.claude/QUICK_START.md` - Quick reference
-- `.claude/agents/` - Architect, Code Reviewer, Security Reviewer
-- `.claude/commands/` - plan, code-review, build-fix, document
-- `.claude/skills/` - coding-standards, frontend-patterns (Next.js, Tailwind), backend-patterns (tRPC, MongoDB)
-- `.claude/memory/` - session-context.json, architecture-decisions.md, data-models.md
-- `.claude/contexts/` - dev.md, review.md
-
-### Quick Start
-
-1. Read `.claude/QUICK_START.md` for common workflows
-2. Check `.claude/memory/session-context.json` for current stack and patterns
-3. Review relevant skills in `.claude/skills/` for your task
-4. Use `/plan` for complex features
-5. Run `/code-review` before committing
-
-## Critical Rules
-
-### Pre-Edit Checklist
-
-Before making any code changes:
-
-- [ ] Read `.claude/FEATURE_IMPLEMENTATION_GUIDE.md`
-- [ ] Check `.claude/memory/data-models.md` and `session-context.json`
-- [ ] Read relevant skills in `.claude/skills/`
-- [ ] Check existing patterns in similar code; align with architecture
-- [ ] Prefer Tailwind; avoid one-off custom CSS when Tailwind suffices
-- [ ] Read the file you are about to edit fully first
-
-### Code Style
-
-- Many small files; high cohesion, low coupling
-- Immutability: do not mutate objects or arrays in place
-- No emojis in code or comments; no `console.log` in production code
-- TypeScript strict; no `any`; use types from tRPC and nosql
-- Use tRPC for data from the UI; do not add ad-hoc fetch for domain data
-- Shared UI in `packages/isomorphic-core`; use Tailwind for styling
-
-### Testing and Quality
-
-- Run lint/build; use `/build-fix` and `/code-review` before committing
-- Handle loading and error states in UI; validate inputs in tRPC
-
-### Security
-
-- No hardcoded secrets; use env for NEXTAUTH_*, MONGODB_URI
-- Validate all user inputs; use projection and safe queries in procedures
-
-## Workflow for Making Changes
-
-1. **REFERENCE** - Check `.claude/memory/session-context.json` for patterns
-2. **PLAN** - Use `/plan` for complex features
-3. **READ** - Check relevant skills in `.claude/skills/`
-4. **UNDERSTAND** - Review similar code in the codebase
-5. **IMPLEMENT** - Follow guidelines and established patterns
-6. **FIX** - Run `/build-fix` for TypeScript/ESLint errors
-7. **REVIEW** - Run `/code-review` before committing
-8. **TEST** - Run dev server and lint
-9. **DOCUMENT** - Use `/document` for significant changes
-10. **COMMIT** - Meaningful, conventional commit message
-
-## When to Ask
-
-Ask the user before proceeding if:
-
-- Requirements or acceptance criteria are unclear
-- Multiple valid approaches exist and a product/architecture decision is needed
-- The change would be breaking or affect existing functionality
-- An architectural or design decision is required
-
-## Development Notes
-
-### Working with the Main App
-- Main dashboard code is in `apps/isomorphic-i18n/src/app/[lang]/(hydrogen)/`
-- Shared components are in `packages/isomorphic-core/src/components/`
-- API routes are in `packages/api/src/router/`
-- Database schemas are in `packages/nosql/src/schema/`
-
-### Adding New Features
-1. Add API endpoints in `packages/api/src/router/`
-2. Create/update database schemas in `packages/nosql/src/schema/`
-3. Build UI components in `packages/isomorphic-core/src/components/`
-4. Implement pages in the appropriate app directory
-
-### Code Organization
-- Follow existing patterns for file structure and naming
-- Components use Tailwind CSS for styling
-- TypeScript is used throughout with strict typing
-- tRPC provides end-to-end type safety
-
-### Database Migrations
-- Migration files are in `packages/nosql/migrations/`
-- Use the migration system for schema changes
-- Test with `packages/nosql/src/test-monthly.ts`
+- `countryConfig.districtToRegion` must mirror `GAUL2_TO_REGION` in `packages/nosql/src/constants/gaul2-districts.ts`, because `packages/api` cannot import from `apps/`. If the region names differ, the homepage region bars render `-` and nothing reports an error.
+- Collection or column names come from `peskas.coasts` (`export_portal`). Renaming one there breaks the dashboard, and the reverse is also true.
+- Not every schema in `packages/nosql/src/schema/` matches a collection that coasts still writes (`individual_data`, `catch_monthly`, for example). The portal contract in PESKAS.md is the list to trust, so check it before building on any other collection.

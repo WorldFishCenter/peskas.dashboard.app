@@ -1,6 +1,6 @@
 /**
  * Country configuration for multi-country deployment.
- * Select the active country at build time via the COUNTRY_CODE env var (default: 'TZ').
+ * Select the active country at build time via the NEXT_PUBLIC_COUNTRY_CODE env var (default: 'TZ').
  *
  * IMPORTANT: districtToRegion must mirror
  * packages/nosql/src/constants/gaul2-districts.ts GAUL2_TO_REGION,
@@ -13,7 +13,7 @@
  *   2. Update packages/nosql/src/constants/gaul2-districts.ts with the new
  *      district/region mapping for the new country's DB data.
  *   3. Add locale files under src/app/i18n/locales/<lang>/common.json.
- *   4. Set COUNTRY_CODE and MONGODB_URI env vars in the new deployment.
+ *   4. Set NEXT_PUBLIC_COUNTRY_CODE and MONGODB_URI env vars in the new deployment.
  */
 
 import type { ComponentType } from 'react';
@@ -29,7 +29,7 @@ export interface MapViewState {
 }
 
 export interface CountryConfig {
-  /** Internal identifier matching COUNTRY_CODE env var, e.g. 'TZ' */
+  /** Internal identifier matching NEXT_PUBLIC_COUNTRY_CODE env var, e.g. 'TZ' */
   countryCode: string;
   /** ISO 3166-1 alpha-3 code used to filter wio_gaul2 boundaries, e.g. 'TZA' */
   iso3Code: string;
@@ -375,7 +375,7 @@ const COUNTRY_REGISTRY: Record<string, CountryConfig> = {
 
 /**
  * The active country configuration for this deployment.
- * Resolved once at module load from the COUNTRY_CODE env var.
+ * Resolved once at module load from the NEXT_PUBLIC_COUNTRY_CODE env var.
  * Defaults to 'TZ' (Zanzibar) when NEXT_PUBLIC_COUNTRY_CODE is unset or unknown.
  */
 export const activeCountry: CountryConfig =

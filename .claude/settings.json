@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(pnpm run dev*)",
+      "Bash(pnpm run i18n:dev*)",
+      "Bash(pnpm run lint*)",
+      "Bash(pnpm run build*)",
+      "Bash(pnpm run i18n:lint*)",
+      "Bash(pnpm run i18n:build*)",
+      "Bash(pnpm -w run i18n:lint*)",
+      "Bash(pnpm tsc --noEmit*)",
+      "Bash(pnpm exec eslint:*)",
+      "Bash(grep:*)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:api.github.com)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./apps/isomorphic-i18n/.env)",
+      "Read(./apps/isomorphic-i18n/.env.local)"
+    ]
+  }
+}
