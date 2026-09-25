@@ -1,23 +1,12 @@
 import type { Types } from "mongoose";
 import mongoose, { Schema } from "mongoose";
 
-// Define metrics for taxa summaries
-export const TAXA_METRICS = [
-  "catch_kg",
-  "mean_length",
-  "price_kg",
-  "n_individuals",
-  "total_value"
-] as const;
-
-export type TTaxaMetric = (typeof TAXA_METRICS)[number] | string;
-
 /* eslint-disable @typescript-eslint/consistent-type-definitions */
 export type TTaxaSummaryDistrict = {
   _id: Types.ObjectId;
   gaul_2_name: string;
   catch_taxon: string;
-  metric: TTaxaMetric;
+  metric: string;
   value?: number; // Optional as some values might be null
   scientific_name?: string; // Optional field for scientific names
   date?: Date; // Month the summary covers

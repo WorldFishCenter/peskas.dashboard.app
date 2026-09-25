@@ -8,12 +8,11 @@
 - **Environment variables were renamed** on every Vercel project and local `.env`:
   `NEXT_PUBLIC_COUNTRY_CODE` → `VITE_COUNTRY_CODE`, `NEXT_PUBLIC_MAPBOX_TOKEN` →
   `VITE_MAPBOX_TOKEN`, `NEXT_PUBLIC_GA_MEASUREMENT_ID` → `VITE_GA_MEASUREMENT_ID`,
-  `NEXT_PUBLIC_GA_ROLLUP_ID` → `VITE_GA_ROLLUP_ID`, `NEXTAUTH_SECRET` → `AUTH_SECRET`,
-  `NEXTAUTH_URL` → `APP_URL`. `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` and
+  `NEXT_PUBLIC_GA_ROLLUP_ID` → `VITE_GA_ROLLUP_ID`. `NEXTAUTH_SECRET`, `NEXTAUTH_URL`,
+  `EMAIL_SERVER`, `EMAIL_FROM`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` and
   `NEXT_PUBLIC_GOOGLE_MAP_API_KEY` are no longer read. Node.js 20.19+ is required.
-- Signing in replaces NextAuth with a signed session cookie; everyone signed in is signed
-  out once. The sign-in form gives the same message for an unknown email and a wrong
-  password, and deactivating an account takes effect on its next request.
+- **Sign-in, password reset and user administration are gone.** They came from the Kenya
+  BMU dashboard, and nothing on this portal needed an account.
 
 ## Redesign
 
@@ -29,8 +28,6 @@
 - All charts use one chart system: the gear treemap and the length box plot no longer
   depend on ApexCharts. Chart legends are clickable chips that hide or show a district or
   species.
-- Sign-in, password reset and user administration use the new form, dialog and table
-  components.
 
 ## Bug Fixes
 
@@ -40,10 +37,6 @@
   breakdowns kept only one month per district and species. Values are now summed (catch)
   or averaged (length, price) across the selected window.
 - **"Top N species" meant the first N alphabetically**; it now ranks species by total catch.
-- **Admin notifications never appeared**: user created, updated and deleted messages were
-  sent to a toast container that was never mounted.
-- **Sign-in links pointed to a missing page** (`/signin`); the unused "Sign up" link is gone,
-  and the sign-in form no longer comes prefilled with test credentials.
 - The map showed `NaN` for visit and cell counts above 1,000.
 - The length tooltip printed "cm kg" for total catch.
 - The species picker could not be reopened after "Clear all".
@@ -51,6 +44,13 @@
 - Time series skipped districts that had no value in the first month.
 - Charts showed an error instead of a prompt when no district was selected.
 - Mapbox attribution is shown again, as the Mapbox terms require.
+- The district table said "no data" when loading failed; it now shows an error.
+- **Home page region cards averaged totals**: a region's catch, revenue, submissions and
+  fishers now add up its districts instead of showing their average.
+- The home page cards say they cover the last 3 months, since the time range above them
+  doesn't change them.
+- Seasonality charts under "All time" now average every year of data, not only the last
+  twelve months, and show month names in the page language.
 
 ## Removed
 
@@ -59,6 +59,7 @@
 - Unused API routers (`aggregatedCatch`, `monthlyStats`, `fishDistribution`,
   `individualData`, and the unmounted `auth` and `bmu` stubs) and the Mongoose schemas only
   they used.
+- The "Ask Data" placeholder page, which was never linked from the menu.
 - Template leftovers: profile-settings demo forms, message and notification dropdowns,
   colour presets, the layout switcher, the OpenAPI stub, the upload endpoint, and about 45
   unused dependencies.

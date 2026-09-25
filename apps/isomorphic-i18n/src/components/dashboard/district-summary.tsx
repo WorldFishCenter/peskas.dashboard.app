@@ -3,7 +3,7 @@ import { useT } from "@/i18n/use-lang";
 import { DistrictSummaryBar } from "@/components/dashboard/district-summary-bar";
 import { GridMap } from "@/components/dashboard/grid-map";
 import { MetricSelect } from "@/components/filters/metric-select";
-import { METRIC_KEYS } from "@/lib/dashboard/metrics";
+import { METRIC_KEYS } from "@repo/domain/metrics";
 import { selectedMetricAtom } from "@/store/filters";
 
 /** Effort grid map with the ranked district bars beside it; hovering one highlights the other. */

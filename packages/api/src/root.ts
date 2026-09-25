@@ -1,25 +1,9 @@
-import {
-  authRouter,
-  districtSummaryRouter,
-  gaul2BoundariesRouter,
-  gearRouter,
-  gridSummaryRouter,
-  monthlySummaryRouter,
-  pingRouter,
-  taxaSummariesRouter,
-  userRouter,
-} from "./router";
+import { gaul2BoundariesRouter, gridSummaryRouter, summariesRouter } from "./router";
 import { createTRPCRouter } from "./trpc";
 
 export const appRouter = createTRPCRouter({
-  ping: pingRouter,
-  auth: authRouter,
-  gear: gearRouter,
-  user: userRouter,
-  districtSummary: districtSummaryRouter,
+  summaries: summariesRouter,
   gridSummary: gridSummaryRouter,
-  monthlySummary: monthlySummaryRouter,
-  taxaSummaries: taxaSummariesRouter,
   gaul2Boundaries: gaul2BoundariesRouter,
 });
 

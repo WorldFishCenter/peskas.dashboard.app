@@ -7,11 +7,12 @@ import { ChartCard } from "@/components/charts/chart-card";
 import { ChartGate } from "@/components/charts/chart-state";
 import { DistrictTooltip } from "@/components/charts/district-tooltip";
 import { SeriesLegend } from "@/components/charts/series-legend";
-import { formatDashboardNumber } from "@/lib/dashboard/format";
-import { metricTitle, type MetricKey } from "@/lib/dashboard/metrics";
+import { calendarMonthLabel, formatDashboardNumber } from "@/lib/dashboard/format";
+import type { MetricKey } from "@repo/domain/metrics";
+import { metricTitle } from "@/lib/dashboard/metrics";
 import { districtSeries } from "@/lib/dashboard/palettes";
 import { districtsAtom } from "@/store/filters";
-import { selectedTimeRangeAtom, TIME_RANGE_OPTIONS } from "@/store/time-range";
+import { monthsAtom, selectedTimeRangeAtom, TIME_RANGE_OPTIONS } from "@/store/time-range";
 import { api } from "@/trpc/react";
 
 /** Month-of-year seasonality per selected district. */
@@ -19,14 +20,14 @@ export function MetricRadar({ metric, className }: { metric: MetricKey; classNam
   const { t, lang } = useT();
   const districts = useAtomValue(districtsAtom);
   const range = useAtomValue(selectedTimeRangeAtom);
+  const months = useAtomValue(monthsAtom);
   const [hidden, setHidden] = useState<string[]>([]);
 
-  const { data, isLoading, error } = api.monthlySummary.radarData.useQuery(
-    // "All time" asks for the last year, the widest window the endpoint serves per month.
-    { districts, metrics: [metric], months: typeof range === "number" ? range : 12 },
+  const { data, isLoading, error } = api.summaries.seasonality.useQuery(
+    { districts, metric, months },
     { enabled: districts.length > 0 }
   );
-  const chartData = useMemo(() => (Array.isArray(data) ? (data as Record<string, number | string>[]) : []), [data]);
+  const chartData = useMemo(() => data ?? [], [data]);
 
   const series = useMemo(() => districtSeries(chartData, districts), [chartData, districts]);
 
@@ -62,7 +63,7 @@ export function MetricRadar({ metric, className }: { metric: MetricKey; classNam
           <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[250px] w-full">
             <RadarChart accessibilityLayer data={chartData}>
               <PolarGrid />
-              <PolarAngleAxis dataKey="month" />
+              <PolarAngleAxis dataKey="month" tickFormatter={(m: number) => calendarMonthLabel(m, lang)} />
               <PolarRadiusAxis
                 angle={90}
                 domain={[0, domainMax]}
@@ -71,7 +72,13 @@ export function MetricRadar({ metric, className }: { metric: MetricKey; classNam
               />
               <ChartTooltip
                 itemSorter={(item) => -(Number(item.value) || 0)}
-                content={<DistrictTooltip metric={metric} visibleKeys={visibleKeys} />}
+                content={
+                  <DistrictTooltip
+                    metric={metric}
+                    visibleKeys={visibleKeys}
+                    labelFormatter={(_, payload) => calendarMonthLabel(Number(payload?.[0]?.payload?.month), lang)}
+                  />
+                }
               />
               {series.map((s) => (
                 <Radar

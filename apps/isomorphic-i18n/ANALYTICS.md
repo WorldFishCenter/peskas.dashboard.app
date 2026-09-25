@@ -16,7 +16,7 @@ loads or configures the tag.
 |---|---|
 | Which property receives data | `VITE_GA_MEASUREMENT_ID`, set per Vercel project |
 | Platform-wide roll-up | `VITE_GA_ROLLUP_ID`, optional, same value on every project |
-| Country label on every event | `peskas_country` / `peskas_country_code`, read from `src/config/countries.ts` |
+| Country label on every event | `peskas_country` / `peskas_country_code`, read from `packages/domain/src/country.ts` |
 | Page views on client-side navigation | Handled by GA4 enhanced measurement, not by app code |
 | Local dev and preview deploys | Silent — no tag is written when no measurement ID is set |
 

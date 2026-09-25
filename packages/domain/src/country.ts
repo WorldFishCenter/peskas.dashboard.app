@@ -1,24 +1,10 @@
 /**
- * Country configuration for multi-country deployment.
- * The active country is picked at build time by the VITE_COUNTRY_CODE env var
- * (default: 'TZ'), see countryConfig.ts. This file holds data only, so
- * vite.config.ts can read it too.
+ * The countries this portal is deployed for, one Vercel project each. The
+ * build (vite.config.ts), the browser and the tRPC server all read this
+ * module, so it holds data and pure functions only: no env, no I/O.
  *
- * IMPORTANT: districtToRegion must mirror
- * packages/nosql/src/constants/gaul2-districts.ts GAUL2_TO_REGION,
- * because the district-summary API router uses that file to group data by region.
- * The region keys (e.g. 'Unguja', 'Pemba') flow from the API into file-stats.tsx
- * as data field names. Both must be updated together when adding a new country.
- *
- * To add a new country:
- *   1. Add an entry to COUNTRY_REGISTRY below.
- *   2. Update packages/nosql/src/constants/gaul2-districts.ts with the new
- *      district/region mapping for the new country's DB data.
- *   3. Add locale files under src/i18n/locales/<lang>/common.json.
- *   4. Set VITE_COUNTRY_CODE and MONGODB_URI env vars in the new deployment.
+ * To add a country, follow apps/isomorphic-i18n/COUNTRY_SETUP.md.
  */
-
-import type { ComponentType } from 'react';
 
 export interface MapViewState {
   longitude: number;
@@ -50,10 +36,9 @@ export interface CountryConfig {
   /** Supported i18n languages. First entry is the fallback language.
    *  Must correspond to folder names under src/i18n/locales/. */
   languages: [string, ...string[]];
-  /** Official adm2 district names as stored in MongoDB gaul_2_name field */
+  /** Official GAUL2 names, exactly as the portal summaries store them */
   districts: string[];
-  /** Maps district name → parent region name. Must mirror GAUL2_TO_REGION
-   *  in packages/nosql/src/constants/gaul2-districts.ts — see note above. */
+  /** Region of every district (see Region in CONTEXT.md) */
   districtToRegion: Record<string, string>;
   /** Per-district hex colors for chart visualization */
   districtColors: Record<string, string>;
@@ -62,17 +47,12 @@ export interface CountryConfig {
   /** Districts pre-selected in the district filter on first visit */
   defaultSelectedDistricts: string[];
   features: {
-    /** Sub-region breakdown bars shown in homepage metric cards.
-     *  Regions must exactly match the keys returned by the
-     *  districtSummary.getMonthlyRegionSummary tRPC procedure.
-     *  Set to undefined for countries with no meaningful sub-regions. */
+    /** Region bars on the home page metric cards: display order and colours.
+     *  Both must name exactly the regions of districtToRegion. */
     regionBreakdown?: {
       regions: [string, ...string[]];
       colors: Record<string, string>;
     };
-    /** Optional slot component for country-specific homepage sections.
-     *  Zanzibar example: island-level summary cards (Pemba / Unguja). */
-    homepageExtras?: ComponentType;
   };
 }
 
@@ -143,7 +123,6 @@ const zanzibarConfig: CountryConfig = {
       regions: ['Unguja', 'Pemba'],
       colors: { Unguja: '#F28F3B', Pemba: '#75ABBC' },
     },
-    homepageExtras: undefined,
   },
 };
 
@@ -238,7 +217,6 @@ const kenyaConfig: CountryConfig = {
       regions: ['Central', 'North', 'South'],
       colors: { Central: '#F28F3B', North: '#75ABBC', South: '#9bddb1' },
     },
-    homepageExtras: undefined,
   },
 };
 
@@ -334,7 +312,6 @@ const mozambiqueConfig: CountryConfig = {
       regions: ['Central', 'North', 'South'],
       colors: { Central: '#F28F3B', North: '#75ABBC', South: '#9bddb1' },
     },
-    homepageExtras: undefined,
   },
 };
 
@@ -347,3 +324,10 @@ export const COUNTRY_REGISTRY: Record<string, CountryConfig> = {
   KE: kenyaConfig,
   MZ: mozambiqueConfig,
 };
+
+/** The country for a VITE_COUNTRY_CODE value; Zanzibar (TZ) when it is unset. */
+export function resolveCountry(code: string | undefined): CountryConfig {
+  const country = COUNTRY_REGISTRY[code || 'TZ'];
+  if (!country) throw new Error(`Unknown VITE_COUNTRY_CODE "${code}" (expected ${Object.keys(COUNTRY_REGISTRY).join(', ')})`);
+  return country;
+}

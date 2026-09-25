@@ -4,12 +4,12 @@ import react from "@vitejs/plugin-react"
 import { nitro } from "nitro/vite"
 import { defineConfig, loadEnv, type HtmlTagDescriptor } from "vite"
 
-import { COUNTRY_REGISTRY, type CountryConfig } from "./src/config/countries.ts"
+import { resolveCountry, type CountryConfig } from "@repo/domain/country"
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd())
-  const country = COUNTRY_REGISTRY[env.VITE_COUNTRY_CODE ?? "TZ"] ?? COUNTRY_REGISTRY.TZ
+  const country = resolveCountry(env.VITE_COUNTRY_CODE)
 
   return {
     plugins: [

@@ -11,6 +11,7 @@ import { useT } from "@/i18n/use-lang";
 import { ChartCard } from "@/components/charts/chart-card";
 import { CHART_HEIGHT, ChartGate } from "@/components/charts/chart-state";
 import { TooltipRow } from "@/components/charts/tooltip-row";
+import type { MetricKey } from "@repo/domain/metrics";
 import { metricUnit } from "@/lib/dashboard/metrics";
 import { getTextColor, TREEMAP_COLORS } from "@/lib/dashboard/palettes";
 import { districtsAtom } from "@/store/filters";
@@ -18,18 +19,18 @@ import { monthsAtom } from "@/store/time-range";
 import { api } from "@/trpc/react";
 
 
-// Per-indicator metric (for the translated unit) and label keys.
-const INDICATORS = {
-  cpue: { metric: "mean_cpue", titleKey: "text-cpue-by-gear", averageKey: "text-average-cpue" },
-  rpue: { metric: "mean_rpue", titleKey: "text-rpue-by-gear", averageKey: "text-average-rpue" },
-} as const;
+// Label keys per metric the gear summaries carry.
+const LABELS: Partial<Record<MetricKey, { titleKey: string; averageKey: string }>> = {
+  mean_cpue: { titleKey: "text-cpue-by-gear", averageKey: "text-average-cpue" },
+  mean_rpue: { titleKey: "text-rpue-by-gear", averageKey: "text-average-rpue" },
+};
 
 type GearTile = {
   name: string;
   size: number;
   fill: string;
-  total_records: number;
-  district_count: number;
+  records: number;
+  districts: number;
 };
 
 const titleCase = (s: string) =>
@@ -65,38 +66,38 @@ function Tile(props: { x?: number; y?: number; width?: number; height?: number; 
 }
 
 /** Average CPUE or RPUE per gear type, sized by value. */
-export function GearTreemap({ metric, className }: { metric: "cpue" | "rpue"; className?: string }) {
+export function GearTreemap({ metric, className }: { metric: MetricKey; className?: string }) {
   const { t, lang } = useT();
   const districts = useAtomValue(districtsAtom);
   const months = useAtomValue(monthsAtom);
-  const { data, isLoading, error } = api.gear.byGear.useQuery(
-    { districts, months, indicator: metric },
+  const { data, isLoading, error } = api.summaries.byGear.useQuery(
+    { districts, months, metric },
     { enabled: districts.length > 0 }
   );
 
-  const indicator = INDICATORS[metric];
-  const unit = metricUnit(t, indicator.metric);
+  const labels = LABELS[metric]!;
+  const unit = metricUnit(t, metric);
   const format = (v: number) => `${v.toLocaleString(lang, { maximumFractionDigits: 2 })} ${unit}`;
 
   // Server order (value descending) decides the colours.
   const tiles: GearTile[] = useMemo(
     () =>
-      ((data ?? []) as Record<string, unknown>[])
+      (data ?? [])
         .map((item) => ({
-          name: titleCase(String(item.gear ?? "").replace(/_/g, " ")) || t("text-unknown"),
-          size: Number((Number(item[`avg_${metric}`]) || 0).toFixed(2)),
-          total_records: Number(item.total_records) || 0,
-          district_count: Number(item.district_count) || 0,
+          name: item.gear ? titleCase(item.gear.replace(/_/g, " ")) : t("text-unknown"),
+          size: Number(item.value.toFixed(2)),
+          records: item.records,
+          districts: item.districts,
         }))
         .filter((d) => d.size > 0)
         .map((d, i) => ({ ...d, fill: TREEMAP_COLORS[i % TREEMAP_COLORS.length] })),
-    [data, metric, t]
+    [data, t]
   );
 
-  const chartConfig = { size: { label: t(indicator.averageKey) } } satisfies ChartConfig;
+  const chartConfig = { size: { label: t(labels.averageKey) } } satisfies ChartConfig;
 
   return (
-    <ChartCard className={className} title={t(indicator.titleKey)}>
+    <ChartCard className={className} title={t(labels.titleKey)}>
       <ChartGate isLoading={isLoading} error={error} isEmpty={!tiles.length} className={CHART_HEIGHT}>
         <ChartContainer config={chartConfig} className={`aspect-auto w-full ${CHART_HEIGHT}`}>
           <Treemap data={tiles} dataKey="size" nameKey="name" content={<Tile format={format} />} animationDuration={800}>
@@ -110,11 +111,11 @@ export function GearTreemap({ metric, className }: { metric: "cpue" | "rpue"; cl
                       <div className="grid w-full gap-1.5">
                         <div className="font-medium">{tile.name}</div>
                         <TooltipRow color={tile.fill} label={chartConfig.size.label} value={format(tile.size)} />
-                        {tile.district_count > 0 && (
-                          <TooltipRow label={t("text-districts")} value={tile.district_count} />
+                        {tile.districts > 0 && (
+                          <TooltipRow label={t("text-districts")} value={tile.districts} />
                         )}
-                        {tile.total_records > 0 && (
-                          <TooltipRow label={t("text-records")} value={tile.total_records.toLocaleString(lang)} />
+                        {tile.records > 0 && (
+                          <TooltipRow label={t("text-records")} value={tile.records.toLocaleString(lang)} />
                         )}
                       </div>
                     );

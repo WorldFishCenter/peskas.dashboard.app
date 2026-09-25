@@ -53,23 +53,23 @@ export function SpeciesComposition({ className }: { className?: string }) {
   const [mode, setMode] = useState<Mode>("relative");
   const [hidden, setHidden] = useState<string[]>([]);
 
-  const { data, isLoading, error } = api.taxaSummaries.getSpeciesComposition.useQuery(
+  const { data, isLoading, error } = api.summaries.composition.useQuery(
     { districts, metric: "catch_kg", months },
     { enabled: districts.length > 0 }
   );
 
   const { rows, species } = useMemo(() => {
-    const all = [...(data ?? [])].sort((a, b) => b.total_value - a.total_value);
+    const all = data ?? []; // largest total first
     const top = all.slice(0, TOP_N);
     const rest = all.slice(TOP_N);
     const districtValue = (s: (typeof all)[number], district: string) =>
-      (s.districts as { gaul_2_name: string; value: number }[]).find((d) => d.gaul_2_name === district)?.value ?? 0;
+      s.districts.find((d) => d.district === district)?.value ?? 0;
 
     const rows: Row[] = districts
       .map((district) => {
         // kg → tonnes
         const values: Record<string, number> = Object.fromEntries(
-          top.map((s) => [s.catch_taxon, districtValue(s, district) / 1000])
+          top.map((s) => [s.taxon ?? t("text-unknown"), districtValue(s, district) / 1000])
         );
         values[OTHERS] = rest.reduce((sum, s) => sum + districtValue(s, district), 0) / 1000;
         const total = Object.values(values).reduce((a, b) => a + b, 0);
@@ -81,7 +81,7 @@ export function SpeciesComposition({ className }: { className?: string }) {
       .filter((row) => row.total > 0);
 
     const species: Series[] = [
-      ...top.map((s, i) => ({ key: s.catch_taxon as string, color: SPECIES_COLORS[i % SPECIES_COLORS.length] })),
+      ...top.map((s, i) => ({ key: s.taxon ?? t("text-unknown"), color: SPECIES_COLORS[i % SPECIES_COLORS.length] })),
       { key: OTHERS, label: t("text-others"), color: OTHERS_COLOR },
     ];
     return { rows, species };

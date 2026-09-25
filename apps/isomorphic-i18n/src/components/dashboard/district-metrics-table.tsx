@@ -24,8 +24,10 @@ import { useT } from "@/i18n/use-lang";
 import { HeatCell, sortNullsAsZero, valueRange } from "@/components/charts/heat-cell";
 import { SortableHeader } from "@/components/data-table/sortable-header";
 import { formatDashboardNumber } from "@/lib/dashboard/format";
-import { metricTitle, metricUnit, type MetricKey } from "@/lib/dashboard/metrics";
-import { dateRangeAtom } from "@/store/time-range";
+import type { RouterOutputs } from "@isomorphic/api";
+import type { MetricKey } from "@repo/domain/metrics";
+import { metricTitle, metricUnit } from "@/lib/dashboard/metrics";
+import { monthsAtom } from "@/store/time-range";
 import { api } from "@/trpc/react";
 
 const features = tableFeatures({
@@ -35,7 +37,7 @@ const features = tableFeatures({
   sortFns: { alphanumeric: sortFn_alphanumeric },
 });
 
-type DistrictRow = { gaul_2_name: string } & Record<string, number | null | string>;
+type DistrictRow = RouterOutputs["summaries"]["byDistrict"][number];
 
 const columnHelper = createColumnHelper<typeof features, DistrictRow>();
 
@@ -59,12 +61,9 @@ const UNIT_KEY_OVERRIDES: Record<string, string> = {
 
 export function DistrictMetricsTable() {
   const { t, lang } = useT();
-  const { start, end } = useAtomValue(dateRangeAtom);
-  const { data, isLoading } = api.districtSummary.getDistrictsSummaryByDateRange.useQuery({
-    startDate: start,
-    endDate: end,
-  });
-  const rows = useMemo(() => (data ?? []) as DistrictRow[], [data]);
+  const months = useAtomValue(monthsAtom);
+  const { data, isLoading, error } = api.summaries.byDistrict.useQuery({ months });
+  const rows = useMemo(() => data ?? [], [data]);
   const [sorting, setSorting] = useState<SortingState>([]);
 
   const columns = useMemo(() => {
@@ -74,7 +73,7 @@ export function DistrictMetricsTable() {
     );
 
     return columnHelper.columns([
-      columnHelper.accessor("gaul_2_name", {
+      columnHelper.accessor("district", {
         header: ({ column }) => <SortableHeader column={column}>{t("text-district")}</SortableHeader>,
         sortFn: "alphanumeric",
         sortDescFirst: false,
@@ -154,7 +153,7 @@ export function DistrictMetricsTable() {
             ) : (
               <TableRow>
                 <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">
-                  {t("text-no-data-available")}
+                  {t(error ? "text-error" : "text-no-data-available")}
                 </TableCell>
               </TableRow>
             )}

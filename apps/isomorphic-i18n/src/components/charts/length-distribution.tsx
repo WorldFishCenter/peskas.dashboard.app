@@ -26,7 +26,7 @@ import { ChartCard } from "@/components/charts/chart-card";
 import { categoryChartHeight, ChartGate } from "@/components/charts/chart-state";
 import { TooltipRow } from "@/components/charts/tooltip-row";
 import { truncateLabel } from "@/lib/dashboard/format";
-import { computeLengthStats, rankSpeciesByCatch, type LengthStats, type TaxaRow } from "@/lib/dashboard/length-stats";
+import { computeLengthStats, rankSpeciesByCatch, type LengthStats } from "@/lib/dashboard/length-stats";
 import { BOX_LOWER_COLOR, BOX_UPPER_COLOR } from "@/lib/dashboard/palettes";
 import { districtsAtom } from "@/store/filters";
 import { monthsAtom } from "@/store/time-range";
@@ -100,11 +100,11 @@ export function LengthDistribution({ className }: { className?: string }) {
   const months = useAtomValue(monthsAtom);
   const [choice, setChoice] = useState<{ preset: Preset } | { custom: string[] }>({ preset: "10" });
 
-  const { data, isLoading, error } = api.taxaSummaries.getDistrictTaxaSummaries.useQuery(
+  const { data, isLoading, error } = api.summaries.taxa.useQuery(
     { districts, metrics: ["mean_length", "catch_kg"], months },
     { enabled: districts.length > 0 }
   );
-  const rows = useMemo(() => (data ?? []) as TaxaRow[], [data]);
+  const rows = useMemo(() => data ?? [], [data]);
   const ranked = useMemo(() => rankSpeciesByCatch(rows), [rows]);
   const scientificNames = useMemo(() => new Map(ranked.map((s) => [s.name, s.scientificName ?? ""])), [ranked]);
   // Search matches the common or the scientific name.

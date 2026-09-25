@@ -26,7 +26,7 @@ import { COLOR_RANGE, GRID_LAYER_SETTINGS, TIME_BREAKS } from "@/lib/grid-map/co
 import type { ChoroplethLegend, DataPoint } from "@/lib/grid-map/types";
 import { hoveredDistrictAtom } from "@/store/dashboard";
 import { selectedMetricAtom } from "@/store/filters";
-import { dateRangeAtom } from "@/store/time-range";
+import { monthsAtom } from "@/store/time-range";
 import { api } from "@/trpc/react";
 
 import "mapbox-gl/dist/mapbox-gl.css";
@@ -51,15 +51,12 @@ export function GridMap({ className }: { className?: string }) {
   const isDark = useTheme().theme === "dark";
 
   const metric = useAtomValue(selectedMetricAtom);
-  const { start, end } = useAtomValue(dateRangeAtom);
+  const months = useAtomValue(monthsAtom);
   const [hoveredDistrict, setHoveredDistrict] = useAtom(hoveredDistrictAtom);
 
   const { data: gridData = [] } = api.gridSummary.all.useQuery();
-  const { data: boundaries } = api.gaul2Boundaries.getByCountry.useQuery({ iso3Code: activeCountry.iso3Code });
-  const { data: districtMetrics = [] } = api.districtSummary.getDistrictsSummaryByDateRange.useQuery({
-    startDate: start,
-    endDate: end,
-  });
+  const { data: boundaries } = api.gaul2Boundaries.getByCountry.useQuery();
+  const { data: districtMetrics = [] } = api.summaries.byDistrict.useQuery({ months });
 
   const points: DataPoint[] = useMemo(
     () =>
@@ -76,10 +73,10 @@ export function GridMap({ className }: { className?: string }) {
 
   const metricByDistrict = useMemo(() => {
     const map = new Map<string, number>();
-    (districtMetrics as any[]).forEach((row) => {
+    for (const row of districtMetrics) {
       const v = row[metric];
-      if (v != null && !isNaN(Number(v))) map.set(row.gaul_2_name, Number(v));
-    });
+      if (v !== null) map.set(row.district, v);
+    }
     return map;
   }, [districtMetrics, metric]);
 
@@ -122,8 +119,8 @@ export function GridMap({ className }: { className?: string }) {
     ({ object, layer }: { object?: any; layer?: { id: string } | null }) => {
       if (!object) return null;
 
-      if (layer?.id === "gaul2-choropleth" && object.properties?.gaul2_name) {
-        const name = object.properties.gaul2_name as string;
+      if (layer?.id === "gaul2-choropleth" && object.properties?.district) {
+        const name = object.properties.district as string;
         const val = metricByDistrict.get(name);
         const detail =
           val != null ? `${metricTitle(t, metric)}: ${formatDashboardNumber(val, metric, lang)}` : t("text-no-data");
@@ -172,17 +169,17 @@ export function GridMap({ className }: { className?: string }) {
       pickable: true,
       stroked: true,
       filled: true,
-      onHover: (info) => setHoveredDistrict(info.object?.properties?.gaul2_name ?? null),
+      onHover: (info) => setHoveredDistrict(info.object?.properties?.district ?? null),
       getFillColor: (f: any): Rgba => {
-        const name = f.properties?.gaul2_name as string | undefined;
+        const name = f.properties?.district as string | undefined;
         const val = name != null ? metricByDistrict.get(name) : undefined;
         const base: Rgba = val != null ? interpolateChoroplethColor(val, minVal, maxVal) : [200, 200, 200, 120];
         if (!hoveredDistrict) return base;
         return [base[0], base[1], base[2], hoveredDistrict === name ? 255 : 80];
       },
       getLineColor: (f: any): Rgba =>
-        hoveredDistrict === f.properties?.gaul2_name ? [255, 255, 255, 255] : [255, 255, 255, 200],
-      getLineWidth: (f: any) => (hoveredDistrict === f.properties?.gaul2_name ? 3 : 1),
+        hoveredDistrict === f.properties?.district ? [255, 255, 255, 255] : [255, 255, 255, 200],
+      getLineWidth: (f: any) => (hoveredDistrict === f.properties?.district ? 3 : 1),
       lineWidthUnits: "pixels",
       // Draw on top of the extruded grid.
       parameters: { depthTest: false },

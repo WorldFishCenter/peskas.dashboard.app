@@ -12,8 +12,6 @@ const TITLE_KEYS: Record<string, string> = {
   [routes.revenue]: "text-revenue-analysis",
   [routes.catchComposition]: "text-catch-composition-analysis",
   [routes.about]: "nav-about",
-  [routes.askData]: "nav-ask-data",
-  [routes.admin.users]: "text-users",
 };
 
 /** Sticky top bar: brand, page navigation and app controls, then the page title with its filters. */

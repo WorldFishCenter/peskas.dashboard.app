@@ -23,7 +23,6 @@ import { ChartCard } from "@/components/charts/chart-card";
 import { ChartGate } from "@/components/charts/chart-state";
 import { SortableHeader } from "@/components/data-table/sortable-header";
 import { HeatCell, sortNullsAsZero, valueRange } from "@/components/charts/heat-cell";
-import type { TaxaRow } from "@/lib/dashboard/length-stats";
 import { districtsAtom } from "@/store/filters";
 import { monthsAtom } from "@/store/time-range";
 import { api } from "@/trpc/react";
@@ -37,7 +36,7 @@ const features = tableFeatures({
   sortFns: { alphanumeric: sortFn_alphanumeric },
 });
 
-type HeatRow = { catch_taxon: string; total: number } & Record<string, number | string>;
+type HeatRow = { taxon: string; total: number } & Record<string, number | string>;
 const columnHelper = createColumnHelper<typeof features, HeatRow>();
 
 const fmt = (v: number) => (v >= 1000 ? `${(v / 1000).toFixed(1)}K` : v.toFixed(1));
@@ -49,28 +48,29 @@ export function DistrictSpeciesHeatmap({ className }: { className?: string }) {
   const months = useAtomValue(monthsAtom);
   const [sorting, setSorting] = useState<SortingState>([]);
 
-  const { data, isLoading, error } = api.taxaSummaries.getDistrictTaxaSummaries.useQuery(
+  const { data, isLoading, error } = api.summaries.taxa.useQuery(
     { districts, metrics: ["catch_kg"], months },
     { enabled: districts.length > 0 }
   );
 
   const rows = useMemo(() => {
     const bySpecies = new Map<string, Record<string, number>>();
-    for (const row of (data ?? []) as TaxaRow[]) {
-      const kg = Number(row.catch_kg) || 0;
+    for (const row of data ?? []) {
+      const kg = row.catch_kg ?? 0;
       if (kg <= 0) continue;
-      const entry = bySpecies.get(row.catch_taxon) ?? {};
-      entry[row.gaul_2_name] = (entry[row.gaul_2_name] ?? 0) + kg;
-      bySpecies.set(row.catch_taxon, entry);
+      const taxon = row.taxon ?? t("text-unknown");
+      const entry = bySpecies.get(taxon) ?? {};
+      entry[row.district] = (entry[row.district] ?? 0) + kg;
+      bySpecies.set(taxon, entry);
     }
-    return Array.from(bySpecies, ([catch_taxon, values]) => ({
-      catch_taxon,
+    return Array.from(bySpecies, ([taxon, values]) => ({
+      taxon,
       total: Object.values(values).reduce((a, b) => a + b, 0),
       ...Object.fromEntries(districts.map((d) => [d, values[d] ?? 0])),
     }))
       .sort((a, b) => b.total - a.total)
       .slice(0, TOP_N) as HeatRow[];
-  }, [data, districts]);
+  }, [data, districts, t]);
 
   const columns = useMemo(() => {
     // No catch counts as missing, both for the colour scale and the cell.
@@ -78,7 +78,7 @@ export function DistrictSpeciesHeatmap({ className }: { className?: string }) {
     const totals = range("total");
 
     return columnHelper.columns([
-      columnHelper.accessor("catch_taxon", {
+      columnHelper.accessor("taxon", {
         header: ({ column }) => <SortableHeader column={column}>{t("text-species")}</SortableHeader>,
         sortFn: "alphanumeric",
         cell: ({ getValue }) => (

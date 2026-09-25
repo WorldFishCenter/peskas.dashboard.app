@@ -18,8 +18,10 @@ import { useT } from "@/i18n/use-lang";
 import { ChartState } from "@/components/charts/chart-state";
 import { TooltipRow } from "@/components/charts/tooltip-row";
 import { REGION_COLORS, REGIONS } from "@/lib/dashboard/regions";
-import { formatDashboardNumber } from "@/lib/dashboard/format";
-import { metricDescription, metricTitle, metricUnit, type MetricKey } from "@/lib/dashboard/metrics";
+import { formatDashboardNumber, monthLabel } from "@/lib/dashboard/format";
+import type { RouterOutputs } from "@isomorphic/api";
+import type { MetricKey } from "@repo/domain/metrics";
+import { metricDescription, metricTitle, metricUnit } from "@/lib/dashboard/metrics";
 import { api } from "@/trpc/react";
 
 // n_fishers and mean_price_kg are not in the current data pipeline.
@@ -34,20 +36,21 @@ const CARD_METRICS: MetricKey[] = [
 
 const chartConfig = Object.fromEntries(REGIONS.map((r) => [r, { label: r }])) satisfies ChartConfig;
 
-type MonthlyRegionData = { data: ({ month: string } & Record<string, number | null>)[]; months?: string[] };
+// A trend strip: always the last 3 months, whatever the header's time range.
+const CARD_MONTHS = 3;
 
-function MetricCard({ metric, data }: { metric: MetricKey; data: MonthlyRegionData }) {
+type RegionMonth = RouterOutputs["summaries"]["regionTrend"][MetricKey][number];
+
+function MetricCard({ metric, rows }: { metric: MetricKey; rows: RegionMonth[] }) {
   const { t, lang } = useT();
   const format = (value: unknown) => formatDashboardNumber(value, metric, lang);
   const unit = metricUnit(t, metric);
 
-  const last3 = data.data.slice(-3);
-  const months = data.months?.slice(-3) ?? last3.map((d) => d.month);
-  const chartData = months.map((month) => {
-    const row = last3.find((d) => d.month === month);
-    return { month, ...Object.fromEntries(REGIONS.map((r) => [r, row?.[r] ?? null])) };
-  });
-  const latest = last3[last3.length - 1];
+  const chartData = rows.map((row) => ({
+    month: monthLabel(row.month, lang),
+    ...Object.fromEntries(REGIONS.map((r) => [r, row[r] ?? null])),
+  }));
+  const latest = rows.at(-1);
 
   return (
     <Card size="sm" className="@container/card w-72 shrink-0">
@@ -56,7 +59,9 @@ function MetricCard({ metric, data }: { metric: MetricKey; data: MonthlyRegionDa
           {metricTitle(t, metric)}
           {unit && ` (${unit})`}
         </CardTitle>
-        <CardDescription>{metricDescription(t, metric)}</CardDescription>
+        <CardDescription>
+          {metricDescription(t, metric)} {t("text-last-3-months")}.
+        </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
         <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs">
@@ -115,7 +120,7 @@ function CardRow({ children }: { children: React.ReactNode }) {
 }
 
 export function MetricCards() {
-  const { data, isLoading, error } = api.districtSummary.getMonthlyRegionSummary.useQuery({ months: 3 });
+  const { data, isLoading, error } = api.summaries.regionTrend.useQuery({ months: CARD_MONTHS });
 
   if (isLoading) {
     return (
@@ -127,7 +132,7 @@ export function MetricCards() {
     );
   }
 
-  const metrics = CARD_METRICS.filter((m) => data?.[m]?.data?.length);
+  const metrics = CARD_METRICS.filter((m) => data?.[m].length);
   if (error || !metrics.length) {
     return <ChartState status={error ? "error" : "empty"} className="h-40" />;
   }
@@ -135,7 +140,7 @@ export function MetricCards() {
   return (
     <CardRow>
       {metrics.map((m) => (
-        <MetricCard key={m} metric={m} data={data![m] as MonthlyRegionData} />
+        <MetricCard key={m} metric={m} rows={data![m]} />
       ))}
     </CardRow>
   );

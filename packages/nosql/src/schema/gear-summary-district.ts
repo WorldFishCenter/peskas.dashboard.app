@@ -1,37 +1,13 @@
 import type { Types } from "mongoose";
 import mongoose, { Schema } from "mongoose";
 
-// Define gear types based on the data
-export const GEAR_TYPES = [
-  "Beach Seine",
-  "Gill Net",
-  "Hand line",
-  "Long line",
-  "Spear gun",
-  "Trap",
-  "Other"
-] as const;
-
-export type TGearType = (typeof GEAR_TYPES)[number] | string;
-
-// Define indicators for gear summaries
-export const GEAR_INDICATORS = [
-  "n_submissions",
-  "cpue",
-  "rpue",
-  "mean_effort",
-  "total_catch_kg"
-] as const;
-
-export type TGearIndicator = (typeof GEAR_INDICATORS)[number] | string;
-
 /* eslint-disable @typescript-eslint/consistent-type-definitions */
 export type TGearSummaryDistrict = {
   _id: Types.ObjectId;
   gaul_2_name: string;
   date?: Date;
-  gear: TGearType;
-  indicator: TGearIndicator;
+  gear: string;
+  indicator: string;
   value: number;
   timestamp?: Date;
 };

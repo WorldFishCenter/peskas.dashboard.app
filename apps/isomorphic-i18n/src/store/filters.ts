@@ -1,7 +1,7 @@
 import { atom } from 'jotai';
 import { atomWithStorage, RESET } from 'jotai/utils';
 import { activeCountry } from '@/config/countryConfig';
-import type { MetricKey } from '@/lib/dashboard/metrics';
+import type { MetricKey } from '@repo/domain/metrics';
 
 // Default district selection comes from countryConfig.defaultSelectedDistricts
 const districtsStorageAtom = atomWithStorage<string[]>(

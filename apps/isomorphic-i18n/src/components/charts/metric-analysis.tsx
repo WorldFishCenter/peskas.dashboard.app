@@ -2,10 +2,10 @@ import { useAtomValue, type Atom } from "jotai";
 import { GearTreemap } from "@/components/charts/gear-treemap";
 import { MetricRadar } from "@/components/charts/metric-radar";
 import { MetricTimeSeries } from "@/components/charts/metric-time-series";
-import type { MetricKey } from "@/lib/dashboard/metrics";
+import type { MetricKey } from "@repo/domain/metrics";
 
 /** Catch and revenue pages: time series and seasonality for the header metric, plus the gear treemap. */
-export function MetricAnalysis({ metricAtom, gear }: { metricAtom: Atom<MetricKey>; gear: "cpue" | "rpue" }) {
+export function MetricAnalysis({ metricAtom, gear }: { metricAtom: Atom<MetricKey>; gear: MetricKey }) {
   const metric = useAtomValue(metricAtom);
 
   return (

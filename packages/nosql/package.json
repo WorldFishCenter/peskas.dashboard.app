@@ -4,29 +4,20 @@
   "license": "MIT",
   "exports": {
     ".": "./src/index.ts",
-    "./schema/*": "./src/schema/*.ts",
-    "./constants/gaul2-districts": "./src/constants/gaul2-districts.ts",
-    "./portal-db": "./src/portal-db.ts"
+    "./schema/*": "./src/schema/*.ts"
   },
   "scripts": {
     "format": "prettier . --ignore-path ../../.gitignore --ignore-path ../../.prettierignore",
     "lint": "oxlint",
-    "typecheck": "tsc --noEmit",
-    "generate": "migrate -f src/migrate.ts create",
-    "migrate": "migrate -f src/migrate.ts"
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "@types/bluebird": "^3.5.42",
-    "@types/lodash": "^4.17.1",
+    "@types/node": "^24.13.3",
     "oxlint": "^1.81.0",
     "prettier": "3.2.5",
-    "ts-migrate-mongoose": "^3.8.4",
     "typescript": "5.4.5"
   },
   "dependencies": {
-    "bluebird": "^3.7.2",
-    "csv-parser": "^3.0.0",
-    "lodash": "^4.18.1",
     "mongoose": "^8.24.3"
   }
 }

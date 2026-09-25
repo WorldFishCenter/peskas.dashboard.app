@@ -6,30 +6,29 @@ import { cn } from "@workspace/ui/lib/utils";
 import { useT } from "@/i18n/use-lang";
 import { categoryChartHeight, ChartState } from "@/components/charts/chart-state";
 import { TooltipRow } from "@/components/charts/tooltip-row";
-import { formatDashboardNumber, getAggregatedDistrictValue } from "@/lib/dashboard/format";
-import { METRIC_KEYS, metricTitle, metricUnit, SUM_METRICS } from "@/lib/dashboard/metrics";
+import type { RouterOutputs } from "@isomorphic/api";
+import { METRIC_KEYS, METRICS } from "@repo/domain/metrics";
+import { formatDashboardNumber } from "@/lib/dashboard/format";
+import { metricTitle, metricUnit } from "@/lib/dashboard/metrics";
 import { getDistrictColor } from "@/lib/dashboard/palettes";
 import { hoveredDistrictAtom } from "@/store/dashboard";
 import { selectedMetricAtom } from "@/store/filters";
-import { dateRangeAtom } from "@/store/time-range";
+import { monthsAtom } from "@/store/time-range";
 import { api } from "@/trpc/react";
 
-type DistrictRow = { gaul_2_name: string } & Record<string, unknown>;
+type DistrictRow = RouterOutputs["summaries"]["byDistrict"][number];
 
 export function DistrictSummaryBar({ className }: { className?: string }) {
   const { t, lang } = useT();
-  const { start, end } = useAtomValue(dateRangeAtom);
+  const months = useAtomValue(monthsAtom);
   const metric = useAtomValue(selectedMetricAtom);
   const [hoveredDistrict, setHoveredDistrict] = useAtom(hoveredDistrictAtom);
-  const { data, isLoading, error } = api.districtSummary.getDistrictsSummaryByDateRange.useQuery({
-    startDate: start,
-    endDate: end,
-  });
+  const { data, isLoading, error } = api.summaries.byDistrict.useQuery({ months });
 
   const chartData = useMemo(
     () =>
-      ((data ?? []) as DistrictRow[])
-        .map((row) => ({ ...row, name: row.gaul_2_name, value: getAggregatedDistrictValue(row, metric) }))
+      (data ?? [])
+        .map((row) => ({ ...row, name: row.district, value: row[metric] }))
         .filter((d): d is typeof d & { value: number } => d.value !== null)
         .sort((a, b) => b.value - a.value),
     [data, metric]
@@ -45,7 +44,7 @@ export function DistrictSummaryBar({ className }: { className?: string }) {
   const format = (value: unknown, key: string = metric) => formatDashboardNumber(value, key, lang);
   const unit = metricUnit(t, metric);
   const caption = `${metricTitle(t, metric)}${unit ? ` (${unit})` : ""} (${
-    SUM_METRICS.has(metric) ? t("text-aggregated") : t("text-average")
+    METRICS[metric].overMonths === "sum" ? t("text-aggregated") : t("text-average")
   })`;
   const chartConfig = { value: { label: metricTitle(t, metric) } } satisfies ChartConfig;
 

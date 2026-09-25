@@ -8,7 +8,7 @@ export default defineHandler((event) =>
     endpoint: "/api/trpc",
     req: event.req,
     router: appRouter,
-    createContext: ({ req, resHeaders }) => createTRPCContext({ headers: req.headers, resHeaders }),
+    createContext: createTRPCContext,
     onError({ error, path }) {
       console.error(`>>> tRPC Error on '${path}'`, error)
     },

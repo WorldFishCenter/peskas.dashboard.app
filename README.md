@@ -70,13 +70,10 @@ Fill in the values in `.env`. The full list of variables the build reads is in `
 - `VITE_COUNTRY_CODE`: which country to build (`TZ`, `KE` or `MZ`; default `TZ`). Zanzibar uses `TZ`, Tanzania's country code.
 - `MONGODB_URI`: the country's summaries database.
 - `MONGODB_URI_COASTS`: the database that holds the district boundaries (`wio_gaul2`).
-- `AUTH_SECRET`: signs the sign-in cookie and password-reset links (for example `openssl rand -base64 32`).
-- `APP_URL`: the deployment's public URL, used in password-reset emails (on Vercel it falls back to the deployment URL).
-- `EMAIL_SERVER` and `EMAIL_FROM`: SMTP for password-reset emails.
 - `VITE_MAPBOX_TOKEN`: base map for the fishing-effort map.
 - `VITE_GA_MEASUREMENT_ID`: the country's Google Analytics stream (see [`apps/isomorphic-i18n/ANALYTICS.md`](apps/isomorphic-i18n/ANALYTICS.md)).
 
-`VITE_*` values are public and inlined into the browser bundle at build time, so changing one needs a redeploy; the others stay on the server. Country settings (districts, colours, currency, map view, languages) live in `apps/isomorphic-i18n/src/config/countries.ts`. To add a country, follow [`apps/isomorphic-i18n/COUNTRY_SETUP.md`](apps/isomorphic-i18n/COUNTRY_SETUP.md).
+`VITE_*` values are public and inlined into the browser bundle at build time, so changing one needs a redeploy; the others stay on the server. Country settings (districts, colours, currency, map view, languages) live in `packages/domain/src/country.ts`. To add a country, follow [`apps/isomorphic-i18n/COUNTRY_SETUP.md`](apps/isomorphic-i18n/COUNTRY_SETUP.md).
 
 **Main commands**
 

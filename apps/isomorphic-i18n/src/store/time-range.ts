@@ -1,5 +1,4 @@
 import { atom } from 'jotai';
-import { computeDateRange } from '@/lib/dashboard/format';
 
 export type TimeRange = 3 | 6 | 12 | 'all';
 
@@ -17,6 +16,3 @@ export const monthsAtom = atom((get) => {
   const range = get(selectedTimeRangeAtom);
   return typeof range === 'number' ? range : undefined;
 });
-
-/** One day-rounded window shared by every date-range query. */
-export const dateRangeAtom = atom((get) => computeDateRange(get(selectedTimeRangeAtom)));

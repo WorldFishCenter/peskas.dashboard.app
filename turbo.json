@@ -6,21 +6,17 @@
       "dependsOn": ["^build"],
       "outputs": ["dist/**", ".output/**", ".vercel/output/**"],
       "env": [
-        "AUTH_SECRET",
-        "APP_URL",
         "MONGODB_URI",
         "MONGODB_URI_COASTS",
-        "VERCEL_URL",
         "VERCEL",
         "VITE_COUNTRY_CODE",
         "VITE_GA_MEASUREMENT_ID",
         "VITE_GA_ROLLUP_ID",
-        "VITE_MAPBOX_TOKEN",
-        "EMAIL_SERVER",
-        "EMAIL_FROM"
+        "VITE_MAPBOX_TOKEN"
       ]
     },
     "lint": {},
+    "test": {},
     "dev": {
       "cache": false,
       "persistent": true
@@ -31,17 +27,12 @@
   },
   "ui": "stream",
   "globalEnv": [
-    "AUTH_SECRET",
-    "APP_URL",
     "MONGODB_URI",
     "MONGODB_URI_COASTS",
-    "VERCEL_URL",
     "VERCEL",
     "VITE_COUNTRY_CODE",
     "VITE_GA_MEASUREMENT_ID",
     "VITE_GA_ROLLUP_ID",
-    "VITE_MAPBOX_TOKEN",
-    "EMAIL_SERVER",
-    "EMAIL_FROM"
+    "VITE_MAPBOX_TOKEN"
   ]
 }

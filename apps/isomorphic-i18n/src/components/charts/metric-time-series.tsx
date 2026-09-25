@@ -8,8 +8,9 @@ import { ChartCard } from "@/components/charts/chart-card";
 import { CHART_HEIGHT, ChartGate } from "@/components/charts/chart-state";
 import { DistrictTooltip } from "@/components/charts/district-tooltip";
 import { SeriesLegend } from "@/components/charts/series-legend";
-import { formatDashboardNumber } from "@/lib/dashboard/format";
-import { metricTitle, metricUnit, type MetricKey } from "@/lib/dashboard/metrics";
+import { formatDashboardNumber, monthLabel } from "@/lib/dashboard/format";
+import type { MetricKey } from "@repo/domain/metrics";
+import { metricTitle, metricUnit } from "@/lib/dashboard/metrics";
 import { districtSeries } from "@/lib/dashboard/palettes";
 import { districtsAtom } from "@/store/filters";
 import { monthsAtom } from "@/store/time-range";
@@ -22,18 +23,11 @@ export function MetricTimeSeries({ metric, className }: { metric: MetricKey; cla
   const months = useAtomValue(monthsAtom);
   const [hidden, setHidden] = useState<string[]>([]);
 
-  const { data, isLoading, error } = api.monthlySummary.timeSeries.useQuery(
-    { districts, metrics: [metric], months },
+  const { data, isLoading, error } = api.summaries.monthly.useQuery(
+    { districts, metric, months },
     { enabled: districts.length > 0 }
   );
-
-  const chartData = useMemo(
-    () =>
-      Object.keys(data ?? {})
-        .sort()
-        .map((date) => ({ date, ...data![date][metric] })),
-    [data, metric]
-  );
+  const chartData = useMemo(() => data ?? [], [data]);
 
   // Every selected district with data anywhere in the window, in selection order.
   const series = useMemo(() => districtSeries(chartData, districts), [chartData, districts]);
@@ -41,8 +35,6 @@ export function MetricTimeSeries({ metric, className }: { metric: MetricKey; cla
   const chartConfig = Object.fromEntries(series.map((s) => [s.key, { label: s.key }])) satisfies ChartConfig;
   const visibleKeys = series.map((s) => s.key).filter((k) => !hidden.includes(k));
   const unit = metricUnit(t, metric);
-  const monthLabel = (value: string, month: "short" | "long") =>
-    new Date(value).toLocaleDateString(lang, { month, year: month === "short" ? "2-digit" : "numeric" });
 
   return (
     <ChartCard
@@ -56,13 +48,13 @@ export function MetricTimeSeries({ metric, className }: { metric: MetricKey; cla
             <LineChart accessibilityLayer data={chartData} margin={{ right: 12 }}>
               <CartesianGrid vertical={false} />
               <XAxis
-                dataKey="date"
+                dataKey="month"
                 tickLine={false}
                 axisLine={false}
                 tickMargin={8}
                 interval="preserveStartEnd"
                 minTickGap={30}
-                tickFormatter={(v) => monthLabel(v, "short")}
+                tickFormatter={(v) => monthLabel(v, lang)}
               />
               <YAxis
                 tickLine={false}
@@ -77,7 +69,7 @@ export function MetricTimeSeries({ metric, className }: { metric: MetricKey; cla
                   <DistrictTooltip
                     metric={metric}
                     visibleKeys={visibleKeys}
-                    labelFormatter={(_, payload) => monthLabel(String(payload?.[0]?.payload?.date), "long")}
+                    labelFormatter={(_, payload) => monthLabel(String(payload?.[0]?.payload?.month), lang, "long")}
                   />
                 }
               />

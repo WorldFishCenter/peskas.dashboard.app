@@ -10,7 +10,8 @@ import {
 } from "@workspace/ui/components/select";
 import { useT } from "@/i18n/use-lang";
 import { trackEvent } from "@/lib/analytics";
-import { metricTitle, type MetricKey } from "@/lib/dashboard/metrics";
+import type { MetricKey } from "@repo/domain/metrics";
+import { metricTitle } from "@/lib/dashboard/metrics";
 
 export function MetricSelect({
   metricAtom,
