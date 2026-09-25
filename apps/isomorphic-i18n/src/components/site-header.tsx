@@ -1,8 +1,5 @@
-"use client";
-
 import { Separator } from "@workspace/ui/components/separator";
-import { useAppRoute, useT } from "@/app/i18n/use-lang";
-import { ClientOnly } from "@/components/client-only";
+import { useAppRoute, useT } from "@/i18n/use-lang";
 import { HeaderFilters } from "@/components/filters/header-filters";
 import { LanguageMenu } from "@/components/language-menu";
 import { Brand, MainNav, MobileNav } from "@/components/site-nav";
@@ -39,9 +36,7 @@ export function SiteHeader() {
       <div className="flex h-11 items-center gap-2 px-4">
         {titleKey && <h1 className="truncate text-base font-medium">{t(titleKey)}</h1>}
         <div className="ml-auto">
-          <ClientOnly>
-            <HeaderFilters />
-          </ClientOnly>
+          <HeaderFilters />
         </div>
       </div>
       <Separator />

@@ -1,15 +1,13 @@
-"use client";
-
 import { useState } from "react";
-import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CircleAlertIcon, CircleCheckIcon } from "lucide-react";
+import { Link } from "react-router";
 import { Controller, useForm } from "react-hook-form";
 import { Alert, AlertDescription } from "@workspace/ui/components/alert";
 import { Button } from "@workspace/ui/components/button";
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@workspace/ui/components/field";
 import { Spinner } from "@workspace/ui/components/spinner";
-import { useLocalizedHref, useT } from "@/app/i18n/use-lang";
+import { useLocalizedHref, useT } from "@/i18n/use-lang";
 import { PasswordInput } from "@/components/auth/password-input";
 import { routes } from "@/config/routes";
 import { api } from "@/trpc/react";
@@ -78,7 +76,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
             Reset Password
           </Button>
           <FieldDescription className="text-center">
-            <Link href={localized(routes.signIn)}>Back to sign in</Link>
+            <Link to={localized(routes.signIn)}>Back to sign in</Link>
           </FieldDescription>
         </Field>
       </FieldGroup>

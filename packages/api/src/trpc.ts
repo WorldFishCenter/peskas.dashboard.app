@@ -8,12 +8,9 @@
  */
 import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
-import { Session, getServerSession } from "next-auth";
-/**
- * IMPORTANT! we need to refactor auth to separate workspace to avoid build cyclic dependency
- */
-//import { authOptions } from "i18n/src/app/api/auth/[...nextauth]/auth-options";
 import getDb from "@repo/nosql";
+
+import { readSession } from "./lib/auth";
 
 /**
  * 1. CONTEXT
@@ -22,25 +19,19 @@ import getDb from "@repo/nosql";
  *
  * These allow you to access things when processing a request, like the database, the session, etc.
  *
- * This helper generates the "internals" for a tRPC context. The API handler and RSC clients each
- * wrap this and provides the required context.
+ * The API handler passes the request headers, and the response headers so procedures can set
+ * cookies.
  *
  * @see https://trpc.io/docs/server/context
  */
 export const createTRPCContext = async (opts: {
   headers: Headers;
-  session: Session | null;
+  resHeaders: Headers;
 }) => {
-  const session = opts.session ?? (await getServerSession());
-  const ip =
-    opts.headers.get("x-forwarded-for") ??
-    opts.headers.get("x-real-ip") ??
-    "unknown";
-
   await getDb();
   return {
-    session,
-    ip,
+    session: await readSession(opts.headers),
+    resHeaders: opts.resHeaders,
   };
 };
 
@@ -65,12 +56,6 @@ const t = initTRPC
       },
     }),
   });
-
-/**
- * Create a server-side caller
- * @see https://trpc.io/docs/server/server-side-calls
- */
-export const createCallerFactory = t.createCallerFactory;
 
 /**
  * 3. ROUTER & PROCEDURE (THE IMPORTANT BIT)

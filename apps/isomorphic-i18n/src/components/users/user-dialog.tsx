@@ -1,7 +1,4 @@
-"use client";
-
 import { useEffect, useMemo } from "react";
-import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { Button } from "@workspace/ui/components/button";
@@ -88,7 +85,6 @@ export function UserDialog({
   userId?: string;
   onOpenChange: (open: boolean) => void;
 }) {
-  const router = useRouter();
   const utils = api.useUtils();
   const { data: bmus } = api.user.allBmus.useQuery(undefined, { enabled: open });
   const { data: user } = api.user.byId.useQuery({ id: userId ?? "" }, { enabled: open && !!userId });
@@ -116,7 +112,6 @@ export function UserDialog({
       await utils.user.invalidate();
       onOpenChange(false);
       toast.add({ type: "success", title: "Successfully updated user" });
-      router.refresh();
     },
     onError: (err) => {
       toast.add({

@@ -1,4 +1,5 @@
 import {
+  authRouter,
   districtSummaryRouter,
   gaul2BoundariesRouter,
   gearRouter,
@@ -12,6 +13,7 @@ import { createTRPCRouter } from "./trpc";
 
 export const appRouter = createTRPCRouter({
   ping: pingRouter,
+  auth: authRouter,
   gear: gearRouter,
   user: userRouter,
   districtSummary: districtSummaryRouter,

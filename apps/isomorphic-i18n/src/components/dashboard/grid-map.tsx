@@ -1,8 +1,5 @@
-"use client";
-
 import { useCallback, useMemo, useState } from "react";
 import { useAtom, useAtomValue } from "jotai";
-import { useTheme } from "next-themes";
 import { GridLayer } from "@deck.gl/aggregation-layers";
 import { GeoJsonLayer } from "@deck.gl/layers";
 import { DeckGL } from "@deck.gl/react";
@@ -11,8 +8,9 @@ import { MapIcon, SatelliteIcon } from "lucide-react";
 import { Button } from "@workspace/ui/components/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@workspace/ui/components/tooltip";
 import { cn } from "@workspace/ui/lib/utils";
-import { useT } from "@/app/i18n/use-lang";
+import { useT } from "@/i18n/use-lang";
 import { EffortToolbar, MetricLegend } from "@/components/dashboard/grid-map-controls";
+import { useTheme } from "@/components/theme-provider";
 import { activeCountry } from "@/config/countryConfig";
 import { trackEvent } from "@/lib/analytics";
 import { formatDashboardNumber } from "@/lib/dashboard/format";
@@ -50,8 +48,7 @@ const TOOLTIP_STYLE = {
 /** Effort grid over district boundaries coloured by the selected metric; `className` sets its height. */
 export function GridMap({ className }: { className?: string }) {
   const { t, lang } = useT();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
+  const isDark = useTheme().theme === "dark";
 
   const metric = useAtomValue(selectedMetricAtom);
   const { start, end } = useAtomValue(dateRangeAtom);
@@ -214,7 +211,7 @@ export function GridMap({ className }: { className?: string }) {
         >
           <MapGL
             mapStyle={basemap === "satellite" ? MAP_STYLES.satellite : isDark ? MAP_STYLES.dark : MAP_STYLES.light}
-            mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? ""}
+            mapboxAccessToken={import.meta.env.VITE_MAPBOX_TOKEN ?? ""}
             // Mapbox GL v3 defaults to the globe projection, which curves the basemap
             // at low zoom while deck.gl keeps rendering Web Mercator: the boundary and
             // grid layers visibly detach from the basemap. Pin mercator so both agree.

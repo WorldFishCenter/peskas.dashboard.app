@@ -1,9 +1,4 @@
-"use client";
-
 import { useState } from "react";
-import Image from "next/image";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
 import {
   ChartPieIcon,
   CircleDollarSignIcon,
@@ -14,6 +9,7 @@ import {
   SailboatIcon,
   type LucideIcon,
 } from "lucide-react";
+import { Link, useLocation } from "react-router";
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
 import {
@@ -25,7 +21,7 @@ import {
 } from "@workspace/ui/components/navigation-menu";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@workspace/ui/components/sheet";
 import { cn } from "@workspace/ui/lib/utils";
-import { useLocalizedHref, useT } from "@/app/i18n/use-lang";
+import { useLocalizedHref, useT } from "@/i18n/use-lang";
 import { activeCountry } from "@/config/countryConfig";
 import { routes } from "@/config/routes";
 
@@ -39,7 +35,7 @@ const NAV_ITEMS: { labelKey: string; href: string; icon: LucideIcon; beta?: bool
 
 /** Nav items with their localized href and whether they are the current page. */
 function useNavItems() {
-  const pathname = usePathname();
+  const { pathname } = useLocation();
   const localized = useLocalizedHref();
   return NAV_ITEMS.map((item) => {
     const href = localized(item.href);
@@ -50,7 +46,7 @@ function useNavItems() {
 export function Brand() {
   const localized = useLocalizedHref();
   return (
-    <Link href={localized(routes.home)} className="flex shrink-0 items-center gap-2">
+    <Link to={localized(routes.home)} className="flex shrink-0 items-center gap-2">
       <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
         <SailboatIcon className="size-4" />
       </div>
@@ -59,13 +55,7 @@ export function Brand() {
         <span className="text-xs text-muted-foreground">{activeCountry.countryName}</span>
       </div>
       {activeCountry.flagIconSrc && (
-        <Image
-          src={activeCountry.flagIconSrc}
-          alt=""
-          width={24}
-          height={16}
-          className="rounded-sm"
-        />
+        <img src={activeCountry.flagIconSrc} alt="" width={24} height={16} className="rounded-sm" />
       )}
     </Link>
   );
@@ -80,7 +70,7 @@ export function MainNav() {
         {useNavItems().map((item) => (
           <NavigationMenuItem key={item.href}>
             <NavigationMenuLink
-              render={<Link href={item.href} />}
+              render={<Link to={item.href} />}
               active={item.active}
               // Base UI marks the current link with a bare `data-active` attribute, which the
               // component's own `data-[active=true]` style doesn't match; apply that style here.
@@ -121,7 +111,7 @@ export function MobileNav() {
               variant={item.active ? "secondary" : "ghost"}
               className="justify-start"
               nativeButton={false}
-              render={<Link href={item.href} onClick={() => setOpen(false)} />}
+              render={<Link to={item.href} onClick={() => setOpen(false)} />}
             >
               <item.icon data-icon="inline-start" />
               {t(item.labelKey)}

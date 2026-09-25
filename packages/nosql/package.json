@@ -10,7 +10,7 @@
   },
   "scripts": {
     "format": "prettier . --ignore-path ../../.gitignore --ignore-path ../../.prettierignore",
-    "lint": "eslint .",
+    "lint": "oxlint",
     "typecheck": "tsc --noEmit",
     "generate": "migrate -f src/migrate.ts create",
     "migrate": "migrate -f src/migrate.ts"
@@ -18,7 +18,7 @@
   "devDependencies": {
     "@types/bluebird": "^3.5.42",
     "@types/lodash": "^4.17.1",
-    "eslint": "8.57.0",
+    "oxlint": "^1.81.0",
     "prettier": "3.2.5",
     "ts-migrate-mongoose": "^3.8.4",
     "typescript": "5.4.5"

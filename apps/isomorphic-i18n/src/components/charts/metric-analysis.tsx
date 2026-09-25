@@ -1,5 +1,3 @@
-"use client";
-
 import { useAtomValue, type Atom } from "jotai";
 import { GearTreemap } from "@/components/charts/gear-treemap";
 import { MetricRadar } from "@/components/charts/metric-radar";

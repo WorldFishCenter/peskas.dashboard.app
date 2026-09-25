@@ -4,26 +4,23 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**", ".next/**", "!.next/cache/**"],
+      "outputs": ["dist/**", ".output/**", ".vercel/output/**"],
       "env": [
-        "NEXTAUTH_SECRET",
-        "NEXTAUTH_URL",
+        "AUTH_SECRET",
+        "APP_URL",
         "MONGODB_URI",
         "MONGODB_URI_COASTS",
         "VERCEL_URL",
         "VERCEL",
-        "NEXT_PUBLIC_COUNTRY_CODE",
-        "NEXT_PUBLIC_GA_MEASUREMENT_ID",
-        "NEXT_PUBLIC_GA_ROLLUP_ID",
-        "NEXT_PUBLIC_MAPBOX_TOKEN",
+        "VITE_COUNTRY_CODE",
+        "VITE_GA_MEASUREMENT_ID",
+        "VITE_GA_ROLLUP_ID",
+        "VITE_MAPBOX_TOKEN",
         "EMAIL_SERVER",
         "EMAIL_FROM"
       ]
     },
     "lint": {},
-    "start": {
-      "dependsOn": ["^start"]
-    },
     "dev": {
       "cache": false,
       "persistent": true
@@ -34,16 +31,16 @@
   },
   "ui": "stream",
   "globalEnv": [
-    "NEXTAUTH_SECRET",
-    "NEXTAUTH_URL",
+    "AUTH_SECRET",
+    "APP_URL",
     "MONGODB_URI",
     "MONGODB_URI_COASTS",
     "VERCEL_URL",
     "VERCEL",
-    "NEXT_PUBLIC_COUNTRY_CODE",
-    "NEXT_PUBLIC_GA_MEASUREMENT_ID",
-    "NEXT_PUBLIC_GA_ROLLUP_ID",
-    "NEXT_PUBLIC_MAPBOX_TOKEN",
+    "VITE_COUNTRY_CODE",
+    "VITE_GA_MEASUREMENT_ID",
+    "VITE_GA_ROLLUP_ID",
+    "VITE_MAPBOX_TOKEN",
     "EMAIL_SERVER",
     "EMAIL_FROM"
   ]

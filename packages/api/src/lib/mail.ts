@@ -1,17 +1,22 @@
 import { z } from "zod";
-import { promises as fs } from "fs";
-import path from "path";
 import type Mail from "nodemailer/lib/mailer";
 import type SMTPTransport from "nodemailer/lib/smtp-transport";
 import handlebars from "handlebars";
 import nodemailer, { createTestAccount } from "nodemailer";
 
-export enum Templates {
-  resetPassword = "resetPassword",
-}
+import { resetPassword } from "./templates/reset-password";
+
+export const Templates = {
+  resetPassword: "resetPassword",
+} as const;
+export type Templates = (typeof Templates)[keyof typeof Templates];
 
 export const DefaultSubject: Partial<Record<Templates, string>> = {
   [Templates.resetPassword]: "Reset your password",
+};
+
+const TemplateSource: Record<Templates, string> = {
+  [Templates.resetPassword]: resetPassword,
 };
 
 export const DefaultTo: Partial<Record<Templates, string | string[]>> = {};
@@ -42,7 +47,6 @@ export class MailService {
   transporter: nodemailer.Transporter<SMTPTransport.SentMessageInfo> | null =
     null;
   templates = Templates;
-  fileContentDict: Record<string, string> = {};
 
   constructor() {
     void this.loadTransporter();
@@ -60,32 +64,8 @@ export class MailService {
     this.transporter = nodemailer.createTransport(transportOptions);
   }
 
-  /**
-   * Read a template off disk once and memoise it, so sending a batch does not
-   * reopen the same file for every message.
-   *
-   * This resolves against the app's cwd. It only works when run from the Next.js
-   * app; a standalone script would need ../../apps/isomorphic-i18n/src/templates.
-   */
-  public async prepTemplate<T extends Templates>(name: T): Promise<string> {
-    const cached = this.fileContentDict[name];
-    if (cached) return cached;
-
-    const templateDirectory = path.join(process.cwd(), "src/templates");
-    const fileContent = await fs.readFile(
-      path.join(templateDirectory, `${name}.hbs`),
-      { encoding: "utf8" },
-    );
-    this.fileContentDict[name] = fileContent;
-    return fileContent;
-  }
-
-  public async getTemplate<T extends Templates>(
-    name: T,
-    params: TemplateType[T],
-  ): Promise<string> {
-    const fileContent = await this.prepTemplate(name);
-    return handlebars.compile(fileContent)(params);
+  public getTemplate<T extends Templates>(name: T, params: TemplateType[T]): string {
+    return handlebars.compile(TemplateSource[name])(params);
   }
 
   async sendTemplateMessages<T extends Templates>(
@@ -102,10 +82,6 @@ export class MailService {
       throw new Error("Missing to and no default to set");
     }
 
-    // When sending template emails, we can't have too many files open at the same time
-    // So we batch them in groups of 100 (the template file)
-    // https://github.com/vercel/next.js/issues/52646 related
-    await this.prepTemplate(template); // Prep template to ensure it is only opened once
     const batchSize = 100;
     const sent: (Error | SMTPTransport.SentMessageInfo)[] = [];
 
@@ -118,7 +94,7 @@ export class MailService {
           from: item.from ? item.from : process.env.EMAIL_FROM,
           to: item.to ? item.to : DefaultTo[template],
           subject: item.subject ? item.subject : DefaultSubject[template],
-          html: await this.getTemplate(template, item),
+          html: this.getTemplate(template, item),
         })),
       );
       const sentBatch = await this.sendViaTransporter(batchMessages);

@@ -1,5 +1,3 @@
-"use client";
-
 import { ChartNoAxesColumnIcon, TriangleAlertIcon } from "lucide-react";
 import {
   Empty,
@@ -11,7 +9,7 @@ import {
 import { Skeleton } from "@workspace/ui/components/skeleton";
 import { cn } from "@workspace/ui/lib/utils";
 import { useAtomValue } from "jotai";
-import { useT } from "@/app/i18n/use-lang";
+import { useT } from "@/i18n/use-lang";
 import { districtsAtom } from "@/store/filters";
 
 /** Chart height for the analysis cards, as in the official shadcn chart examples. */

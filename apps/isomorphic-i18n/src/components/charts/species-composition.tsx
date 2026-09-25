@@ -1,5 +1,3 @@
-"use client";
-
 import { useMemo, useState } from "react";
 import { useAtomValue } from "jotai";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
@@ -10,7 +8,7 @@ import {
   type ChartConfig,
 } from "@workspace/ui/components/chart";
 import { ToggleGroup, ToggleGroupItem } from "@workspace/ui/components/toggle-group";
-import { useT } from "@/app/i18n/use-lang";
+import { useT } from "@/i18n/use-lang";
 import { ChartCard } from "@/components/charts/chart-card";
 import { categoryChartHeight, ChartGate } from "@/components/charts/chart-state";
 import { SeriesLegend, type Series } from "@/components/charts/series-legend";

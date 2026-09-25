@@ -5,6 +5,8 @@ import { TRPCError } from "@trpc/server";
 
 import type { TGroup, TPermission } from "@repo/nosql/schema/auth";
 
+import type { Session } from "./auth";
+
 /**
  * Single source of truth for permission checks.
  *
@@ -34,19 +36,13 @@ export function hasPermission(
  * Throws FORBIDDEN unless the session carries the requested permission.
  * `protectedProcedure` only proves that someone is signed in; mutations that
  * act on other people's records need this on top.
- *
- * The session is read loosely because the next-auth module augmentation that
- * adds `groups` is declared in the Next.js app, not in this package.
  */
 export function assertPermission(
-  session: unknown,
+  session: Session,
   resource: string,
   actions: string[]
 ) {
-  const groups = (session as { user?: { groups?: TGroup[] } } | null)?.user
-    ?.groups;
-
-  if (!hasPermission(groups, resource, actions)) {
+  if (!hasPermission(session.user.groups, resource, actions)) {
     throw new TRPCError({
       code: "FORBIDDEN",
       message: `Missing ${actions.join("/")} permission on ${resource}`,

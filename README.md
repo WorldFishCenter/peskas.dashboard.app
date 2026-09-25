@@ -51,9 +51,9 @@ Peskas is WorldFish's open-source platform for monitoring small-scale fisheries 
 
 ## For developers
 
-A pnpm Turborepo whose only app is `apps/isomorphic-i18n` (Next.js). It reads the monthly summaries that `peskas.coasts::export_portal` writes to MongoDB.
+A pnpm Turborepo whose only app is `apps/isomorphic-i18n`: a [Vite](https://vite.dev) single-page app (React Router) with a small [Nitro](https://nitro.build) server for the tRPC API. It reads the monthly summaries that `peskas.coasts::export_portal` writes to MongoDB.
 
-**Requirements:** Node.js 18 or later and pnpm 9.
+**Requirements:** Node.js 20.19+ or 22.12+ (Vite 8) and pnpm 9.
 
 **Setup**
 
@@ -67,18 +67,20 @@ Fill in the values in `.env`. The full list of variables the build reads is in `
 
 **One codebase, one deployment per country.** Each country is a separate Vercel project built from this repository and configured through environment variables, so adding a country needs no fork. Each deployment needs at least:
 
-- `NEXT_PUBLIC_COUNTRY_CODE`: which country to build (`TZ`, `KE` or `MZ`; default `TZ`). Zanzibar uses `TZ`, Tanzania's country code.
+- `VITE_COUNTRY_CODE`: which country to build (`TZ`, `KE` or `MZ`; default `TZ`). Zanzibar uses `TZ`, Tanzania's country code.
 - `MONGODB_URI`: the country's summaries database.
 - `MONGODB_URI_COASTS`: the database that holds the district boundaries (`wio_gaul2`).
-- `NEXTAUTH_SECRET` (required in production) and `NEXTAUTH_URL` (the deployment's public URL; on Vercel it falls back to the deployment URL).
-- `NEXT_PUBLIC_MAPBOX_TOKEN`: base map for the fishing-effort map.
-- `NEXT_PUBLIC_GA_MEASUREMENT_ID`: the country's Google Analytics stream (see [`apps/isomorphic-i18n/ANALYTICS.md`](apps/isomorphic-i18n/ANALYTICS.md)).
+- `AUTH_SECRET`: signs the sign-in cookie and password-reset links (for example `openssl rand -base64 32`).
+- `APP_URL`: the deployment's public URL, used in password-reset emails (on Vercel it falls back to the deployment URL).
+- `EMAIL_SERVER` and `EMAIL_FROM`: SMTP for password-reset emails.
+- `VITE_MAPBOX_TOKEN`: base map for the fishing-effort map.
+- `VITE_GA_MEASUREMENT_ID`: the country's Google Analytics stream (see [`apps/isomorphic-i18n/ANALYTICS.md`](apps/isomorphic-i18n/ANALYTICS.md)).
 
-Country settings (districts, colours, currency, map view, languages) live in `apps/isomorphic-i18n/src/config/countryConfig.ts`. To add a country, follow [`apps/isomorphic-i18n/COUNTRY_SETUP.md`](apps/isomorphic-i18n/COUNTRY_SETUP.md).
+`VITE_*` values are public and inlined into the browser bundle at build time, so changing one needs a redeploy; the others stay on the server. Country settings (districts, colours, currency, map view, languages) live in `apps/isomorphic-i18n/src/config/countries.ts`. To add a country, follow [`apps/isomorphic-i18n/COUNTRY_SETUP.md`](apps/isomorphic-i18n/COUNTRY_SETUP.md).
 
 **Main commands**
 
-- `pnpm run i18n:dev`, `pnpm run i18n:build`, `pnpm run i18n:lint`: run, build or lint the dashboard.
+- `pnpm run i18n:dev`, `pnpm run i18n:build`, `pnpm run i18n:lint`: run, build or lint the dashboard. `pnpm --filter i18n preview` serves a production build locally.
 - `pnpm run build`, `pnpm run lint`: the whole workspace.
 
 **Production:** the three Vercel projects (`peskas-dashboard-zanzibar`, `peskas-dashboard-kenya`, `peskas-dashboard-mozambique`) deploy to production on every push to `dev`, the default branch.

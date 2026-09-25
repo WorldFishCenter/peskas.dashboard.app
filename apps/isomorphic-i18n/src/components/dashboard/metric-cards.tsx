@@ -1,5 +1,3 @@
-"use client";
-
 import { Bar, BarChart, LabelList, XAxis } from "recharts";
 import {
   Card,
@@ -16,7 +14,7 @@ import {
 } from "@workspace/ui/components/chart";
 import { ScrollArea, ScrollBar } from "@workspace/ui/components/scroll-area";
 import { Skeleton } from "@workspace/ui/components/skeleton";
-import { useT } from "@/app/i18n/use-lang";
+import { useT } from "@/i18n/use-lang";
 import { ChartState } from "@/components/charts/chart-state";
 import { TooltipRow } from "@/components/charts/tooltip-row";
 import { REGION_COLORS, REGIONS } from "@/lib/dashboard/regions";

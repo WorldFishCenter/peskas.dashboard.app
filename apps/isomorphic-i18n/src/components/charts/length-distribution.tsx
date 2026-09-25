@@ -1,5 +1,3 @@
-"use client";
-
 import { useMemo, useState } from "react";
 import { useAtomValue } from "jotai";
 import { InfoIcon, ListChecksIcon } from "lucide-react";
@@ -23,7 +21,7 @@ import {
 } from "@workspace/ui/components/combobox";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@workspace/ui/components/hover-card";
 import { ToggleGroup, ToggleGroupItem } from "@workspace/ui/components/toggle-group";
-import { useT } from "@/app/i18n/use-lang";
+import { useT } from "@/i18n/use-lang";
 import { ChartCard } from "@/components/charts/chart-card";
 import { categoryChartHeight, ChartGate } from "@/components/charts/chart-state";
 import { TooltipRow } from "@/components/charts/tooltip-row";

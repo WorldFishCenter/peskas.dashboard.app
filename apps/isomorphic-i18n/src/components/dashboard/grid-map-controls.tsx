@@ -1,5 +1,3 @@
-"use client";
-
 import { useMemo } from "react";
 import { InfoIcon } from "lucide-react";
 import { Button } from "@workspace/ui/components/button";
@@ -8,7 +6,7 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from "@workspace/ui/com
 import { Separator } from "@workspace/ui/components/separator";
 import { ToggleGroup, ToggleGroupItem } from "@workspace/ui/components/toggle-group";
 import { cn } from "@workspace/ui/lib/utils";
-import { useT } from "@/app/i18n/use-lang";
+import { useT } from "@/i18n/use-lang";
 import { COLOR_RANGE, TIME_BREAKS } from "@/lib/grid-map/config";
 import { calculateStats } from "@/lib/grid-map/stats";
 import type { ChoroplethLegend, DataPoint } from "@/lib/grid-map/types";

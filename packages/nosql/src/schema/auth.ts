@@ -21,30 +21,6 @@ export type TUser = {
   updated_at: Date;
 };
 
-export type TAccount = {
-  userId: Types.ObjectId;
-  type: string;
-  provider: string;
-  providerAccountId: string;
-  expires_at: Date;
-  access_token: string;
-  expires_in?: number;
-  refresh_token?: string;
-  scope?: string;
-};
-
-export type TSession = {
-  sessionToken: string;
-  userId: Types.ObjectId;
-  expires: Date;
-};
-
-export type TVerificationToken = {
-  identifier: string;
-  expires: Date;
-  token: string;
-};
-
 export type TGroup = {
   _id: Types.ObjectId;
   name: string;
@@ -91,35 +67,6 @@ const userSchema = new Schema<TUser>({
   updated_at: Date,
 });
 
-const accountSchema = new Schema<TAccount>({
-  userId: { type: Schema.Types.ObjectId, ref: "User" },
-  type: String,
-  provider: String,
-  providerAccountId: String,
-  access_token: String,
-  expires_at: Date,
-  expires_in: Number,
-  refresh_token: String,
-  scope: String,
-});
-
-const sessionSchema = new Schema<TSession>({
-  sessionToken: String,
-  userId: { type: Schema.Types.ObjectId, ref: "User" },
-  expires: Date,
-});
-
-const verificationTokenSchema = new Schema<TVerificationToken>(
-  {
-    identifier: String,
-    expires: Date,
-    token: String,
-  },
-  {
-    collection: "verification_tokens",
-  },
-);
-
 const groupSchema = new Schema<TGroup>({
   name: String,
   permission_id: { type: Schema.Types.ObjectId, ref: "Permission" },  
@@ -140,24 +87,9 @@ const permissionSchema = new Schema<TPermission>({
 /**
  * Models
  */
-export const AccountModel =
-  (mongoose.models.Account as mongoose.Model<TAccount>) ??
-  mongoose.model<TAccount>("Account", accountSchema);
-
-export const SessionModel =
-  (mongoose.models.Session as mongoose.Model<TSession>) ??
-  mongoose.model<TSession>("Session", sessionSchema);
-
 export const UserModel =
   (mongoose.models.User as mongoose.Model<TUser>) ??
   mongoose.model<TUser>("User", userSchema);
-
-export const VerificationTokenModel =
-  (mongoose.models.VerificationToken as mongoose.Model<TVerificationToken>) ??
-  mongoose.model<TVerificationToken>(
-    "VerificationToken",
-    verificationTokenSchema,
-  );
 
 export const PermissionModel =
   (mongoose.models.Permission as mongoose.Model<TPermission>) ??

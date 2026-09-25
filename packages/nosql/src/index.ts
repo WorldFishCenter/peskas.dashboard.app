@@ -9,9 +9,6 @@ declare global {
   };
 }
 
-const databaseUrl = process.env.MONGODB_URI;
-if (!databaseUrl) throw new Error("DATABASE_URL is not defined");
-
 let cached = global.mongoose;
 
 if (!cached) {
@@ -19,6 +16,9 @@ if (!cached) {
 }
 
 async function getDb() {
+  const databaseUrl = process.env.MONGODB_URI;
+  if (!databaseUrl) throw new Error("MONGODB_URI is not defined");
+
   if (process.env.NODE_ENV !== 'production') {
     cached.conn = null;
     cached.promise = null;
@@ -48,7 +48,7 @@ async function getDb() {
     };
 
     cached.promise = mongoose
-      .connect(databaseUrl as string, opts)
+      .connect(databaseUrl, opts)
       .then((mongoose) => {
         console.log('MongoDB connected successfully');
         return mongoose;

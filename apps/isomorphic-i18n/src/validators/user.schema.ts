@@ -1,13 +1,10 @@
-import mongoose from "mongoose";
 import { z } from "zod";
 
 // form zod validation schema
 export const UpsertUserSchema = z.object({
   _id: z
     .string()
-    .refine((val) => {
-      return mongoose.Types.ObjectId.isValid(val);
-    })
+    .regex(/^[a-f\d]{24}$/i) // a Mongo ObjectId
     .optional(),
   name: z.string().min(1),
   email: z.string().email(),

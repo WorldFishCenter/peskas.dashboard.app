@@ -1,8 +1,6 @@
-"use client";
-
 import { ArrowDownIcon, ArrowUpIcon } from "lucide-react";
 import { ChartTooltipContent } from "@workspace/ui/components/chart";
-import { useT } from "@/app/i18n/use-lang";
+import { useT } from "@/i18n/use-lang";
 import { TooltipRow } from "@/components/charts/tooltip-row";
 import { formatDashboardNumber } from "@/lib/dashboard/format";
 

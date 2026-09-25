@@ -1,3 +1,4 @@
+import { authRouter } from "./auth";
 import { districtSummaryRouter } from "./district-summary";
 import { gaul2BoundariesRouter } from "./gaul2-boundaries";
 import { gearRouter } from "./gear";
@@ -8,6 +9,7 @@ import { taxaSummariesRouter } from "./taxa-summaries";
 import { userRouter } from "./user";
 
 export {
+  authRouter,
   districtSummaryRouter,
   gaul2BoundariesRouter,
   gearRouter,

@@ -1,5 +1,20 @@
 # peskas.dashboard 2.0.0
 
+## Platform
+
+- **The app now runs on Vite instead of Next.js.** Pages are a single-page app (React Router);
+  the tRPC API runs on a small Nitro server that deploys as Vercel Functions. Dev server
+  start and page switches are near-instant.
+- **Environment variables were renamed** on every Vercel project and local `.env`:
+  `NEXT_PUBLIC_COUNTRY_CODE` → `VITE_COUNTRY_CODE`, `NEXT_PUBLIC_MAPBOX_TOKEN` →
+  `VITE_MAPBOX_TOKEN`, `NEXT_PUBLIC_GA_MEASUREMENT_ID` → `VITE_GA_MEASUREMENT_ID`,
+  `NEXT_PUBLIC_GA_ROLLUP_ID` → `VITE_GA_ROLLUP_ID`, `NEXTAUTH_SECRET` → `AUTH_SECRET`,
+  `NEXTAUTH_URL` → `APP_URL`. `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` and
+  `NEXT_PUBLIC_GOOGLE_MAP_API_KEY` are no longer read. Node.js 20.19+ is required.
+- Signing in replaces NextAuth with a signed session cookie; everyone signed in is signed
+  out once. The sign-in form gives the same message for an unknown email and a wrong
+  password, and deactivating an account takes effect on its next request.
+
 ## Redesign
 
 - **The dashboard is rebuilt on shadcn/ui.** One sticky top bar (page links, language and

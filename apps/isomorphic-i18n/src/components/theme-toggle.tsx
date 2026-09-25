@@ -1,15 +1,13 @@
-"use client";
-
 import { MoonIcon, SunIcon } from "lucide-react";
-import { useTheme } from "next-themes";
 import { Button } from "@workspace/ui/components/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@workspace/ui/components/tooltip";
-import { useT } from "@/app/i18n/use-lang";
+import { useTheme } from "@/components/theme-provider";
+import { useT } from "@/i18n/use-lang";
 
-/** Light/dark switch; the icons swap with CSS so nothing depends on the hydrated theme. */
+/** Light/dark switch; the icons swap with the `dark` class CSS. */
 export function ThemeToggle() {
   const { t } = useT();
-  const { resolvedTheme, setTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
   const label = t("text-toggle-theme");
 
   return (
@@ -20,7 +18,7 @@ export function ThemeToggle() {
             variant="ghost"
             size="icon"
             aria-label={label}
-            onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
           />
         }
       >

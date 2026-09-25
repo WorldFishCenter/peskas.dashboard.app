@@ -1,5 +1,3 @@
-"use client";
-
 import { ToggleGroup, ToggleGroupItem } from "@workspace/ui/components/toggle-group";
 
 export type Series = { key: string; label?: string; color: string };

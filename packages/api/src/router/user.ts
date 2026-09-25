@@ -1,13 +1,12 @@
 import bcryptjs from "bcryptjs";
 import isEmpty from "lodash/isEmpty";
 import mongoose from "mongoose";
-import { decode, encode } from "next-auth/jwt";
-import { createSecretKey } from "node:crypto";
 import { z } from "zod";
 
 import type { TPermission } from "@repo/nosql/schema/auth";
 import { BmuModel, GroupModel, UserModel } from "@repo/nosql/schema/auth";
 
+import { signToken, verifyToken } from "../lib/auth";
 import { MailService, Templates } from "../lib/mail";
 import { assertPermission } from "../lib/permissions";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
@@ -83,12 +82,8 @@ export const ResetPasswordSchema = z
     path: ["confirmPassword"],
   });
 
-const secretKey = createSecretKey(process.env.NEXTAUTH_SECRET ?? "", "utf-8");
-
-const now = () => (Date.now() / 1000) | 0;
-
 export const userRouter = createTRPCRouter({
-  all: protectedProcedure.query(async ({ ctx }) => {
+  all: protectedProcedure.query(async () => {
     const users = await UserModel.find({}, { password: 0 })
       .populate([
         {
@@ -207,7 +202,7 @@ export const userRouter = createTRPCRouter({
         BMU: input.userBmu.label,
       }) : null;
       const findOne = input._id ? { _id: input._id } : { email: input.email };
-      const _user = await UserModel.findOneAndUpdate(
+      await UserModel.findOneAndUpdate(
         findOne,
         {
           name: input.name,
@@ -231,11 +226,7 @@ export const userRouter = createTRPCRouter({
     .mutation(async ({ input }) => {
       const user = await UserModel.findOne({ email: input.email });
       if (!user) throw new Error("User doesn't exist.");
-      const reset_token = await encode({
-        token: { id: user._id.toString() },
-        secret: process.env.NEXTAUTH_SECRET ?? "",
-        maxAge: 60 * 60, // 1 hr
-      });
+      const reset_token = await signToken(user._id.toString(), "reset-password", 60 * 60); // 1 hr
 
       /**
        * TODO: Load lang dynamically
@@ -245,7 +236,7 @@ export const userRouter = createTRPCRouter({
        * users to someone else's dashboard.
        */
       const baseUrl =
-        process.env.NEXTAUTH_URL ??
+        process.env.APP_URL ??
         (process.env.VERCEL_URL
           ? `https://${process.env.VERCEL_URL}`
           : "http://localhost:3001");
@@ -260,21 +251,11 @@ export const userRouter = createTRPCRouter({
   resetPassword: publicProcedure
     .input(ResetPasswordSchema)
     .mutation(async ({ input }) => {
-      try {
-        const payload = await decode({
-          token: input.token,
-          secret: process.env.NEXTAUTH_SECRET ?? "",
-        });
-        await UserModel.findOneAndUpdate(
-          {
-            _id: new mongoose.Types.ObjectId(payload?.id as string),
-          },
-          {
-            password: bcryptjs.hashSync(input.newPassword ?? "", 10),
-          }
-        );
-      } catch (e) {
-        throw new Error("Invalid token.");
-      }
+      const userId = await verifyToken(input.token, "reset-password");
+      if (!userId) throw new Error("Invalid token.");
+      await UserModel.findOneAndUpdate(
+        { _id: new mongoose.Types.ObjectId(userId) },
+        { password: bcryptjs.hashSync(input.newPassword ?? "", 10) }
+      );
     }),
 });

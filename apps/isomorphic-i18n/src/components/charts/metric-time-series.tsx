@@ -1,11 +1,9 @@
-"use client";
-
 import { useMemo, useState } from "react";
 import { useAtomValue } from "jotai";
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 import { ChartContainer, ChartTooltip, type ChartConfig } from "@workspace/ui/components/chart";
 import { cn } from "@workspace/ui/lib/utils";
-import { useT } from "@/app/i18n/use-lang";
+import { useT } from "@/i18n/use-lang";
 import { ChartCard } from "@/components/charts/chart-card";
 import { CHART_HEIGHT, ChartGate } from "@/components/charts/chart-state";
 import { DistrictTooltip } from "@/components/charts/district-tooltip";

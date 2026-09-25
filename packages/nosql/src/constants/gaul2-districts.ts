@@ -1,6 +1,6 @@
 /**
  * District/region data for the API layer, mirroring countryConfig.ts in the app.
- * Selected at build time via the NEXT_PUBLIC_COUNTRY_CODE env var (default: 'TZ').
+ * Selected by the VITE_COUNTRY_CODE env var (default: 'TZ').
  *
  * IMPORTANT: district names and region mappings here must stay in sync with
  * countryConfig.districtToRegion in apps/isomorphic-i18n/src/config/countryConfig.ts.
@@ -145,7 +145,7 @@ const DISTRICT_REGISTRY = {
   MZ: { names: MZ_DISTRICT_NAMES, toRegion: MZ_TO_REGION },
 } as const;
 
-const code = (process.env.NEXT_PUBLIC_COUNTRY_CODE ?? 'TZ') as keyof typeof DISTRICT_REGISTRY;
+const code = (process.env.VITE_COUNTRY_CODE ?? 'TZ') as keyof typeof DISTRICT_REGISTRY;
 const active = DISTRICT_REGISTRY[code] ?? DISTRICT_REGISTRY['TZ'];
 
 export const GAUL2_DISTRICT_NAMES = active.names;

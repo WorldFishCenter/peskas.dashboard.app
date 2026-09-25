@@ -1,5 +1,3 @@
-"use client";
-
 import { useMemo, useState } from "react";
 import { useAtomValue } from "jotai";
 import {
@@ -22,7 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from "@workspace/ui/components/table";
-import { useT } from "@/app/i18n/use-lang";
+import { useT } from "@/i18n/use-lang";
 import { HeatCell, sortNullsAsZero, valueRange } from "@/components/charts/heat-cell";
 import { SortableHeader } from "@/components/data-table/sortable-header";
 import { formatDashboardNumber } from "@/lib/dashboard/format";

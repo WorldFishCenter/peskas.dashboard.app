@@ -1,5 +1,3 @@
-"use client";
-
 import { useMemo } from "react";
 import { useAtomValue } from "jotai";
 import { Treemap } from "recharts";
@@ -9,7 +7,7 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@workspace/ui/components/chart";
-import { useT } from "@/app/i18n/use-lang";
+import { useT } from "@/i18n/use-lang";
 import { ChartCard } from "@/components/charts/chart-card";
 import { CHART_HEIGHT, ChartGate } from "@/components/charts/chart-state";
 import { TooltipRow } from "@/components/charts/tooltip-row";

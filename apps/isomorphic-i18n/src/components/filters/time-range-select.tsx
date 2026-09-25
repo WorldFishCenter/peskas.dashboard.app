@@ -1,5 +1,3 @@
-"use client";
-
 import { useAtom } from "jotai";
 import {
   Select,
@@ -9,7 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@workspace/ui/components/select";
-import { useT } from "@/app/i18n/use-lang";
+import { useT } from "@/i18n/use-lang";
 import { trackEvent } from "@/lib/analytics";
 import { selectedTimeRangeAtom, TIME_RANGE_OPTIONS, type TimeRange } from "@/store/time-range";
 

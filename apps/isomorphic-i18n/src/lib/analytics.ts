@@ -1,11 +1,9 @@
-'use client';
-
 /**
  * Client-side wrapper for GA4 custom events.
  *
  * No-ops when gtag is absent, which is the case in local development and on preview
- * deployments: google-analytics.tsx only renders the tag when
- * NEXT_PUBLIC_GA_MEASUREMENT_ID is set. Callers never pass the country — the init
+ * deployments: vite.config.ts only injects the tag when
+ * VITE_GA_MEASUREMENT_ID is set. Callers never pass the country — the init
  * snippet attaches peskas_country to every event globally.
  *
  * Each event parameter must be registered as a custom dimension in GA4 before it

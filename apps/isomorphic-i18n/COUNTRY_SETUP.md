@@ -21,8 +21,8 @@ packages/api/src/router/district-summary.ts  (getMonthlyRegionSummary)
        Groups rows by region, returns { month, RegionA: avg, RegionB: avg, ... }
        │
        ▼
-apps/isomorphic-i18n/src/app/shared/file/dashboard/file-stats.tsx
-       Reads countryConfig.features.regionBreakdown.regions to know which keys to render as bars
+apps/isomorphic-i18n/src/lib/dashboard/regions.ts
+       Reads features.regionBreakdown.regions (src/config/countries.ts) to know which keys to render as bars
 ```
 
 **The region names must be identical** across `gaul2-districts.ts` (API grouping) and
@@ -31,15 +31,15 @@ A mismatch means the UI reads undefined values and shows `-` for every bar.
 
 ---
 
-## Step 1 — `countryConfig.ts`
+## Step 1 — `countries.ts`
 
-**File**: `apps/isomorphic-i18n/src/config/countryConfig.ts`
+**File**: `apps/isomorphic-i18n/src/config/countries.ts`
 
 Add an entry to `COUNTRY_REGISTRY`. Use the Zanzibar config as a template:
 
 ```ts
 const kenyaConfig: CountryConfig = {
-  countryCode: 'KE',                           // matches NEXT_PUBLIC_COUNTRY_CODE env var
+  countryCode: 'KE',                           // matches VITE_COUNTRY_CODE env var
   countryName: 'Kenya',                         // used in page titles and map heading
   siteTitle: 'PESKAS | Kenya Fisheries',
   siteDescription: 'Peskas | Kenya Fisheries Dashboard',
@@ -103,8 +103,8 @@ export const GAUL2_TO_REGION: Record<string, string> = {
 };
 ```
 
-> **Why is this separate from `countryConfig.ts`?**
-> `packages/api` (the tRPC router) cannot import from `apps/isomorphic-i18n` (the Next.js app)
+> **Why is this separate from `countries.ts`?**
+> `packages/api` (the tRPC router) cannot import from `apps/isomorphic-i18n` (the Vite app)
 > due to package boundaries. Both files carry the same data but serve different consumers:
 > `gaul2-districts.ts` → API, `countryConfig` → UI.
 
@@ -114,7 +114,7 @@ export const GAUL2_TO_REGION: Record<string, string> = {
 
 For each language in your `languages` array, add:
 ```
-apps/isomorphic-i18n/src/app/i18n/locales/<lang>/common.json
+apps/isomorphic-i18n/src/i18n/locales/<lang>/common.json
 ```
 
 Copy from `locales/en/common.json` and update country-specific strings.
@@ -125,32 +125,35 @@ Strings to check: `metric-mean_rpue-unit`, `metric-mean_price_kg-unit` (currency
 ## Step 4 — Deployment env vars
 
 ```
-NEXT_PUBLIC_COUNTRY_CODE=KE
+VITE_COUNTRY_CODE=KE
 MONGODB_URI=<your-kenya-cluster-connection-string>
 MONGODB_URI_COASTS=<connection-string-of-the-database-holding-wio_gaul2>
-NEXTAUTH_SECRET=<random-secret>
-NEXTAUTH_URL=<the-deployment-public-url>
-NEXT_PUBLIC_MAPBOX_TOKEN=<mapbox-token>
-NEXT_PUBLIC_GA_MEASUREMENT_ID=<the-new-country-GA4-stream>
+AUTH_SECRET=<random-secret>
+APP_URL=<the-deployment-public-url>
+EMAIL_SERVER=<smtp-url>
+EMAIL_FROM=<sender>
+VITE_MAPBOX_TOKEN=<mapbox-token>
+VITE_GA_MEASUREMENT_ID=<the-new-country-GA4-stream>
 ```
 
-`NEXT_PUBLIC_COUNTRY_CODE` is inlined into the client bundle at build time (Next.js `NEXT_PUBLIC_*`
-convention). A redeploy is required when changing it.
+`VITE_COUNTRY_CODE` is inlined into the client bundle at build time (Vite exposes only
+`VITE_*` variables to the browser), and the server reads the same variable at runtime.
+A redeploy is required when changing it.
 
 Each country reports into its own GA4 data stream, so the new deployment needs its own
-`NEXT_PUBLIC_GA_MEASUREMENT_ID` plus a registered `peskas_country` custom dimension.
+`VITE_GA_MEASUREMENT_ID` plus a registered `peskas_country` custom dimension.
 See [ANALYTICS.md](./ANALYTICS.md) for the GA4 admin steps.
 
 ---
 
 ## Checklist before deploying
 
-- [ ] New entry in `COUNTRY_REGISTRY` in `countryConfig.ts`
+- [ ] New entry in `COUNTRY_REGISTRY` in `countries.ts`
 - [ ] `GAUL2_DISTRICT_NAMES` and `GAUL2_TO_REGION` updated in `gaul2-districts.ts`
 - [ ] District names identical in both files and in the MongoDB `gaul_2_name` field
 - [ ] Region names identical in `districtToRegion` (countryConfig) and `GAUL2_TO_REGION` (nosql)
 - [ ] `regionBreakdown.regions` values match the region names used in `districtToRegion`
 - [ ] Locale files added for each language
-- [ ] Step 4 env vars (`NEXT_PUBLIC_COUNTRY_CODE`, `MONGODB_URI`, `MONGODB_URI_COASTS`, `NEXTAUTH_SECRET`, `NEXTAUTH_URL`, `NEXT_PUBLIC_MAPBOX_TOKEN`) set in the deployment environment
-- [ ] GA4 stream created and `NEXT_PUBLIC_GA_MEASUREMENT_ID` set on Production (see ANALYTICS.md)
-- [ ] `npx tsc --noEmit` passes in both `apps/isomorphic-i18n/` and `packages/api/`
+- [ ] Step 4 env vars (`VITE_COUNTRY_CODE`, `MONGODB_URI`, `MONGODB_URI_COASTS`, `AUTH_SECRET`, `APP_URL`, `EMAIL_SERVER`, `EMAIL_FROM`, `VITE_MAPBOX_TOKEN`) set in the deployment environment
+- [ ] GA4 stream created and `VITE_GA_MEASUREMENT_ID` set on Production (see ANALYTICS.md)
+- [ ] `pnpm tsc -b` passes in `apps/isomorphic-i18n/` and `pnpm tsc --noEmit` in `packages/api/`

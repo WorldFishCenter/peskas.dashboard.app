@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect } from "react";
 import { useAtom, type PrimitiveAtom } from "jotai";
 import {
@@ -10,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@workspace/ui/components/select";
-import { useT } from "@/app/i18n/use-lang";
+import { useT } from "@/i18n/use-lang";
 import { trackEvent } from "@/lib/analytics";
 import { metricTitle, type MetricKey } from "@/lib/dashboard/metrics";
 

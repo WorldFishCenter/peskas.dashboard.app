@@ -1,6 +1,5 @@
-"use client";
-
 import { LanguagesIcon } from "lucide-react";
+import { useLocation, useNavigate } from "react-router";
 import { Button } from "@workspace/ui/components/button";
 import {
   DropdownMenu,
@@ -11,12 +10,14 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu";
-import { changeAppLanguage, LANGUAGE_NAMES } from "@/app/i18n/change-language";
-import { languages } from "@/app/i18n/settings";
-import { useT } from "@/app/i18n/use-lang";
+import { LANGUAGE_NAMES, languages } from "@/i18n/settings";
+import { useAppRoute, useT } from "@/i18n/use-lang";
 
 export function LanguageMenu() {
   const { t, lang } = useT();
+  const navigate = useNavigate();
+  const route = useAppRoute();
+  const { search } = useLocation();
 
   if (languages.length < 2) return null;
 
@@ -29,7 +30,7 @@ export function LanguageMenu() {
       <DropdownMenuContent align="end" className="min-w-40">
         <DropdownMenuGroup>
           <DropdownMenuLabel>{t("text-language")}</DropdownMenuLabel>
-          <DropdownMenuRadioGroup value={lang} onValueChange={(value) => changeAppLanguage(value)}>
+          <DropdownMenuRadioGroup value={lang} onValueChange={(value) => navigate(`/${value}${route === "/" ? "" : route}${search}`)}>
             {languages.map((code) => (
               <DropdownMenuRadioItem key={code} value={code}>
                 {LANGUAGE_NAMES[code] ?? code}

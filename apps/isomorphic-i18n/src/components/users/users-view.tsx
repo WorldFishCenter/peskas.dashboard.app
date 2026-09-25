@@ -1,7 +1,4 @@
-"use client";
-
 import { useCallback, useState } from "react";
-import { useRouter } from "next/navigation";
 import { PlusIcon, Trash2Icon } from "lucide-react";
 import {
   AlertDialog,
@@ -22,7 +19,6 @@ import { UserTable, type UserRow } from "@/components/users/user-table";
 import { api } from "@/trpc/react";
 
 export function UsersView({ users }: { users: UserRow[] }) {
-  const router = useRouter();
   const utils = api.useUtils();
   const [dialog, setDialog] = useState<{ open: boolean; userId?: string }>({ open: false });
   const [toDelete, setToDelete] = useState<UserRow | null>(null);
@@ -32,7 +28,6 @@ export function UsersView({ users }: { users: UserRow[] }) {
       toast.add({ type: "success", title: "User deleted successfully" });
       setToDelete(null);
       await utils.user.invalidate();
-      router.refresh();
     },
     onError: (error) => {
       toast.add({ type: "error", title: error.message || "Failed to delete user" });

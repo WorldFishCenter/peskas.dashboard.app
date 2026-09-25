@@ -1,7 +1,5 @@
-"use client";
-
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
-import { useT } from "@/app/i18n/use-lang";
+import { useT } from "@/i18n/use-lang";
 import { DistrictSummaryBar } from "@/components/dashboard/district-summary-bar";
 import { GridMap } from "@/components/dashboard/grid-map";
 import { MetricSelect } from "@/components/filters/metric-select";

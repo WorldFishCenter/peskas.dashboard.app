@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { lastMonths } from "../lib/date-window";
 import { createTRPCRouter, publicProcedure } from "../trpc";
-import { TaxaSummaryDistrictModel, TAXA_METRICS } from "@repo/nosql/schema/taxa-summary-district";
+import { TaxaSummaryDistrictModel } from "@repo/nosql/schema/taxa-summary-district";
 import getDb from "@repo/nosql";
 import { TRPCError } from "@trpc/server";
 

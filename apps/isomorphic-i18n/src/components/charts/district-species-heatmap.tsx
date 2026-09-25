@@ -1,5 +1,3 @@
-"use client";
-
 import { useMemo, useState } from "react";
 import { useAtomValue } from "jotai";
 import {
@@ -20,7 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from "@workspace/ui/components/table";
-import { useT } from "@/app/i18n/use-lang";
+import { useT } from "@/i18n/use-lang";
 import { ChartCard } from "@/components/charts/chart-card";
 import { ChartGate } from "@/components/charts/chart-state";
 import { SortableHeader } from "@/components/data-table/sortable-header";

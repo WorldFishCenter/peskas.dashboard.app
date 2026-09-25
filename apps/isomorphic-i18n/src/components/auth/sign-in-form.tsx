@@ -1,31 +1,29 @@
-"use client";
-
 import { useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useSetAtom } from "jotai";
 import { RESET } from "jotai/utils";
 import { CircleAlertIcon } from "lucide-react";
-import { signIn } from "next-auth/react";
 import { Controller, useForm } from "react-hook-form";
+import { Link, useNavigate } from "react-router";
 import { Alert, AlertDescription } from "@workspace/ui/components/alert";
 import { Button } from "@workspace/ui/components/button";
 import { Checkbox } from "@workspace/ui/components/checkbox";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@workspace/ui/components/field";
 import { Input } from "@workspace/ui/components/input";
 import { Spinner } from "@workspace/ui/components/spinner";
-import { useLocalizedHref } from "@/app/i18n/use-lang";
+import { useLocalizedHref } from "@/i18n/use-lang";
 import { PasswordInput } from "@/components/auth/password-input";
 import { routes } from "@/config/routes";
 import { districtsAtom } from "@/store/filters";
+import { api } from "@/trpc/react";
 import { loginSchema, type LoginType } from "@/validators/login.schema";
 
 export function SignInForm() {
-  const router = useRouter();
+  const navigate = useNavigate();
   const localized = useLocalizedHref();
   const setDistricts = useSetAtom(districtsAtom);
   const [error, setError] = useState("");
+  const signIn = api.auth.signIn.useMutation();
   const form = useForm<LoginType>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: "", password: "", rememberMe: true },
@@ -33,13 +31,13 @@ export function SignInForm() {
 
   const onSubmit = form.handleSubmit(async (data) => {
     setError("");
-    const resp = await signIn("credentials", { ...data, redirect: false });
-    if (resp?.ok) {
+    try {
+      await signIn.mutateAsync(data);
       // A different user may have a different default district selection.
       setDistricts(RESET);
-      router.refresh();
-    } else if (resp?.error) {
-      setError(resp.error);
+      navigate(localized(routes.home));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
     }
   });
 
@@ -78,7 +76,7 @@ export function SignInForm() {
               <div className="flex items-center">
                 <FieldLabel htmlFor="sign-in-password">Password</FieldLabel>
                 <Link
-                  href={localized(routes.forgotPassword)}
+                  to={localized(routes.forgotPassword)}
                   className="ml-auto text-sm underline-offset-4 hover:underline"
                 >
                   Forgot your password?

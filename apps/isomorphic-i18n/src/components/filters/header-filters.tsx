@@ -1,5 +1,3 @@
-"use client";
-
 import { SlidersHorizontalIcon } from "lucide-react";
 import { Button } from "@workspace/ui/components/button";
 import {
@@ -9,7 +7,7 @@ import {
   PopoverTitle,
   PopoverTrigger,
 } from "@workspace/ui/components/popover";
-import { useAppRoute, useT } from "@/app/i18n/use-lang";
+import { useAppRoute, useT } from "@/i18n/use-lang";
 import { DistrictFilter } from "@/components/filters/district-filter";
 import { MetricSelect } from "@/components/filters/metric-select";
 import { TimeRangeSelect } from "@/components/filters/time-range-select";

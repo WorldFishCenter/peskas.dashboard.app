@@ -8,23 +8,24 @@ driven entirely by per-deployment environment variables.
 
 ## How it works
 
-`src/app/_components/google-analytics.tsx` is a Server Component mounted once in
-`src/app/[lang]/layout.tsx`. It renders the `gtag.js` snippet and nothing else.
+The `country-head` plugin in `vite.config.ts` writes the `gtag.js` snippet into the
+`<head>` of `index.html` at build time (Vite's `transformIndexHtml` hook). No React code
+loads or configures the tag.
 
 | Concern | Behaviour |
 |---|---|
-| Which property receives data | `NEXT_PUBLIC_GA_MEASUREMENT_ID`, set per Vercel project |
-| Platform-wide roll-up | `NEXT_PUBLIC_GA_ROLLUP_ID`, optional, same value on every project |
-| Country label on every event | `peskas_country` / `peskas_country_code`, read from `countryConfig.ts` |
+| Which property receives data | `VITE_GA_MEASUREMENT_ID`, set per Vercel project |
+| Platform-wide roll-up | `VITE_GA_ROLLUP_ID`, optional, same value on every project |
+| Country label on every event | `peskas_country` / `peskas_country_code`, read from `src/config/countries.ts` |
 | Page views on client-side navigation | Handled by GA4 enhanced measurement, not by app code |
-| Local dev and preview deploys | Silent — the component returns `null` when no measurement ID is set |
+| Local dev and preview deploys | Silent — no tag is written when no measurement ID is set |
 
 ### Why there is no `useEffect` page-view tracking
 
 GA4 enhanced measurement already fires `page_view` on History API changes, which is how
-the App Router navigates. Sending our own `page_view` (or re-calling `gtag('config')`) on
+React Router navigates. Sending our own `page_view` (or re-calling `gtag('config')`) on
 route change **double-counts every navigation**. This is the single most common GA4 bug in
-Next.js App Router apps, and it is why this component has no hooks and no client bundle.
+single-page apps, and it is why the app has no page-view code.
 
 The trade-off: `page_title` is captured by GA4 at navigation time, which can occasionally
 lag React's title update by a few hundred milliseconds. Use `page_location` / page path as
@@ -44,7 +45,7 @@ Three GA4 properties, e.g. `Peskas Zanzibar`, `Peskas Kenya`, `Peskas Mozambique
 - Fully siloed reports; no cross-contamination of totals, audiences, or conversions.
 - Access control per country: a national fisheries partner can be granted their property
   without seeing the others.
-- No built-in combined view — add the shared `NEXT_PUBLIC_GA_ROLLUP_ID` roll-up property
+- No built-in combined view — add the shared `VITE_GA_ROLLUP_ID` roll-up property
   (below) if you also want platform-wide numbers.
 
 ### Option B — one property, one web data stream per country
@@ -60,7 +61,7 @@ A single `Peskas` property with three streams, one per domain.
 
 ### The roll-up property
 
-Setting `NEXT_PUBLIC_GA_ROLLUP_ID` to the same value on all three Vercel projects makes
+Setting `VITE_GA_ROLLUP_ID` to the same value on all three Vercel projects makes
 `gtag` mirror every event into a second property, giving Option A a combined view as well.
 Break it down by `peskas_country`. Leave the variable empty to disable.
 
@@ -77,10 +78,10 @@ deployments do not pollute the reports.
 
 | Variable | Zanzibar | Kenya | Mozambique |
 |---|---|---|---|
-| `NEXT_PUBLIC_GA_MEASUREMENT_ID` | that country's stream | that country's stream | that country's stream |
-| `NEXT_PUBLIC_GA_ROLLUP_ID` | same on all three, or unset | same | same |
+| `VITE_GA_MEASUREMENT_ID` | that country's stream | that country's stream | that country's stream |
+| `VITE_GA_ROLLUP_ID` | same on all three, or unset | same | same |
 
-`NEXT_PUBLIC_*` variables are inlined at build time, so **changing either value requires a
+Both are read at build time, so **changing either value requires a
 redeploy**, not just an env update. Both are declared in the root `turbo.json` `env` list;
 omitting them there would let Turborepo reuse one country's cached build for another.
 
@@ -186,7 +187,7 @@ ID and read the queue in the browser console — `trackEvent` pushes through gta
 - **Cookie consent / Consent Mode v2.** The tag currently loads unconditionally. Users are
   primarily in TZ/KE/MZ, but EU-based funders and researchers do visit these dashboards. If
   consent is required, add `gtag('consent', 'default', ...)` as the first line of the init
-  script in `google-analytics.tsx` — it must run before `gtag('config')` to take effect.
+  script in `vite.config.ts` (`countryHead`) — it must run before `gtag('config')` to take effect.
 - **Cross-domain tracking.** Deliberately absent: the country dashboards are separate sites
   and a user is never expected to travel between them in one session. Enabling the domain
   linker would merge their sessions.

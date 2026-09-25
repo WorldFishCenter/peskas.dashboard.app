@@ -1,5 +1,3 @@
-"use client";
-
 import { useAtom } from "jotai";
 import { MapPinnedIcon } from "lucide-react";
 import { Badge } from "@workspace/ui/components/badge";
@@ -18,7 +16,7 @@ import {
   ComboboxSeparator,
   ComboboxTrigger,
 } from "@workspace/ui/components/combobox";
-import { useT } from "@/app/i18n/use-lang";
+import { useT } from "@/i18n/use-lang";
 import { ALL_DISTRICTS, REGION_GROUPS } from "@/lib/dashboard/regions";
 import { trackEvent } from "@/lib/analytics";
 import { districtsAtom } from "@/store/filters";

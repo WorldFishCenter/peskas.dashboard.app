@@ -1,11 +1,9 @@
-"use client";
-
 import { useMemo } from "react";
 import { useAtom, useAtomValue } from "jotai";
 import { Bar, BarChart, CartesianGrid, Cell, LabelList, XAxis, YAxis } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@workspace/ui/components/chart";
 import { cn } from "@workspace/ui/lib/utils";
-import { useT } from "@/app/i18n/use-lang";
+import { useT } from "@/i18n/use-lang";
 import { categoryChartHeight, ChartState } from "@/components/charts/chart-state";
 import { TooltipRow } from "@/components/charts/tooltip-row";
 import { formatDashboardNumber, getAggregatedDistrictValue } from "@/lib/dashboard/format";

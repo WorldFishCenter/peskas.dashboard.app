@@ -1,5 +1,3 @@
-"use client";
-
 import { useMemo, useState } from "react";
 import {
   columnVisibilityFeature,
@@ -40,7 +38,7 @@ import {
   TableRow,
 } from "@workspace/ui/components/table";
 import { cn } from "@workspace/ui/lib/utils";
-import type { RouterOutputs } from "@api/index";
+import type { RouterOutputs } from "@isomorphic/api";
 import { SortableHeader } from "@/components/data-table/sortable-header";
 import { statusLabel } from "@/components/users/user-options";
 
