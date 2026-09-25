@@ -18,6 +18,14 @@ _Avoid_: gaul2, area, BMU
 A grouping of districts the dashboard defines per country for the home page (for example Pemba and Unguja in Zanzibar). It is not GAUL level 1.
 _Avoid_: province, gaul1, zone
 
+**Analysis page**:
+A page that charts the district selection over the time range: catch, revenue and catch composition. Catch and revenue also let the viewer pick a metric, each remembering its own choice.
+_Avoid_: data page, detail page
+
+**District selection**:
+The districts a viewer picked in the header filter. The analysis pages (catch, revenue, catch composition) follow it; the home page always covers every district of the country.
+_Avoid_: filter, selected districts
+
 ### Measures
 
 **Metric**:

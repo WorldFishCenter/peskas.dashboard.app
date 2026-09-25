@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react";
-import { useAtomValue } from "jotai";
 import {
   columnVisibilityFeature,
   createColumnHelper,
@@ -23,8 +22,7 @@ import { ChartCard } from "@/components/charts/chart-card";
 import { ChartGate } from "@/components/charts/chart-state";
 import { SortableHeader } from "@/components/data-table/sortable-header";
 import { HeatCell, sortNullsAsZero, valueRange } from "@/components/charts/heat-cell";
-import { districtsAtom } from "@/store/filters";
-import { monthsAtom } from "@/store/time-range";
+import { useDistrictScope } from "@/store/filters";
 import { api } from "@/trpc/react";
 
 const TOP_N = 15;
@@ -44,14 +42,12 @@ const fmt = (v: number) => (v >= 1000 ? `${(v / 1000).toFixed(1)}K` : v.toFixed(
 /** Catch (kg) of the top species in each selected district. */
 export function DistrictSpeciesHeatmap({ className }: { className?: string }) {
   const { t } = useT();
-  const districts = useAtomValue(districtsAtom);
-  const months = useAtomValue(monthsAtom);
+  const scope = useDistrictScope();
+  const { districts } = scope.input;
   const [sorting, setSorting] = useState<SortingState>([]);
 
-  const { data, isLoading, error } = api.summaries.taxa.useQuery(
-    { districts, metrics: ["catch_kg"], months },
-    { enabled: districts.length > 0 }
-  );
+  const query = api.summaries.taxa.useQuery({ ...scope.input, metrics: ["catch_kg"] }, scope.options);
+  const { data } = query;
 
   const rows = useMemo(() => {
     const bySpecies = new Map<string, Record<string, number>>();
@@ -129,7 +125,7 @@ export function DistrictSpeciesHeatmap({ className }: { className?: string }) {
       title={t("text-district-species-breakdown")}
       description={t("text-district-species-description")}
     >
-      <ChartGate isLoading={isLoading} error={error} isEmpty={!rows.length} className="h-64">
+      <ChartGate query={query} isEmpty={!rows.length} className="h-64">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((group) => (

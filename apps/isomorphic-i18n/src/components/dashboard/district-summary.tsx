@@ -4,7 +4,7 @@ import { DistrictSummaryBar } from "@/components/dashboard/district-summary-bar"
 import { GridMap } from "@/components/dashboard/grid-map";
 import { MetricSelect } from "@/components/filters/metric-select";
 import { METRIC_KEYS } from "@repo/domain/metrics";
-import { selectedMetricAtom } from "@/store/filters";
+import { homeMetricAtom } from "@/store/filters";
 
 /** Effort grid map with the ranked district bars beside it; hovering one highlights the other. */
 export function DistrictSummary() {
@@ -16,9 +16,8 @@ export function DistrictSummary() {
         <CardTitle>{t("text-district-summary")}</CardTitle>
         <CardAction>
           <MetricSelect
-            metricAtom={selectedMetricAtom}
+            metricAtom={homeMetricAtom}
             options={METRIC_KEYS}
-            fallback="mean_cpue"
             controlSource="district_widget"
           />
         </CardAction>

@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { useAtom, type PrimitiveAtom } from "jotai";
 import {
   Select,
@@ -16,21 +15,14 @@ import { metricTitle } from "@/lib/dashboard/metrics";
 export function MetricSelect({
   metricAtom,
   options,
-  fallback,
   controlSource,
 }: {
   metricAtom: PrimitiveAtom<MetricKey>;
   options: readonly MetricKey[];
-  /** Used when the stored metric isn't offered on this page. */
-  fallback: MetricKey;
   controlSource: "header" | "district_widget";
 }) {
   const { t } = useT();
   const [metric, setMetric] = useAtom(metricAtom);
-
-  useEffect(() => {
-    if (!options.includes(metric)) setMetric(fallback);
-  }, [metric, options, fallback, setMetric]);
 
   const items = options.map((value) => ({ value, label: metricTitle(t, value) }));
 

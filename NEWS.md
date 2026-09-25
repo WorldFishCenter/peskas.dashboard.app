@@ -45,6 +45,10 @@
 - Charts showed an error instead of a prompt when no district was selected.
 - Mapbox attribution is shown again, as the Mapbox terms require.
 - The district table said "no data" when loading failed; it now shows an error.
+- The metric picked on the home map no longer resets after visiting the catch page; the home
+  map and each analysis page keep their own choice.
+- A chart that fails to draw now shows an error in its own card instead of blanking the whole
+  page, and any other page error offers a reload button.
 - **Home page region cards averaged totals**: a region's catch, revenue, submissions and
   fishers now add up its districts instead of showing their average.
 - The home page cards say they cover the last 3 months, since the time range above them

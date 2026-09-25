@@ -1,32 +1,29 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useAtomValue } from "jotai";
 import { PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart } from "recharts";
-import { ChartContainer, ChartTooltip, type ChartConfig } from "@workspace/ui/components/chart";
+import { ChartContainer, ChartTooltip } from "@workspace/ui/components/chart";
 import { useT } from "@/i18n/use-lang";
 import { ChartCard } from "@/components/charts/chart-card";
 import { ChartGate } from "@/components/charts/chart-state";
 import { DistrictTooltip } from "@/components/charts/district-tooltip";
-import { SeriesLegend } from "@/components/charts/series-legend";
+import { useSeriesToggle } from "@/components/charts/series-legend";
 import { calendarMonthLabel, formatDashboardNumber } from "@/lib/dashboard/format";
 import type { MetricKey } from "@repo/domain/metrics";
 import { metricTitle } from "@/lib/dashboard/metrics";
 import { districtSeries } from "@/lib/dashboard/palettes";
-import { districtsAtom } from "@/store/filters";
-import { monthsAtom, selectedTimeRangeAtom, TIME_RANGE_OPTIONS } from "@/store/time-range";
+import { useDistrictScope } from "@/store/filters";
+import { selectedTimeRangeAtom, TIME_RANGE_OPTIONS } from "@/store/time-range";
 import { api } from "@/trpc/react";
 
 /** Month-of-year seasonality per selected district. */
 export function MetricRadar({ metric, className }: { metric: MetricKey; className?: string }) {
   const { t, lang } = useT();
-  const districts = useAtomValue(districtsAtom);
+  const scope = useDistrictScope();
+  const { districts } = scope.input;
   const range = useAtomValue(selectedTimeRangeAtom);
-  const months = useAtomValue(monthsAtom);
-  const [hidden, setHidden] = useState<string[]>([]);
 
-  const { data, isLoading, error } = api.summaries.seasonality.useQuery(
-    { districts, metric, months },
-    { enabled: districts.length > 0 }
-  );
+  const query = api.summaries.seasonality.useQuery({ ...scope.input, metric }, scope.options);
+  const { data } = query;
   const chartData = useMemo(() => data ?? [], [data]);
 
   const series = useMemo(() => districtSeries(chartData, districts), [chartData, districts]);
@@ -47,8 +44,7 @@ export function MetricRadar({ metric, className }: { metric: MetricKey; classNam
     return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * pow * 3;
   }, [chartData]);
 
-  const chartConfig = Object.fromEntries(series.map((s) => [s.key, { label: s.key }])) satisfies ChartConfig;
-  const visibleKeys = series.map((s) => s.key).filter((k) => !hidden.includes(k));
+  const { chartConfig, visibleKeys, isHidden, legend } = useSeriesToggle(series);
   const rangeLabelKey =
     TIME_RANGE_OPTIONS.find((o) => o.value === range)?.labelKey ?? "text-last-6-months";
 
@@ -58,7 +54,7 @@ export function MetricRadar({ metric, className }: { metric: MetricKey; classNam
       title={`${metricTitle(t, metric)} ${t("text-seasonality")}`}
       description={t(rangeLabelKey)}
     >
-      <ChartGate isLoading={isLoading} error={error} isEmpty={!chartData.length || !series.length}>
+      <ChartGate query={query} isEmpty={!chartData.length || !series.length}>
         <>
           <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[250px] w-full">
             <RadarChart accessibilityLayer data={chartData}>
@@ -88,14 +84,14 @@ export function MetricRadar({ metric, className }: { metric: MetricKey; classNam
                   fill={s.color}
                   fillOpacity={0.3}
                   strokeWidth={2}
-                  hide={hidden.includes(s.key)}
+                  hide={isHidden(s.key)}
                   animationDuration={1000}
                   animationEasing="ease-out"
                 />
               ))}
             </RadarChart>
           </ChartContainer>
-          <SeriesLegend series={series} hidden={hidden} onHiddenChange={setHidden} />
+          {legend}
         </>
       </ChartGate>
     </ChartCard>

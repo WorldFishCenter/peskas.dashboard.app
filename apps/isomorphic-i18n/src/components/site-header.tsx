@@ -1,23 +1,15 @@
 import { Separator } from "@workspace/ui/components/separator";
-import { useAppRoute, useT } from "@/i18n/use-lang";
+import { useT } from "@/i18n/use-lang";
 import { HeaderFilters } from "@/components/filters/header-filters";
 import { LanguageMenu } from "@/components/language-menu";
 import { Brand, MainNav, MobileNav } from "@/components/site-nav";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { routes } from "@/config/routes";
-
-const TITLE_KEYS: Record<string, string> = {
-  [routes.home]: "text-home",
-  [routes.catch]: "text-catch-analysis",
-  [routes.revenue]: "text-revenue-analysis",
-  [routes.catchComposition]: "text-catch-composition-analysis",
-  [routes.about]: "nav-about",
-};
+import { useCurrentPage } from "@/config/routes";
 
 /** Sticky top bar: brand, page navigation and app controls, then the page title with its filters. */
 export function SiteHeader() {
   const { t } = useT();
-  const titleKey = TITLE_KEYS[useAppRoute()];
+  const titleKey = useCurrentPage()?.titleKey;
 
   return (
     <header className="sticky top-0 z-10 bg-background">

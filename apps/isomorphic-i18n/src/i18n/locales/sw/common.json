@@ -160,5 +160,7 @@
   "text-switch-to-map-view": "Badilisha kwenda ramani",
   "text-switch-to-satellite-view": "Badilisha kwenda satelaiti",
   "text-select-districts": "Chagua angalau wilaya moja kuona chati hii.",
-  "text-open-menu": "Fungua menyu"
+  "text-open-menu": "Fungua menyu",
+  "text-page-error-description": "Ukurasa huu umepata hitilafu isiyotarajiwa. Pakia upya ili kujaribu tena.",
+  "text-reload": "Pakia upya"
 }

@@ -1,3 +1,4 @@
+import { Component, type ReactNode } from "react";
 import { ChartNoAxesColumnIcon, TriangleAlertIcon } from "lucide-react";
 import {
   Empty,
@@ -8,9 +9,7 @@ import {
 } from "@workspace/ui/components/empty";
 import { Skeleton } from "@workspace/ui/components/skeleton";
 import { cn } from "@workspace/ui/lib/utils";
-import { useAtomValue } from "jotai";
 import { useT } from "@/i18n/use-lang";
-import { districtsAtom } from "@/store/filters";
 
 /** Chart height for the analysis cards, as in the official shadcn chart examples. */
 export const CHART_HEIGHT = "h-[250px]";
@@ -50,33 +49,53 @@ export function ChartState({
   );
 }
 
+/** The parts of a query result (React Query) that decide what a chart shows. */
+type QueryState = { isPending: boolean; isFetching: boolean; error: unknown; dataUpdatedAt: number };
+
 /**
- * Renders `children` only when the chart has something to draw; otherwise the
- * matching placeholder: pick districts, loading, error, or no data.
+ * Renders `children` once the query has something to draw, otherwise its
+ * placeholder: the "select districts" prompt, loading, error or no data. A
+ * pending query that isn't fetching was disabled, and only an empty district
+ * selection disables one (useDistrictScope). A chart that throws while
+ * rendering shows the error state instead of taking the page down.
  */
 export function ChartGate({
-  isLoading,
-  error,
+  query,
   isEmpty,
   emptyDescription,
   className,
   children,
 }: {
-  isLoading: boolean;
-  error: unknown;
+  query: QueryState;
   isEmpty: boolean;
   emptyDescription?: string;
   className?: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   const { t } = useT();
-  const districts = useAtomValue(districtsAtom);
 
-  if (!districts.length) {
+  if (query.isPending && !query.isFetching) {
     return <ChartState status="empty" className={className} description={t("text-select-districts")} />;
   }
-  if (isLoading) return <ChartState status="loading" className={className} />;
-  if (error) return <ChartState status="error" className={className} />;
+  if (query.isPending) return <ChartState status="loading" className={className} />;
+  if (query.error) return <ChartState status="error" className={className} />;
   if (isEmpty) return <ChartState status="empty" className={className} description={emptyDescription} />;
-  return children;
+  // New data remounts the guard, so a chart that failed on one response can draw the next.
+  return (
+    <RenderGuard key={query.dataUpdatedAt} fallback={<ChartState status="error" className={className} />}>
+      {children}
+    </RenderGuard>
+  );
+}
+
+class RenderGuard extends Component<{ fallback: ReactNode; children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  render() {
+    return this.state.failed ? this.props.fallback : this.props.children;
+  }
 }

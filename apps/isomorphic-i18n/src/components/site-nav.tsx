@@ -1,14 +1,5 @@
 import { useState } from "react";
-import {
-  ChartPieIcon,
-  CircleDollarSignIcon,
-  FishIcon,
-  HouseIcon,
-  InfoIcon,
-  MenuIcon,
-  SailboatIcon,
-  type LucideIcon,
-} from "lucide-react";
+import { MenuIcon, SailboatIcon } from "lucide-react";
 import { Link, useLocation } from "react-router";
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
@@ -23,15 +14,9 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@wor
 import { cn } from "@workspace/ui/lib/utils";
 import { useLocalizedHref, useT } from "@/i18n/use-lang";
 import { activeCountry } from "@/config/countryConfig";
-import { routes } from "@/config/routes";
+import { allPages, pages } from "@/config/routes";
 
-const NAV_ITEMS: { labelKey: string; href: string; icon: LucideIcon; beta?: boolean }[] = [
-  { labelKey: "text-home", href: routes.home, icon: HouseIcon },
-  { labelKey: "nav-catch", href: routes.catch, icon: FishIcon },
-  { labelKey: "nav-revenue", href: routes.revenue, icon: CircleDollarSignIcon },
-  { labelKey: "nav-catch-composition", href: routes.catchComposition, icon: ChartPieIcon, beta: true },
-  { labelKey: "nav-about", href: routes.about, icon: InfoIcon, beta: true },
-];
+const NAV_ITEMS = allPages.flatMap((p) => (p.nav ? [{ ...p.nav, href: p.path }] : []));
 
 /** Nav items with their localized href and whether they are the current page. */
 function useNavItems() {
@@ -46,7 +31,7 @@ function useNavItems() {
 export function Brand() {
   const localized = useLocalizedHref();
   return (
-    <Link to={localized(routes.home)} className="flex shrink-0 items-center gap-2">
+    <Link to={localized(pages.home.path)} className="flex shrink-0 items-center gap-2">
       <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
         <SailboatIcon className="size-4" />
       </div>

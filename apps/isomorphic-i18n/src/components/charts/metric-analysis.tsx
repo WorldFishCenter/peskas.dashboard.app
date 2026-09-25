@@ -1,12 +1,12 @@
-import { useAtomValue, type Atom } from "jotai";
+import { useAtomValue } from "jotai";
 import { GearTreemap } from "@/components/charts/gear-treemap";
 import { MetricRadar } from "@/components/charts/metric-radar";
 import { MetricTimeSeries } from "@/components/charts/metric-time-series";
-import type { MetricKey } from "@repo/domain/metrics";
+import type { PageMetric } from "@/config/routes";
 
 /** Catch and revenue pages: time series and seasonality for the header metric, plus the gear treemap. */
-export function MetricAnalysis({ metricAtom, gear }: { metricAtom: Atom<MetricKey>; gear: MetricKey }) {
-  const metric = useAtomValue(metricAtom);
+export function MetricAnalysis({ metric: page }: { metric: PageMetric }) {
+  const metric = useAtomValue(page.atom);
 
   return (
     <>
@@ -14,7 +14,7 @@ export function MetricAnalysis({ metricAtom, gear }: { metricAtom: Atom<MetricKe
         <MetricTimeSeries metric={metric} className="lg:col-span-8" />
         <MetricRadar metric={metric} className="lg:col-span-4" />
       </div>
-      <GearTreemap metric={gear} />
+      <GearTreemap metric={page.gear} />
     </>
   );
 }

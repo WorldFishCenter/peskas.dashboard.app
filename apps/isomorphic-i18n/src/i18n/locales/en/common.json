@@ -160,5 +160,7 @@
   "text-switch-to-map-view": "Switch to map view",
   "text-switch-to-satellite-view": "Switch to satellite view",
   "text-select-districts": "Select at least one district to see this chart.",
-  "text-open-menu": "Open menu"
+  "text-open-menu": "Open menu",
+  "text-page-error-description": "This page hit an unexpected error. Reload to try again.",
+  "text-reload": "Reload"
 }

@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react";
-import { useAtomValue } from "jotai";
 import { InfoIcon, ListChecksIcon } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { Button } from "@workspace/ui/components/button";
@@ -28,8 +27,7 @@ import { TooltipRow } from "@/components/charts/tooltip-row";
 import { truncateLabel } from "@/lib/dashboard/format";
 import { computeLengthStats, rankSpeciesByCatch, type LengthStats } from "@/lib/dashboard/length-stats";
 import { BOX_LOWER_COLOR, BOX_UPPER_COLOR } from "@/lib/dashboard/palettes";
-import { districtsAtom } from "@/store/filters";
-import { monthsAtom } from "@/store/time-range";
+import { useDistrictScope } from "@/store/filters";
 import { api } from "@/trpc/react";
 
 const PRESETS = ["3", "5", "8", "10", "all"] as const;
@@ -96,14 +94,11 @@ function AboutLengthDistribution() {
 /** Box plots of district mean lengths for the top species by catch, or a custom pick. */
 export function LengthDistribution({ className }: { className?: string }) {
   const { t, lang } = useT();
-  const districts = useAtomValue(districtsAtom);
-  const months = useAtomValue(monthsAtom);
+  const scope = useDistrictScope();
   const [choice, setChoice] = useState<{ preset: Preset } | { custom: string[] }>({ preset: "10" });
 
-  const { data, isLoading, error } = api.summaries.taxa.useQuery(
-    { districts, metrics: ["mean_length", "catch_kg"], months },
-    { enabled: districts.length > 0 }
-  );
+  const query = api.summaries.taxa.useQuery({ ...scope.input, metrics: ["mean_length", "catch_kg"] }, scope.options);
+  const { data } = query;
   const rows = useMemo(() => data ?? [], [data]);
   const ranked = useMemo(() => rankSpeciesByCatch(rows), [rows]);
   const scientificNames = useMemo(() => new Map(ranked.map((s) => [s.name, s.scientificName ?? ""])), [ranked]);
@@ -187,7 +182,7 @@ export function LengthDistribution({ className }: { className?: string }) {
   return (
     <ChartCard className={className} title={t("text-length-distribution")} action={<AboutLengthDistribution />}>
       {controls}
-      <ChartGate isLoading={isLoading} error={error} isEmpty={!ranked.length || !stats.length} emptyDescription={t(ranked.length ? "text-select-species-to-view" : "text-no-length-data-available")}>
+      <ChartGate query={query} isEmpty={!ranked.length || !stats.length} emptyDescription={t(ranked.length ? "text-select-species-to-view" : "text-no-length-data-available")}>
         <ChartContainer
           config={chartConfig}
           className="aspect-auto w-full"

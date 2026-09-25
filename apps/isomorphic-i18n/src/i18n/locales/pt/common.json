@@ -160,5 +160,7 @@
   "text-switch-to-map-view": "Mudar para vista de mapa",
   "text-switch-to-satellite-view": "Mudar para vista de satélite",
   "text-select-districts": "Selecione pelo menos um distrito para ver este gráfico.",
-  "text-open-menu": "Abrir menu"
+  "text-open-menu": "Abrir menu",
+  "text-page-error-description": "Esta página encontrou um erro inesperado. Recarregue para tentar de novo.",
+  "text-reload": "Recarregar"
 }

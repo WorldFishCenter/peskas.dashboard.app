@@ -25,7 +25,7 @@ import {
 import { COLOR_RANGE, GRID_LAYER_SETTINGS, TIME_BREAKS } from "@/lib/grid-map/config";
 import type { ChoroplethLegend, DataPoint } from "@/lib/grid-map/types";
 import { hoveredDistrictAtom } from "@/store/dashboard";
-import { selectedMetricAtom } from "@/store/filters";
+import { homeMetricAtom } from "@/store/filters";
 import { monthsAtom } from "@/store/time-range";
 import { api } from "@/trpc/react";
 
@@ -50,7 +50,7 @@ export function GridMap({ className }: { className?: string }) {
   const { t, lang } = useT();
   const isDark = useTheme().theme === "dark";
 
-  const metric = useAtomValue(selectedMetricAtom);
+  const metric = useAtomValue(homeMetricAtom);
   const months = useAtomValue(monthsAtom);
   const [hoveredDistrict, setHoveredDistrict] = useAtom(hoveredDistrictAtom);
 

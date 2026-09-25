@@ -1,8 +1,20 @@
 import { type ComponentType, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { createBrowserRouter, Navigate, Outlet, useLocation, useParams } from "react-router";
+import { TriangleAlertIcon } from "lucide-react";
+import { Button } from "@workspace/ui/components/button";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@workspace/ui/components/empty";
 import { SiteHeader } from "@/components/site-header";
 import { languages, preferredLang, rememberLang } from "@/i18n/settings";
+import { useT } from "@/i18n/use-lang";
+import { allPages } from "@/config/routes";
 
 /** Load a page on first visit, so each route ships its own chunk. */
 const page = (load: () => Promise<{ default: ComponentType }>) => async () => ({
@@ -43,23 +55,41 @@ function DashboardLayout() {
   );
 }
 
+/** Shown instead of a page that crashed outside a chart, with a way back rather than a stack trace. */
+function RouteError() {
+  const { t } = useT();
+  return (
+    <main className="flex min-h-svh items-center justify-center p-4">
+      <Empty>
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <TriangleAlertIcon />
+          </EmptyMedia>
+          <EmptyTitle>{t("text-error")}</EmptyTitle>
+          <EmptyDescription>{t("text-page-error-description")}</EmptyDescription>
+        </EmptyHeader>
+        <EmptyContent>
+          <Button onClick={() => window.location.reload()}>{t("text-reload")}</Button>
+        </EmptyContent>
+      </Empty>
+    </main>
+  );
+}
+
 export const router = createBrowserRouter([
   { path: "/", Component: LangRedirect },
   {
     path: "/:lang",
     Component: LangLayout,
+    ErrorBoundary: RouteError,
     // Blank while the first page's chunk loads.
     HydrateFallback: () => null,
     children: [
       {
         Component: DashboardLayout,
-        children: [
-          { index: true, lazy: page(() => import("@/pages/home")) },
-          { path: "catch", lazy: page(() => import("@/pages/catch")) },
-          { path: "revenue", lazy: page(() => import("@/pages/revenue")) },
-          { path: "catch_composition", lazy: page(() => import("@/pages/catch-composition")) },
-          { path: "about", lazy: page(() => import("@/pages/about")) },
-        ],
+        children: allPages.map((p) =>
+          p.path === "/" ? { index: true, lazy: page(p.load) } : { path: p.path.slice(1), lazy: page(p.load) }
+        ),
       },
       { path: "*", lazy: page(() => import("@/pages/not-found")) },
     ],

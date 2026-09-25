@@ -1,5 +1,4 @@
 import { useMemo } from "react";
-import { useAtomValue } from "jotai";
 import { Treemap } from "recharts";
 import {
   ChartContainer,
@@ -14,8 +13,7 @@ import { TooltipRow } from "@/components/charts/tooltip-row";
 import type { MetricKey } from "@repo/domain/metrics";
 import { metricUnit } from "@/lib/dashboard/metrics";
 import { getTextColor, TREEMAP_COLORS } from "@/lib/dashboard/palettes";
-import { districtsAtom } from "@/store/filters";
-import { monthsAtom } from "@/store/time-range";
+import { useDistrictScope } from "@/store/filters";
 import { api } from "@/trpc/react";
 
 
@@ -68,12 +66,9 @@ function Tile(props: { x?: number; y?: number; width?: number; height?: number; 
 /** Average CPUE or RPUE per gear type, sized by value. */
 export function GearTreemap({ metric, className }: { metric: MetricKey; className?: string }) {
   const { t, lang } = useT();
-  const districts = useAtomValue(districtsAtom);
-  const months = useAtomValue(monthsAtom);
-  const { data, isLoading, error } = api.summaries.byGear.useQuery(
-    { districts, months, metric },
-    { enabled: districts.length > 0 }
-  );
+  const scope = useDistrictScope();
+  const query = api.summaries.byGear.useQuery({ ...scope.input, metric }, scope.options);
+  const { data } = query;
 
   const labels = LABELS[metric]!;
   const unit = metricUnit(t, metric);
@@ -98,7 +93,7 @@ export function GearTreemap({ metric, className }: { metric: MetricKey; classNam
 
   return (
     <ChartCard className={className} title={t(labels.titleKey)}>
-      <ChartGate isLoading={isLoading} error={error} isEmpty={!tiles.length} className={CHART_HEIGHT}>
+      <ChartGate query={query} isEmpty={!tiles.length} className={CHART_HEIGHT}>
         <ChartContainer config={chartConfig} className={`aspect-auto w-full ${CHART_HEIGHT}`}>
           <Treemap data={tiles} dataKey="size" nameKey="name" content={<Tile format={format} />} animationDuration={800}>
             <ChartTooltip

@@ -1,6 +1,6 @@
 import { MetricAnalysis } from "@/components/charts/metric-analysis";
-import { selectedMetricAtom } from "@/store/filters";
+import { pages } from "@/config/routes";
 
 export default function CatchPage() {
-  return <MetricAnalysis metricAtom={selectedMetricAtom} gear="mean_cpue" />;
+  return <MetricAnalysis metric={pages.catch.metric} />;
 }

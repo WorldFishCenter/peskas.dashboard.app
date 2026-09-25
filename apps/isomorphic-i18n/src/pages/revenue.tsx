@@ -1,6 +1,6 @@
 import { MetricAnalysis } from "@/components/charts/metric-analysis";
-import { selectedRevenueMetricAtom } from "@/store/filters";
+import { pages } from "@/config/routes";
 
 export default function RevenuePage() {
-  return <MetricAnalysis metricAtom={selectedRevenueMetricAtom} gear="mean_rpue" />;
+  return <MetricAnalysis metric={pages.revenue.metric} />;
 }

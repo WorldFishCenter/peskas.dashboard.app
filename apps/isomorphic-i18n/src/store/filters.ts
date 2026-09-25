@@ -1,7 +1,8 @@
-import { atom } from 'jotai';
+import { atom, useAtomValue } from 'jotai';
 import { atomWithStorage, RESET } from 'jotai/utils';
 import { activeCountry } from '@/config/countryConfig';
 import type { MetricKey } from '@repo/domain/metrics';
+import { monthsAtom } from '@/store/time-range';
 
 // Default district selection comes from countryConfig.defaultSelectedDistricts
 const districtsStorageAtom = atomWithStorage<string[]>(
@@ -49,8 +50,16 @@ export const districtsAtom = atom(
   }
 );
 
-// Metric shown on /catch and by the home district widget.
-export const selectedMetricAtom = atom<MetricKey>('mean_cpue');
+// Metric of the home district widget (map and ranking). The analysis pages keep theirs in the page table.
+export const homeMetricAtom = atom<MetricKey>('mean_cpue');
 
-// Metric shown on /revenue.
-export const selectedRevenueMetricAtom = atom<MetricKey>('estimated_revenue');
+/**
+ * Query input and options for a card that follows the district selection and
+ * the time range. An empty selection disables the query, which ChartGate
+ * turns into the "select districts" prompt.
+ */
+export function useDistrictScope() {
+  const districts = useAtomValue(districtsAtom);
+  const months = useAtomValue(monthsAtom);
+  return { input: { districts, months }, options: { enabled: districts.length > 0 } };
+}

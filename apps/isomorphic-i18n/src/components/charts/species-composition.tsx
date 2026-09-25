@@ -1,22 +1,19 @@
 import { useMemo, useState } from "react";
-import { useAtomValue } from "jotai";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-  type ChartConfig,
 } from "@workspace/ui/components/chart";
 import { ToggleGroup, ToggleGroupItem } from "@workspace/ui/components/toggle-group";
 import { useT } from "@/i18n/use-lang";
 import { ChartCard } from "@/components/charts/chart-card";
 import { categoryChartHeight, ChartGate } from "@/components/charts/chart-state";
-import { SeriesLegend, type Series } from "@/components/charts/series-legend";
+import { useSeriesToggle, type Series } from "@/components/charts/series-legend";
 import { TooltipRow } from "@/components/charts/tooltip-row";
 import { truncateLabel } from "@/lib/dashboard/format";
 import { OTHERS_COLOR, SPECIES_COLORS } from "@/lib/dashboard/palettes";
-import { districtsAtom } from "@/store/filters";
-import { monthsAtom } from "@/store/time-range";
+import { useDistrictScope } from "@/store/filters";
 import { api } from "@/trpc/react";
 
 const OTHERS = "__others";
@@ -48,15 +45,12 @@ type Row = { name: string } & Record<string, number | null | string>;
 /** Share of catch by species in each selected district: top 10 species plus "Others". */
 export function SpeciesComposition({ className }: { className?: string }) {
   const { t } = useT();
-  const districts = useAtomValue(districtsAtom);
-  const months = useAtomValue(monthsAtom);
+  const scope = useDistrictScope();
+  const { districts } = scope.input;
   const [mode, setMode] = useState<Mode>("relative");
-  const [hidden, setHidden] = useState<string[]>([]);
 
-  const { data, isLoading, error } = api.summaries.composition.useQuery(
-    { districts, metric: "catch_kg", months },
-    { enabled: districts.length > 0 }
-  );
+  const query = api.summaries.composition.useQuery({ ...scope.input, metric: "catch_kg" }, scope.options);
+  const { data } = query;
 
   const { rows, species } = useMemo(() => {
     const all = data ?? []; // largest total first
@@ -88,8 +82,9 @@ export function SpeciesComposition({ className }: { className?: string }) {
   }, [data, districts, mode, t]);
 
   const { format, domain, tick, axisKey } = MODES[mode];
-  const chartConfig = Object.fromEntries(species.map((s) => [s.key, { label: s.label ?? s.key }])) satisfies ChartConfig;
-  const visible = species.filter((s) => !hidden.includes(s.key));
+  // "Others" always stays visible.
+  const { chartConfig, isHidden, legend } = useSeriesToggle(species, [OTHERS]);
+  const visible = species.filter((s) => !isHidden(s.key));
 
   return (
     <ChartCard
@@ -108,7 +103,7 @@ export function SpeciesComposition({ className }: { className?: string }) {
         </ToggleGroup>
       }
     >
-      <ChartGate isLoading={isLoading} error={error} isEmpty={!rows.length} emptyDescription={t("text-no-data-available-for-districts")}>
+      <ChartGate query={query} isEmpty={!rows.length} emptyDescription={t("text-no-data-available-for-districts")}>
         <>
           <ChartContainer
             config={chartConfig}
@@ -167,19 +162,14 @@ export function SpeciesComposition({ className }: { className?: string }) {
                   dataKey={s.key}
                   stackId="species"
                   fill={s.color}
-                  hide={hidden.includes(s.key)}
+                  hide={isHidden(s.key)}
                   radius={s.key === OTHERS ? [0, 4, 4, 0] : 0}
                   animationDuration={1000}
                 />
               ))}
             </BarChart>
           </ChartContainer>
-          <SeriesLegend
-            series={species}
-            hidden={hidden}
-            // "Others" always stays visible.
-            onHiddenChange={(next) => setHidden(next.filter((k) => k !== OTHERS))}
-          />
+          {legend}
         </>
       </ChartGate>
     </ChartCard>
