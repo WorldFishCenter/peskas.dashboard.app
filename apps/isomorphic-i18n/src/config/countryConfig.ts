@@ -55,9 +55,7 @@ export interface CountryConfig {
   districtToRegion: Record<string, string>;
   /** Per-district hex colors for chart visualization */
   districtColors: Record<string, string>;
-  /** View state for the DeckGL hexbin map */
-  mapViewState: MapViewState;
-  /** View state for the H3 grid map */
+  /** Initial view of the home-page fishing-effort grid map */
   gridMapViewState: MapViewState;
   /** Districts pre-selected in the district filter on first visit */
   defaultSelectedDistricts: string[];
@@ -129,14 +127,6 @@ const zanzibarConfig: CountryConfig = {
     'Mjini':       '#643c6a',  // Semi dark purple
     'Mkoani':      '#836394',  // Light medium purple
     'Wete':        '#90a4ae',  // Blue-grey lighten-2
-  },
-  mapViewState: {
-    longitude: 39.8,
-    latitude: -4.3,
-    zoom: 8,
-    minZoom: 5,
-    maxZoom: 15,
-    pitch: 40.5,
   },
   gridMapViewState: {
     longitude: 39.19,
@@ -232,19 +222,10 @@ const kenyaConfig: CountryConfig = {
     'Garsen':       '#FDBCB4',  // Palette supplement/Pink peach
   },
   // Kenya Map viewport tuned for coast region (centered on Mombasa/Malindi axis)
-  mapViewState: {
-    longitude: 38.12,
-    latitude: -3.60,
-    zoom: 7.1,
-    minZoom: 5.5,
-    maxZoom: 14.5,
-    pitch: 39,
-    bearing: 1,
-  },
   // Grid map view focused on southern coast (centered for Nyali/Diani zone)
   gridMapViewState: {
-    longitude: 39.0,
-    latitude: -3.9,
+    longitude: 39.6,
+    latitude: -3.5,
     zoom: 7,
     pitch: 42,
     bearing: 7,
@@ -337,14 +318,6 @@ const mozambiqueConfig: CountryConfig = {
     'Quelimane':    '#643c6a',  // Semi dark purple
     'Xai-Xai':      '#8cdaec',  // Light sky blue
     'Zavala':       '#8c6d46',  // Palette supplement/Warm brown
-  },
-  mapViewState: {
-    longitude: 32.61,
-    latitude: -19.09,
-    zoom: 5,
-    minZoom: 5,
-    maxZoom: 14,
-    pitch: 45,
   },
   gridMapViewState: {
     longitude: 32.61,

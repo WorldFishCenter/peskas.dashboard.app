@@ -1,3 +1,55 @@
+# peskas.dashboard 2.0.0
+
+## Redesign
+
+- **The dashboard is rebuilt on shadcn/ui.** One sticky top bar (page links, language and
+  theme toggle; a side menu on phones) replaces the two template layouts and their settings
+  drawer, leaving the full width to the charts. The page title and its filters sit just below;
+  filters fold into a "Filters" popover on small screens. Light is the default theme, with a
+  toggle to dark; both follow the shadcn Nova style with Stone neutrals and a Cyan accent.
+- The monthly summary cards on the home page sit in one horizontally scrollable row.
+- The home page map is much larger, with the district ranking beside it. Its explanation
+  and legends no longer cover the map: the effort ranges and visit counts sit below it, and
+  the details open from an info button.
+- All charts use one chart system: the gear treemap and the length box plot no longer
+  depend on ApexCharts. Chart legends are clickable chips that hide or show a district or
+  species.
+- Sign-in, password reset and user administration use the new form, dialog and table
+  components.
+
+## Bug Fixes
+
+- **Catch composition ignored the time range**: the species and length endpoints accepted
+  `months` but never applied it. They now filter on the month field that coasts writes.
+- **Catch composition counted a single month**: with monthly taxa rows, the district
+  breakdowns kept only one month per district and species. Values are now summed (catch)
+  or averaged (length, price) across the selected window.
+- **"Top N species" meant the first N alphabetically**; it now ranks species by total catch.
+- **Admin notifications never appeared**: user created, updated and deleted messages were
+  sent to a toast container that was never mounted.
+- **Sign-in links pointed to a missing page** (`/signin`); the unused "Sign up" link is gone,
+  and the sign-in form no longer comes prefilled with test credentials.
+- The map showed `NaN` for visit and cell counts above 1,000.
+- The length tooltip printed "cm kg" for total catch.
+- The species picker could not be reopened after "Clear all".
+- Revenue units in the district table were hard-coded to TZS for every country.
+- Time series skipped districts that had no value in the first month.
+- Charts showed an error instead of a prompt when no district was selected.
+- Mapbox attribution is shown again, as the Mapbox terms require.
+
+## Removed
+
+- The `/map` page and its data endpoint: the `map_distribution` collection is empty and is
+  not part of the portal contract.
+- Unused API routers (`aggregatedCatch`, `monthlyStats`, `fishDistribution`,
+  `individualData`, and the unmounted `auth` and `bmu` stubs) and the Mongoose schemas only
+  they used.
+- Template leftovers: profile-settings demo forms, message and notification dropdowns,
+  colour presets, the layout switcher, the OpenAPI stub, the upload endpoint, and about 45
+  unused dependencies.
+
+---
+
 # peskas.dashboard 1.4.0
 
 ## Security

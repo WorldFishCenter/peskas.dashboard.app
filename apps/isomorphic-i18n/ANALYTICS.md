@@ -127,14 +127,14 @@ loaded. Add new event names to the `AnalyticsEvent` union there so typos fail th
 
 | Event | Parameters | Fired when |
 |---|---|---|
-| `filter_time_range_change` | `time_range` (`"3"`, `"6"`, `"12"`, `"72"`, `"all"`) | Header time range option picked |
+| `filter_time_range_change` | `time_range` (`"3"`, `"6"`, `"12"`, `"all"`) | Header time range option picked |
 | `filter_metric_change` | `metric`, `control_source` (`header` \| `district_widget`) | Metric picked in either control |
 | `filter_district_change` | `action`, `district`, `peskas_region`, `district_count` | District selection changed |
 | `map_basemap_change` | `basemap` (`satellite` \| `map`) | Basemap toggled on the grid map |
 | `map_effort_range_toggle` | `effort_range`, `enabled` | Effort band toggled in the map info panel |
 
-`filter_district_change.action` is one of `add`, `remove`, `clear`, `region_add`,
-`region_remove`, or `replace_in_region` (the admin region-view single-select path).
+`filter_district_change.action` is one of `add`, `remove`, `clear`, `region_add` or
+`region_remove`.
 `district` is absent on region and clear actions; `peskas_region` is only present on region
 actions.
 
@@ -151,19 +151,17 @@ Two deliberate choices in how these fire:
   suppressed. Without this the funnel is full of no-op "changes".
 - **Nothing fires on mount, hydration, or navigation.** Only user gestures are tracked. In
   particular the district list is restored from `localStorage` and the metric is reset by
-  route-driven effects in `MetricSelectorDropdown`; neither is a user action.
+  route-driven effects in the header metric select (`components/filters/metric-select.tsx`);
+  neither is a user action.
 
 Continuous interactions are intentionally not tracked: map pan/zoom
-(`onViewStateChange`), hover tooltips, and the hex-radius slider drag would each produce
-hundreds of events per session and blow through GA4 event quotas.
+(`onViewStateChange`) and hover tooltips would each produce hundreds of events per session
+and blow through GA4 event quotas.
 
 ### Not instrumented: exports
 
-There is no export or download feature in the fisheries dashboard today. The only CSV
-exports in the repo are on template account-settings pages (billing history, logged-in
-devices) that are not part of the Peskas product. When a real export is added, wrap it and
-fire a `data_export` event with the dataset and format; `packages/isomorphic-core/src/utils/export-to-csv.ts`
-is the shared helper it will likely use.
+There is no export or download feature in the fisheries dashboard today. When one is
+added, fire a `data_export` event with the dataset and format.
 
 ---
 

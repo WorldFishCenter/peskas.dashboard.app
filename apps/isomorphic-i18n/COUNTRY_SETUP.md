@@ -57,7 +57,6 @@ const kenyaConfig: CountryConfig = {
     'Kilifi':  '#8cdaec',
     'Mombasa': '#b45248',
   },
-  mapViewState:     { longitude: 40.1, latitude: -1.3, zoom: 7, pitch: 40.5 },
   gridMapViewState: { longitude: 39.7, latitude: -2.0, zoom: 7, pitch: 45, bearing: 10 },
   defaultSelectedDistricts: ['Kilifi', 'Kwale'],
   features: {

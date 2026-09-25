@@ -17,7 +17,7 @@ async function checkMonthlyData() {
       console.log('Collections:', collections.map((c: any) => c.name).join(', '));
     } else {
       // Get unique districts
-      const districts = await MonthlySummaryDistrictModel.distinct('district');
+      const districts = await MonthlySummaryDistrictModel.distinct('gaul_2_name');
       console.log(`\nDistricts: ${districts.join(', ')}`);
       
       // Get unique metrics
@@ -28,7 +28,7 @@ async function checkMonthlyData() {
       const samples = await MonthlySummaryDistrictModel.find().limit(5);
       console.log('\nSample data:');
       samples.forEach(doc => {
-        console.log(`${doc.district} - ${doc.date} - ${doc.metric}: ${doc.value}`);
+        console.log(`${doc.gaul_2_name} - ${doc.date} - ${doc.metric}: ${doc.value}`);
       });
     }
     

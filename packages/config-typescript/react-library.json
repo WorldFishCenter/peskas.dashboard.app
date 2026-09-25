@@ -3,9 +3,9 @@
   "display": "React Library",
   "extends": "./base.json",
   "compilerOptions": {
-    "lib": ["ES2015", "DOM"],
+    "lib": ["es2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
-    "target": "ES6",
+    "target": "ES2022",
     "jsx": "react-jsx",
     "noEmit": true
   }

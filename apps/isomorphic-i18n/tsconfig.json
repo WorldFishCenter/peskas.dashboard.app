@@ -1,15 +1,14 @@
 {
+  "extends": "@repo/typescript-config/nextjs.json",
   "compilerOptions": {
     "baseUrl": ".",
-    "target": "es5",
+    "target": "ES2017",
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
-    "forceConsistentCasingInFileNames": true,
     "noEmit": true,
     "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
     "module": "esnext",
     "resolveJsonModule": true,
     "isolatedModules": true,
@@ -17,14 +16,8 @@
     "incremental": true,
     "paths": {
       "@/*": ["src/*"],
-      "@public/*": ["public/*"],
-      "@ui/*": ["../../packages/isomorphic-core/src/ui/*"],
-      "@components/*": ["../../packages/isomorphic-core/src/components/*"],
-      "@shared/*": ["../../packages/isomorphic-core/src/shared/*"],
-      "@hooks/*": ["../../packages/isomorphic-core/src/hooks/*"],
-      "@utils/*": ["../../packages/isomorphic-core/src/utils/*"],
-      "@layouts/*": ["../../packages/isomorphic-core/src/layouts/*"],
-      "@api/*": ["../../packages/api/src/*"]
+      "@api/*": ["../../packages/api/src/*"],
+      "@workspace/ui/*": ["../../packages/ui/src/*"]
     },
     "plugins": [
       {
@@ -32,13 +25,10 @@
       }
     ]
   },
-  "extends": "@repo/typescript-config/nextjs.json",
   "include": [
     "next-env.d.ts",
-    "additional.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    "**/*.cjs",
     "**/*.mjs",
     ".next/types/**/*.ts"
   ],

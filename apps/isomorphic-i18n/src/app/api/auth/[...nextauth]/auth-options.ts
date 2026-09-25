@@ -5,10 +5,10 @@ import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 
-import InvalidPayloadError from "@/app/shared/error/InvalidPayloadError";
-import UserInactiveError from "@/app/shared/error/UserInactiveError";
-import UserNoPasswordError from "@/app/shared/error/UserNoPasswordError";
-import UserNotFoundError from "@/app/shared/error/UserNotFoundError";
+import InvalidPayloadError from "@/lib/errors/InvalidPayloadError";
+import UserInactiveError from "@/lib/errors/UserInactiveError";
+import UserNoPasswordError from "@/lib/errors/UserNoPasswordError";
+import UserNotFoundError from "@/lib/errors/UserNotFoundError";
 import { env } from "@/env.mjs";
 import { loginSchema } from "@/validators/login.schema";
 import getDb from "@repo/nosql";

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { lastMonths } from "../lib/date-window";
 
 import { GearSummaryModel } from "@repo/nosql/schema/gear-summary";
 import { GearSummaryDistrictModel } from "@repo/nosql/schema/gear-summary-district";
@@ -46,10 +47,7 @@ export const gearRouter = createTRPCRouter({
         };
 
         if (input.months) {
-          const endDate = new Date();
-          const startDate = new Date();
-          startDate.setMonth(endDate.getMonth() - input.months);
-          matchStage.date = { $gte: startDate, $lte: endDate };
+          matchStage.date = lastMonths(input.months);
         }
 
         return await GearSummaryDistrictModel.aggregate([

@@ -707,7 +707,6 @@
   "text-subscribe-newsletter-details": "Pokea makala na rasilimali mpya moja kwa moja kwenye sanduku lako la barua pepe. Jaza barua pepe yako hapa chini ili kujiunga na jarida letu la barua pepe leo.",
   "text-subscribe-newsletter-details-two": "Kuwa wa kwanza kupokea ofa za kipekee na habari za hivi karibuni",
   "text-subscribe-newsletter-details-three": "Ofa maalum zinakusubiri!",
-
   "text-step": "Hatua",
   "text-of": "ya",
   "text-questions": "Maswali",
@@ -912,14 +911,13 @@
   "info-more-hours": "Masaa mengi",
   "info-time-ranges": "VIPINDI VYA MUDA (chagua kuchuja)",
   "info-activity": "SHUGHULI",
-  "info-total-visits": "{{count}} ziara jumla zimeripotiwa",
-  "info-active-cells": "{{count}} seli hai za gridi",
+  "info-total-visits": "{{count, number}} ziara jumla zimeripotiwa",
+  "info-active-cells": "{{count, number}} seli hai za gridi",
   "info-time-speed": "MUDA & MWENDO",
   "info-avg-time": "{{value}}h muda wa wastani kwa kila ziara",
   "info-max-time": "{{value}}h muda wa juu zaidi ulioripotiwa",
   "info-avg-speed": "{{value}} km/h kasi ya wastani",
   "info-rotate-hint": "⌘ + Buruta kubadilisha mtazamo",
-
   "nav-about": "Kuhusu",
   "nav-catch": "Samaki",
   "nav-catch-overview": "Muhtasari wa Samaki",
@@ -1076,5 +1074,16 @@
   "text-district-species-breakdown": "Mgawanyo wa Aina za Samaki kwa Wilaya",
   "text-no-data-available-for-filters": "Hakuna data kwa vichujio vilivyochaguliwa",
   "text-district-species-description": "Mgawanyo wa uvuvi (kg) kati ya wilaya na aina za samaki (inaonyesha aina 15 za juu)",
-  "text-species": "Vikundi vya Samaki"
+  "text-species": "Vikundi vya Samaki",
+  "text-beta": "Beta",
+  "text-toggle-theme": "Badilisha mandhari",
+  "text-language": "Lugha",
+  "text-time-range": "Kipindi",
+  "text-search-districts": "Tafuta wilaya...",
+  "text-no-districts-found": "Hakuna wilaya zilizopatikana.",
+  "text-districts-selected": "Wilaya {{count}} kati ya {{total}} zimechaguliwa",
+  "text-switch-to-map-view": "Badilisha kwenda ramani",
+  "text-switch-to-satellite-view": "Badilisha kwenda satelaiti",
+  "text-select-districts": "Chagua angalau wilaya moja kuona chati hii.",
+  "text-open-menu": "Fungua menyu"
 }

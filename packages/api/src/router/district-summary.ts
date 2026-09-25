@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { lastMonths } from "../lib/date-window";
 import { createTRPCRouter, publicProcedure } from "../trpc";
 import { DistrictSummaryModel } from "@repo/nosql/schema/district-summary";
 import { GAUL2_DISTRICT_NAMES, GAUL2_TO_REGION } from "@repo/nosql/constants/gaul2-districts";
@@ -131,12 +132,6 @@ export const districtSummaryRouter = createTRPCRouter({
       try {
         await getDb();
         
-        // Calculate the date range: last N months from today (end of current month)
-        const endDate = new Date();
-        const startDate = new Date();
-        startDate.setMonth(endDate.getMonth() - input.months);
-        startDate.setDate(1);
-        startDate.setHours(0, 0, 0, 0);
 
         // Fetch all relevant district summaries in the date range for the required metrics
         const metrics = [
@@ -151,7 +146,8 @@ export const districtSummaryRouter = createTRPCRouter({
         ];
         const summaries = await DistrictSummaryModel.find({
           indicator: { $in: metrics },
-          date: { $gte: startDate, $lte: endDate },
+          // Last N months, from the first day of the earliest one.
+          date: lastMonths(input.months, { fromMonthStart: true }),
         }).lean();
 
         // Group by metric, date, region using GAUL2_TO_REGION (region names are deployment-specific)

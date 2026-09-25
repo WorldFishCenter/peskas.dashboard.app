@@ -1,4 +1,5 @@
 import { createTRPCRouter, publicProcedure } from "../trpc";
+import { lastMonths } from "../lib/date-window";
 import { MonthlySummaryDistrictModel } from "@repo/nosql/schema/monthly-summary-district";
 import { z } from "zod";
 
@@ -27,10 +28,7 @@ export const monthlySummaryRouter = createTRPCRouter({
       };
 
       if (months) {
-        const endDate = new Date();
-        const startDate = new Date();
-        startDate.setMonth(endDate.getMonth() - months);
-        query.date = { $gte: startDate, $lte: endDate };
+        query.date = lastMonths(months);
       }
 
       const data = await MonthlySummaryDistrictModel.find(query).sort({ date: 1 }).lean();
@@ -56,14 +54,13 @@ export const monthlySummaryRouter = createTRPCRouter({
     .query(async ({ input }) => {
       const { districts, metrics, months } = input;
 
-      const endDate = new Date();
-      const startDate = new Date();
-      startDate.setMonth(endDate.getMonth() - months);
+      const window = lastMonths(months);
+      const endDate = window.$lte;
 
       const data = await MonthlySummaryDistrictModel.find({
         gaul_2_name: { $in: districts },
         metric: { $in: metrics },
-        date: { $gte: startDate, $lte: endDate }
+        date: window,
       }).sort({ date: 1 }).lean();
 
       const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];

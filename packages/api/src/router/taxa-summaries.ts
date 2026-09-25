@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { lastMonths } from "../lib/date-window";
 import { createTRPCRouter, publicProcedure } from "../trpc";
 import { TaxaSummaryDistrictModel, TAXA_METRICS } from "@repo/nosql/schema/taxa-summary-district";
 import getDb from "@repo/nosql";
@@ -11,6 +12,12 @@ const taxaMetricSchema = z.enum([
   "n_individuals",
   "total_value"
 ]);
+
+// Totals are summed across months; per-fish or per-kg figures are averaged.
+const SUMMED_TAXA_METRICS = new Set(["catch_kg", "n_individuals", "total_value"]);
+
+/** Match clause limiting rows to the last `months` months (all rows when omitted). */
+const monthWindow = (months?: number) => (months ? { date: lastMonths(months) } : {});
 
 export const taxaSummariesRouter = createTRPCRouter({
   getDistrictTaxaSummaries: publicProcedure
@@ -41,38 +48,36 @@ export const taxaSummariesRouter = createTRPCRouter({
           matchQuery.metric = { $in: input.metrics };
         }
         
-        // Note: Time filtering not yet implemented for taxa summaries due to data structure limitations
-        // The months parameter is accepted for API compatibility but not currently applied
-        if (input.months && typeof input.months === 'number') {
-          console.log(`Time filtering requested for ${input.months} months, but not yet implemented for taxa summaries`);
-          // TODO: Implement time filtering once appropriate data source is identified
+        Object.assign(matchQuery, monthWindow(input.months));
+
+        // One value per district, species and metric across the window: rows are
+        // monthly, so reading them one by one would keep only the last month.
+        const rows: {
+          _id: { gaul_2_name: string; catch_taxon: string; metric: string };
+          scientific_name?: string;
+          sum: number;
+          avg: number;
+        }[] = await TaxaSummaryDistrictModel.aggregate([
+          { $match: matchQuery },
+          {
+            $group: {
+              _id: { gaul_2_name: "$gaul_2_name", catch_taxon: "$catch_taxon", metric: "$metric" },
+              scientific_name: { $first: "$scientific_name" },
+              sum: { $sum: "$value" },
+              avg: { $avg: "$value" },
+            },
+          },
+          { $sort: { "_id.gaul_2_name": 1, "_id.catch_taxon": 1 } },
+        ]).exec();
+
+        // Pivot to one row per district and species, with each metric as a property.
+        const grouped: Record<string, Record<string, unknown>> = {};
+        for (const row of rows) {
+          const { gaul_2_name, catch_taxon, metric } = row._id;
+          const key = `${gaul_2_name}|${catch_taxon}`;
+          grouped[key] ??= { gaul_2_name, catch_taxon, scientific_name: row.scientific_name };
+          grouped[key][metric] = SUMMED_TAXA_METRICS.has(metric) ? row.sum : row.avg;
         }
-
-        // Get raw records first
-        const records = await TaxaSummaryDistrictModel.find(matchQuery)
-          .select('gaul_2_name catch_taxon scientific_name metric value')
-          .sort({ gaul_2_name: 1, catch_taxon: 1, metric: 1 })
-          .exec();
-
-        // Group by gaul_2_name and species to create pivot table structure
-        const grouped = records.reduce((acc: any, record: any) => {
-          const key = `${record.gaul_2_name}|${record.catch_taxon}`;
-
-          if (!acc[key]) {
-            acc[key] = {
-              gaul_2_name: record.gaul_2_name,
-              catch_taxon: record.catch_taxon,
-              scientific_name: record.scientific_name,
-            };
-          }
-
-          // Add metric as property, but only if value exists and is not null
-          if (record.value !== null && record.value !== undefined) {
-            acc[key][record.metric] = record.value;
-          }
-
-          return acc;
-        }, {});
 
         return Object.values(grouped);
       } catch (error) {
@@ -107,29 +112,29 @@ export const taxaSummariesRouter = createTRPCRouter({
           matchQuery.gaul_2_name = { $in: input.districts };
         }
 
-        // Note: Time filtering not yet implemented for taxa summaries due to data structure limitations
-        // The months parameter is accepted for API compatibility but not currently applied
-        if (input.months && typeof input.months === 'number') {
-          console.log(`Time filtering requested for ${input.months} months, but not yet implemented for taxa summaries`);
-          // TODO: Implement time filtering once appropriate data source is identified
-        }
+        Object.assign(matchQuery, monthWindow(input.months));
 
-        // Aggregate species composition
+        // Aggregate species composition: combine each district's monthly values first
+        // (summed or averaged by metric, as in getDistrictTaxaSummaries), then roll
+        // districts up per species.
+        const acrossMonths = SUMMED_TAXA_METRICS.has(input.metric) ? { $sum: "$value" } : { $avg: "$value" };
         const composition = await TaxaSummaryDistrictModel.aggregate([
           {
             $match: matchQuery
           },
           {
             $group: {
-              _id: "$catch_taxon",
+              _id: { catch_taxon: "$catch_taxon", gaul_2_name: "$gaul_2_name" },
+              scientific_name: { $first: "$scientific_name" },
+              value: acrossMonths,
+            },
+          },
+          {
+            $group: {
+              _id: "$_id.catch_taxon",
               total_value: { $sum: "$value" },
               scientific_name: { $first: "$scientific_name" },
-              districts: {
-                $addToSet: {
-                  gaul_2_name: "$gaul_2_name",
-                  value: "$value"
-                }
-              }
+              districts: { $push: { gaul_2_name: "$_id.gaul_2_name", value: "$value" } },
             }
           },
           {

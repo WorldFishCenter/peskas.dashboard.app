@@ -1,34 +1,19 @@
-import { userRouter } from "./user";
-import { authRouter } from "./auth";
-import { aggregatedCatchRouter } from "./aggregated-catch";
-import { bmuRouter } from "./bmu";
-import { gearRouter } from "./gear";
-import { monthlyStatsRouter } from "./monthly-stats";
-import { fishDistributionRouter } from "./fish-distribution";
-import { pingRouter } from "./ping";
-import { mapDistributionRouter } from "./map-distribution";
-import { individualDataRouter } from "./individual-data";
 import { districtSummaryRouter } from "./district-summary";
+import { gaul2BoundariesRouter } from "./gaul2-boundaries";
+import { gearRouter } from "./gear";
 import { gridSummaryRouter } from "./grid-summary";
 import { monthlySummaryRouter } from "./monthly-summary";
+import { pingRouter } from "./ping";
 import { taxaSummariesRouter } from "./taxa-summaries";
-import { gaul2BoundariesRouter } from "./gaul2-boundaries";
+import { userRouter } from "./user";
 
-// Export all routers for easier imports
 export {
-  userRouter,
-  authRouter,
-  aggregatedCatchRouter,
-  bmuRouter,
-  gearRouter,
-  monthlyStatsRouter,
-  fishDistributionRouter,
-  pingRouter,
-  mapDistributionRouter,
-  individualDataRouter,
   districtSummaryRouter,
+  gaul2BoundariesRouter,
+  gearRouter,
   gridSummaryRouter,
   monthlySummaryRouter,
+  pingRouter,
   taxaSummariesRouter,
-  gaul2BoundariesRouter,
-}; 
+  userRouter,
+};

@@ -1,29 +1,12 @@
-import { Metadata } from 'next';
-import logoImg from '@public/logo.svg';
-import { LAYOUT_OPTIONS } from '@/config/enums';
-import logoIconImg from '@public/logo-short.svg';
-import { OpenGraph } from 'next/dist/lib/metadata/types/opengraph-types';
-import sailboatIcon from '@public/sailboat-icon.svg';
+import type { Metadata } from 'next';
+import type { OpenGraph } from 'next/dist/lib/metadata/types/opengraph-types';
 import { activeCountry } from '@/config/countryConfig';
-
-enum MODE {
-  LIGHT = 'light',
-  DARK = 'dark',
-}
 
 export const siteConfig = {
   title: activeCountry.siteTitle,
   description: activeCountry.siteDescription,
-  logo: logoImg,
-  icon: logoIconImg,
-  mode: MODE.DARK,
-  layout: LAYOUT_OPTIONS.LITHIUM,
-  favicon: sailboatIcon,
-  author: {
-    name: 'WorldFish',
-    url: 'https://worldfishcenter.org',
-  },
-  headerLinks: [],
+  defaultTheme: 'light',
+  favicon: '/sailboat-icon.svg',
 };
 
 export const metaObject = (

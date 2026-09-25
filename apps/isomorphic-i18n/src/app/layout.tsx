@@ -1,10 +1,12 @@
-import { siteConfig } from "@/config/site.config";
+import type { Metadata } from 'next';
+import { siteConfig } from '@/config/site.config';
 
-import "./[lang]/globals.css";
+import '@workspace/ui/globals.css';
 
-export const metadata = {
+export const metadata: Metadata = {
   title: siteConfig.title,
   description: siteConfig.description,
+  icons: { icon: siteConfig.favicon },
 };
 
 /**
