@@ -162,5 +162,8 @@
   "text-select-districts": "Chagua angalau wilaya moja kuona chati hii.",
   "text-open-menu": "Fungua menyu",
   "text-page-error-description": "Ukurasa huu umepata hitilafu isiyotarajiwa. Pakia upya ili kujaribu tena.",
-  "text-reload": "Pakia upya"
+  "text-reload": "Pakia upya",
+  "text-page-not-found": "Ukurasa haukupatikana",
+  "text-page-not-found-description": "Ukurasa unaoutafuta haupo au umehamishwa.",
+  "text-back-home": "Rudi mwanzo"
 }

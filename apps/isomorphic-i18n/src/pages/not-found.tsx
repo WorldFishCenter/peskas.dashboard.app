@@ -9,10 +9,11 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@workspace/ui/components/empty";
-import { useLocalizedHref } from "@/i18n/use-lang";
+import { useLocalizedHref, useT } from "@/i18n/use-lang";
 
 export default function NotFoundPage() {
   const localized = useLocalizedHref();
+  const { t } = useT();
   return (
     <div className="flex min-h-svh items-center justify-center p-6">
       <Empty>
@@ -20,12 +21,12 @@ export default function NotFoundPage() {
           <EmptyMedia variant="icon">
             <FileQuestionIcon />
           </EmptyMedia>
-          <EmptyTitle>Page not found</EmptyTitle>
-          <EmptyDescription>The page you are looking for does not exist or has been moved.</EmptyDescription>
+          <EmptyTitle>{t("text-page-not-found")}</EmptyTitle>
+          <EmptyDescription>{t("text-page-not-found-description")}</EmptyDescription>
         </EmptyHeader>
         <EmptyContent>
           <Button render={<Link to={localized("/")} />} nativeButton={false}>
-            Back to home
+            {t("text-back-home")}
           </Button>
         </EmptyContent>
       </Empty>

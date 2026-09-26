@@ -5,6 +5,7 @@ import {
   GEAR_METRIC_KEYS,
   METRIC_KEYS,
   METRICS,
+  MONTHLY_METRIC_KEYS,
   TAXA_METRIC_KEYS,
   TAXA_METRICS,
   type Combine,
@@ -32,9 +33,8 @@ export type MonthRow = { month: string; [series: string]: number | string | null
 export type SeasonRow = { month: number; [district: string]: number | null };
 export type DistrictRow = { district: string } & Record<MetricKey, number | null>;
 // Coasts leaves some catches without a taxon and some trips without a gear: those come back as null.
-export type TaxonRow = { district: string; taxon: string | null; scientificName: string | null } & Partial<
-  Record<TaxaMetricKey, number>
->;
+// Coasts writes the scientific name as the taxon.
+export type TaxonRow = { district: string; taxon: string | null } & Partial<Record<TaxaMetricKey, number>>;
 
 const scope = z.object({
   /** Districts of the active country; all of them when left out, none when empty. */
@@ -70,7 +70,7 @@ const entry = <K, V>(map: Map<K, V>, key: K, make: () => V) => map.get(key) ?? m
 /** The Mongo accumulator for a combine rule. */
 const accumulate = (how: Combine) => (how === "sum" ? { $sum: "$value" } : { $avg: "$value" });
 
-const metricOf = scope.extend({ metric: z.enum(METRIC_KEYS) });
+const monthlyMetric = scope.extend({ metric: z.enum(MONTHLY_METRIC_KEYS) });
 
 export const summariesRouter = createTRPCRouter({
   /** Every metric per district over the window: each combined across months by its rule. */
@@ -116,7 +116,7 @@ export const summariesRouter = createTRPCRouter({
     }),
 
   /** One metric per month, a value per district. */
-  monthly: publicProcedure.input(metricOf).query(async ({ input }): Promise<MonthRow[]> => {
+  monthly: publicProcedure.input(monthlyMetric).query(async ({ input }): Promise<MonthRow[]> => {
     const docs = await MonthlySummaryDistrictModel.find({ ...match(input), metric: input.metric })
       .sort({ date: 1 })
       .lean();
@@ -133,7 +133,7 @@ export const summariesRouter = createTRPCRouter({
    * averaged across the window's years. Months without a measurement are
    * skipped, not counted as zero: a zero claims the month was surveyed.
    */
-  seasonality: publicProcedure.input(metricOf).query(async ({ input }): Promise<SeasonRow[]> => {
+  seasonality: publicProcedure.input(monthlyMetric).query(async ({ input }): Promise<SeasonRow[]> => {
     const docs = await MonthlySummaryDistrictModel.find({ ...match(input), metric: input.metric }).lean();
     const values = new Map<string, number[]>();
     for (const d of docs) {
@@ -182,7 +182,6 @@ export const summariesRouter = createTRPCRouter({
     .query(async ({ input }): Promise<TaxonRow[]> => {
       const groups = await TaxaSummaryDistrictModel.aggregate<{
         _id: { district: string; taxon: string | null; metric: TaxaMetricKey };
-        scientificName: string | null;
         sum: number;
         avg: number;
       }>([
@@ -190,7 +189,6 @@ export const summariesRouter = createTRPCRouter({
         {
           $group: {
             _id: { district: "$gaul_2_name", taxon: "$catch_taxon", metric: "$metric" },
-            scientificName: { $first: "$scientific_name" },
             sum: { $sum: "$value" },
             avg: { $avg: "$value" },
           },
@@ -198,9 +196,9 @@ export const summariesRouter = createTRPCRouter({
       ]).exec();
 
       const rows = new Map<string, TaxonRow>();
-      for (const { _id, scientificName, sum, avg } of groups) {
+      for (const { _id, sum, avg } of groups) {
         const { district, taxon, metric } = _id;
-        const row = entry(rows, `${district}|${taxon}`, (): TaxonRow => ({ district, taxon, scientificName }));
+        const row = entry(rows, `${district}|${taxon}`, (): TaxonRow => ({ district, taxon }));
         row[metric] = TAXA_METRICS[metric].overMonths === "sum" ? sum : avg;
       }
       return [...rows.values()];
@@ -213,7 +211,6 @@ export const summariesRouter = createTRPCRouter({
       const { overMonths, overDistricts } = TAXA_METRICS[input.metric];
       return TaxaSummaryDistrictModel.aggregate<{
         taxon: string | null;
-        scientificName: string | null;
         total: number;
         districts: { district: string; value: number }[];
       }>([
@@ -221,20 +218,18 @@ export const summariesRouter = createTRPCRouter({
         {
           $group: {
             _id: { taxon: "$catch_taxon", district: "$gaul_2_name" },
-            scientificName: { $first: "$scientific_name" },
             value: accumulate(overMonths),
           },
         },
         {
           $group: {
             _id: "$_id.taxon",
-            scientificName: { $first: "$scientificName" },
             total: accumulate(overDistricts),
             districts: { $push: { district: "$_id.district", value: "$value" } },
           },
         },
         { $match: { total: { $gt: 0 } } },
-        { $project: { _id: 0, taxon: "$_id", scientificName: 1, total: 1, districts: 1 } },
+        { $project: { _id: 0, taxon: "$_id", total: 1, districts: 1 } },
         { $sort: { total: -1 } },
       ]).exec();
     }),

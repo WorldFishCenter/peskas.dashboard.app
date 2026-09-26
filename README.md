@@ -75,6 +75,8 @@ Fill in the values in `.env`. The full list of variables the build reads is in `
 
 `VITE_*` values are public and inlined into the browser bundle at build time, so changing one needs a redeploy; the others stay on the server. Country settings (districts, colours, currency, map view, languages) live in `packages/domain/src/country.ts`. To add a country, follow [`apps/isomorphic-i18n/COUNTRY_SETUP.md`](apps/isomorphic-i18n/COUNTRY_SETUP.md).
 
+**Upgrading a deployment from 1.x (Next.js):** rename `NEXT_PUBLIC_COUNTRY_CODE`, `NEXT_PUBLIC_MAPBOX_TOKEN`, `NEXT_PUBLIC_GA_MEASUREMENT_ID` and `NEXT_PUBLIC_GA_ROLLUP_ID` to their `VITE_*` names, and delete `NEXTAUTH_SECRET`, `NEXTAUTH_URL`, `EMAIL_SERVER`, `EMAIL_FROM`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` and `NEXT_PUBLIC_GOOGLE_MAP_API_KEY`, which nothing reads any more.
+
 **Main commands**
 
 - `pnpm run i18n:dev`, `pnpm run i18n:build`, `pnpm run i18n:lint`: run, build or lint the dashboard. `pnpm --filter i18n preview` serves a production build locally.
@@ -84,6 +86,6 @@ Fill in the values in `.env`. The full list of variables the build reads is in `
 
 **Releases:** add a block at the top of `NEWS.md`. On every push to `dev`, `.github/workflows/release.yml` publishes that block as a GitHub release.
 
-**Tests:** no automated test suite yet. `packages/nosql/src/test-monthly.ts` checks the monthly summaries connection and data.
+**Tests:** `pnpm test` (vitest) checks the country registry, the metric catalogue and the summary queries, the last on an in-memory MongoDB. `packages/nosql/src/test-monthly.ts` checks the live monthly summaries connection and data.
 
 **AI-assisted work:** see [`CLAUDE.md`](CLAUDE.md).

@@ -1,72 +1,39 @@
 # peskas.dashboard 2.0.0
 
-## Platform
-
-- **The app now runs on Vite instead of Next.js.** Pages are a single-page app (React Router);
-  the tRPC API runs on a small Nitro server that deploys as Vercel Functions. Dev server
-  start and page switches are near-instant.
-- **Environment variables were renamed** on every Vercel project and local `.env`:
-  `NEXT_PUBLIC_COUNTRY_CODE` → `VITE_COUNTRY_CODE`, `NEXT_PUBLIC_MAPBOX_TOKEN` →
-  `VITE_MAPBOX_TOKEN`, `NEXT_PUBLIC_GA_MEASUREMENT_ID` → `VITE_GA_MEASUREMENT_ID`,
-  `NEXT_PUBLIC_GA_ROLLUP_ID` → `VITE_GA_ROLLUP_ID`. `NEXTAUTH_SECRET`, `NEXTAUTH_URL`,
-  `EMAIL_SERVER`, `EMAIL_FROM`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` and
-  `NEXT_PUBLIC_GOOGLE_MAP_API_KEY` are no longer read. Node.js 20.19+ is required.
-- **Sign-in, password reset and user administration are gone.** They came from the Kenya
-  BMU dashboard, and nothing on this portal needed an account.
-
 ## Redesign
 
-- **The dashboard is rebuilt on shadcn/ui.** One sticky top bar (page links, language and
-  theme toggle; a side menu on phones) replaces the two template layouts and their settings
-  drawer, leaving the full width to the charts. The page title and its filters sit just below;
-  filters fold into a "Filters" popover on small screens. Light is the default theme, with a
-  toggle to dark; both follow the shadcn Nova style with Stone neutrals and a Cyan accent.
-- The monthly summary cards on the home page sit in one horizontally scrollable row.
-- The home page map is much larger, with the district ranking beside it. Its explanation
-  and legends no longer cover the map: the effort ranges and visit counts sit below it, and
-  the details open from an info button.
-- All charts use one chart system: the gear treemap and the length box plot no longer
-  depend on ApexCharts. Chart legends are clickable chips that hide or show a district or
-  species.
+- A new look: one top bar holds the page links, language and theme switch (a side menu on phones), leaving the full width to the charts.
+- Light theme by default, with a switch to dark.
+- Filters fold into a "Filters" button on small screens.
+- Pages open faster, and switching between them is almost instant.
+- The home page summary cards sit in one scrollable row and say they cover the last 3 months.
+- The home page map is larger, with the district ranking beside it; its legends and explanation no longer cover the map.
+- Chart legends are clickable: tap a district or species to hide or show it.
 
 ## Bug Fixes
 
-- **Catch composition ignored the time range**: the species and length endpoints accepted
-  `months` but never applied it. They now filter on the month field that coasts writes.
-- **Catch composition counted a single month**: with monthly taxa rows, the district
-  breakdowns kept only one month per district and species. Values are now summed (catch)
-  or averaged (length, price) across the selected window.
-- **"Top N species" meant the first N alphabetically**; it now ranks species by total catch.
-- The map showed `NaN` for visit and cell counts above 1,000.
-- The length tooltip printed "cm kg" for total catch.
+- Catch composition now follows the selected time range.
+- Catch composition showed a single month per district and species; it now covers the whole selected period.
+- "Top N species" now means the N species with the most catch, not the first N alphabetically.
+- The home page region cards add up their districts' catch, revenue, landings and fishers instead of averaging them.
+- Seasonality charts under "All time" average every year of data and show month names in the page language.
+- The map showed "NaN" for visit and cell counts above 1,000.
+- The length chart tooltip printed "cm kg" for total catch.
 - The species picker could not be reopened after "Clear all".
-- Revenue units in the district table were hard-coded to TZS for every country.
-- Time series skipped districts that had no value in the first month.
+- The district table labelled revenue in Tanzanian shillings for every country.
+- Time series left out districts with no value in the first month.
 - Charts showed an error instead of a prompt when no district was selected.
-- Mapbox attribution is shown again, as the Mapbox terms require.
 - The district table said "no data" when loading failed; it now shows an error.
-- The metric picked on the home map no longer resets after visiting the catch page; the home
-  map and each analysis page keep their own choice.
-- A chart that fails to draw now shows an error in its own card instead of blanking the whole
-  page, and any other page error offers a reload button.
-- **Home page region cards averaged totals**: a region's catch, revenue, submissions and
-  fishers now add up its districts instead of showing their average.
-- The home page cards say they cover the last 3 months, since the time range above them
-  doesn't change them.
-- Seasonality charts under "All time" now average every year of data, not only the last
-  twelve months, and show month names in the page language.
+- The Mapbox attribution is shown on the map again.
+- The metric picked on the home map no longer resets after visiting the catch page.
+- A chart that fails to draw shows an error in its own card instead of blanking the page; other page errors offer a reload button.
+- The "page not found" page is shown in the page language.
 
 ## Removed
 
-- The `/map` page and its data endpoint: the `map_distribution` collection is empty and is
-  not part of the portal contract.
-- Unused API routers (`aggregatedCatch`, `monthlyStats`, `fishDistribution`,
-  `individualData`, and the unmounted `auth` and `bmu` stubs) and the Mongoose schemas only
-  they used.
-- The "Ask Data" placeholder page, which was never linked from the menu.
-- Template leftovers: profile-settings demo forms, message and notification dropdowns,
-  colour presets, the layout switcher, the OpenAPI stub, the upload endpoint, and about 45
-  unused dependencies.
+- Sign-in, password reset and user administration: the dashboards are open and need no account.
+- The Map page, which had no data to show.
+- The unfinished "Ask Data" page, which was never in the menu.
 
 ---
 

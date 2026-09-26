@@ -1,6 +1,6 @@
 import React, { Suspense, useEffect, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { httpBatchLink, loggerLink } from "@trpc/client";
+import { httpLink, loggerLink } from "@trpc/client";
 import { createTRPCReact } from "@trpc/react-query";
 import SuperJSON from "superjson";
 import type { AppRouter } from "@isomorphic/api";
@@ -40,11 +40,10 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
             import.meta.env.DEV ||
             (op.direction === "down" && op.result instanceof Error),
         }),
-        httpBatchLink({
-          // Above this, tRPC splits a batch; a single query over it is not
-          // sent at all ("Input is too big for a single dispatch"). 2083 is
-          // the conservative browser-safe limit; Vercel accepts far more.
-          maxURLLength: 2083,
+        // One request per query, not batched: a batch answers only when its
+        // slowest query does, so the map's megabytes would hold every other
+        // chart back. It also gives each query a stable, CDN-cacheable URL.
+        httpLink({
           transformer: SuperJSON,
           url: "/api/trpc",
         }),

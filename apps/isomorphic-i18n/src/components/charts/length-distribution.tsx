@@ -101,12 +101,6 @@ export function LengthDistribution({ className }: { className?: string }) {
   const { data } = query;
   const rows = useMemo(() => data ?? [], [data]);
   const ranked = useMemo(() => rankSpeciesByCatch(rows), [rows]);
-  const scientificNames = useMemo(() => new Map(ranked.map((s) => [s.name, s.scientificName ?? ""])), [ranked]);
-  // Search matches the common or the scientific name.
-  const matchesSpecies = (name: string, query: string) => {
-    const q = query.toLowerCase();
-    return name.toLowerCase().includes(q) || (scientificNames.get(name) ?? "").toLowerCase().includes(q);
-  };
 
   const selected = useMemo(
     () =>
@@ -139,7 +133,6 @@ export function LengthDistribution({ className }: { className?: string }) {
       <Combobox
         items={ranked.map((s) => s.name)}
         multiple
-        filter={matchesSpecies}
         value={selected}
         onValueChange={(next: string[]) => next.length <= MAX_CUSTOM && setChoice({ custom: next })}
       >
@@ -202,17 +195,9 @@ export function LengthDistribution({ className }: { className?: string }) {
               content={
                 <ChartTooltipContent
                   hideIndicator
-                  labelFormatter={(_, payload) => {
-                    const s = payload?.[0]?.payload as LengthStats | undefined;
-                    return (
-                      <div className="grid">
-                        <span>{s?.name ?? t("text-unknown")}</span>
-                        {s?.scientificName && (
-                          <span className="font-normal text-muted-foreground italic">{s.scientificName}</span>
-                        )}
-                      </div>
-                    );
-                  }}
+                  labelFormatter={(_, payload) =>
+                    (payload?.[0]?.payload as LengthStats | undefined)?.name ?? t("text-unknown")
+                  }
                   formatter={(_value, _name, item) => {
                     const s = item.payload as LengthStats;
                     return (

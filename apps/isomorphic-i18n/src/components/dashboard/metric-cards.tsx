@@ -24,7 +24,6 @@ import type { MetricKey } from "@repo/domain/metrics";
 import { metricDescription, metricTitle, metricUnit } from "@/lib/dashboard/metrics";
 import { api } from "@/trpc/react";
 
-// n_fishers and mean_price_kg are not in the current data pipeline.
 const CARD_METRICS: MetricKey[] = [
   "n_submissions",
   "trip_duration_hrs",

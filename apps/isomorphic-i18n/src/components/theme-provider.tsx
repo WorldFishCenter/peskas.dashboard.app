@@ -23,6 +23,23 @@ const ThemeProviderContext = React.createContext<
   ThemeProviderState | undefined
 >(undefined)
 
+// A browser that blocks storage throws on any access: keep the theme in memory instead.
+function readStoredTheme(storageKey: string) {
+  try {
+    return localStorage.getItem(storageKey)
+  } catch {
+    return null
+  }
+}
+
+function storeTheme(storageKey: string, theme: Theme) {
+  try {
+    localStorage.setItem(storageKey, theme)
+  } catch {
+    // ignored: see readStoredTheme
+  }
+}
+
 function isTheme(value: string | null): value is Theme {
   if (value === null) {
     return false
@@ -85,7 +102,7 @@ export function ThemeProvider({
   ...props
 }: ThemeProviderProps) {
   const [theme, setThemeState] = React.useState<Theme>(() => {
-    const storedTheme = localStorage.getItem(storageKey)
+    const storedTheme = readStoredTheme(storageKey)
     if (isTheme(storedTheme)) {
       return storedTheme
     }
@@ -95,7 +112,7 @@ export function ThemeProvider({
 
   const setTheme = React.useCallback(
     (nextTheme: Theme) => {
-      localStorage.setItem(storageKey, nextTheme)
+      storeTheme(storageKey, nextTheme)
       setThemeState(nextTheme)
     },
     [storageKey]
@@ -167,7 +184,7 @@ export function ThemeProvider({
                 ? "light"
                 : "dark"
 
-        localStorage.setItem(storageKey, nextTheme)
+        storeTheme(storageKey, nextTheme)
         return nextTheme
       })
     }

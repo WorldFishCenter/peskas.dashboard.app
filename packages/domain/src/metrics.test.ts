@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { combine, GEAR_METRIC_KEYS, isMetricKey, METRICS } from "./metrics";
+import { combine, GEAR_METRIC_KEYS, isMetricKey, METRICS, MONTHLY_METRIC_KEYS } from "./metrics";
 
 test("combine sums or averages, skipping missing values", () => {
   expect(combine([1, 2, null, undefined, NaN, 3], "sum")).toBe(6);
@@ -19,6 +19,10 @@ test("totals add up across months and districts; fisher counts add up across dis
 
 test("gear summaries carry CPUE and RPUE", () => {
   expect(GEAR_METRIC_KEYS).toEqual(["mean_cpue", "mean_rpue"]);
+});
+
+test("monthly summaries carry no fisher, submission or trip-duration counts", () => {
+  expect(MONTHLY_METRIC_KEYS).toEqual(["mean_cpue", "mean_rpue", "mean_price_kg", "estimated_revenue", "estimated_catch_tn"]);
 });
 
 test("isMetricKey rejects prototype names", () => {

@@ -8,7 +8,6 @@ export type TTaxaSummaryDistrict = {
   catch_taxon: string;
   metric: string;
   value?: number; // Optional as some values might be null
-  scientific_name?: string; // Optional field for scientific names
   date?: Date; // Month the summary covers
   timestamp?: Date;
 };
@@ -22,7 +21,6 @@ const taxaSummaryDistrictSchema = new Schema<TTaxaSummaryDistrict>(
     catch_taxon: { type: String, required: true },
     metric: { type: String, required: true },
     value: { type: Number, required: false }, // Not required as it can be null
-    scientific_name: String,
     date: Date,
     timestamp: Date,
   },

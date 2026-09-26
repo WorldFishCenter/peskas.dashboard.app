@@ -162,5 +162,8 @@
   "text-select-districts": "Selecione pelo menos um distrito para ver este gráfico.",
   "text-open-menu": "Abrir menu",
   "text-page-error-description": "Esta página encontrou um erro inesperado. Recarregue para tentar de novo.",
-  "text-reload": "Recarregar"
+  "text-reload": "Recarregar",
+  "text-page-not-found": "Página não encontrada",
+  "text-page-not-found-description": "A página que procura não existe ou foi movida.",
+  "text-back-home": "Voltar ao início"
 }

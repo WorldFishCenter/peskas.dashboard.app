@@ -162,5 +162,8 @@
   "text-select-districts": "Select at least one district to see this chart.",
   "text-open-menu": "Open menu",
   "text-page-error-description": "This page hit an unexpected error. Reload to try again.",
-  "text-reload": "Reload"
+  "text-reload": "Reload",
+  "text-page-not-found": "Page not found",
+  "text-page-not-found-description": "The page you are looking for does not exist or has been moved.",
+  "text-back-home": "Back to home"
 }

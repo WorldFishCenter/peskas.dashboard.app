@@ -4,7 +4,6 @@ type TaxonRow = RouterOutputs['summaries']['taxa'][number];
 
 export type LengthStats = {
   name: string;
-  scientificName?: string;
   min: number;
   q1: number;
   median: number;
@@ -19,14 +18,10 @@ const round1 = (v: number) => Math.round(v * 10) / 10;
 
 /** Species with length data, ranked by total catch (largest first). */
 export function rankSpeciesByCatch(rows: TaxonRow[]) {
-  const species = new Map<string, { name: string; scientificName?: string; totalCatch: number }>();
+  const species = new Map<string, { name: string; totalCatch: number }>();
   for (const row of rows) {
     if (!row.taxon || !(Number(row.mean_length) > 0)) continue;
-    const entry = species.get(row.taxon) ?? {
-      name: row.taxon,
-      scientificName: row.scientificName ?? undefined,
-      totalCatch: 0,
-    };
+    const entry = species.get(row.taxon) ?? { name: row.taxon, totalCatch: 0 };
     entry.totalCatch += Number(row.catch_kg) || 0;
     species.set(row.taxon, entry);
   }
@@ -50,7 +45,6 @@ export function computeLengthStats(rows: TaxonRow[], selected: string[]): Length
       const max = lengths[n - 1];
       return {
         name,
-        scientificName: speciesRows[0]?.scientificName ?? undefined,
         min: round1(min),
         q1: round1(lengths[Math.floor(n * 0.25)] || min),
         median: round1(lengths[Math.floor(n * 0.5)] || mean),

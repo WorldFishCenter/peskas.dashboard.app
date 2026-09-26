@@ -49,7 +49,7 @@ beforeAll(async () => {
   ]);
 
   const taxa = (gaul_2_name: string, metric: string, value: number, ago: number) =>
-    ({ gaul_2_name, catch_taxon: "Octopus", scientific_name: "Octopus cyanea", metric, value, date: month(ago) });
+    ({ gaul_2_name, catch_taxon: "Octopus cyanea", metric, value, date: month(ago) });
   await TaxaSummaryDistrictModel.insertMany([
     taxa("Wete", "catch_kg", 10, 0),
     taxa("Wete", "catch_kg", 20, 1),
@@ -83,6 +83,7 @@ test("a district's totals add up across the window and its rates average", async
 test("districts outside the country are refused; an empty selection gives no rows", async () => {
   await expect(summaries.byDistrict({ districts: ["Nyali"] })).rejects.toMatchObject({ code: "BAD_REQUEST" });
   expect(await summaries.monthly({ districts: [], metric: "mean_cpue" })).toEqual([]);
+  await expect(summaries.monthly({ metric: "n_fishers" })).rejects.toMatchObject({ code: "BAD_REQUEST" });
 });
 
 test("monthly rows are keyed YYYY-MM; seasonality averages a calendar month across years", async () => {
@@ -106,8 +107,8 @@ test("gear rows read the gear summaries' name for the metric", async () => {
 
 test("taxa sum catch and average length across months; composition adds districts up", async () => {
   expect(await summaries.taxa({ districts: ["Wete"], metrics: ["catch_kg", "mean_length"], months: 3 })).toEqual([
-    { district: "Wete", taxon: "Octopus", scientificName: "Octopus cyanea", catch_kg: 30, mean_length: 40 },
+    { district: "Wete", taxon: "Octopus cyanea", catch_kg: 30, mean_length: 40 },
   ]);
   const [octopus] = await summaries.composition({ districts: ["Wete", "Mkoani"], metric: "catch_kg", months: 3 });
-  expect(octopus).toMatchObject({ taxon: "Octopus", total: 35 });
+  expect(octopus).toMatchObject({ taxon: "Octopus cyanea", total: 35 });
 });

@@ -13,6 +13,8 @@ type MetricSpec = {
   overDistricts: Combine;
   /** The same measure's name in the gear summaries. */
   gearIndicator?: "cpue" | "rpue";
+  /** Only in the district summaries: the monthly summaries don't carry it. */
+  districtsOnly?: true;
   /** Always shown in millions ("0.9M"), so an axis never mixes "850,000" and "1.2M". */
   inMillions?: true;
 };
@@ -28,9 +30,9 @@ export const METRICS = catalogue({
   mean_cpue: { ...AVERAGE, gearIndicator: "cpue" },
   mean_rpue: { ...AVERAGE, gearIndicator: "rpue" },
   // Fisher count: fishers in a typical month, added up across districts.
-  n_fishers: { overMonths: "mean", overDistricts: "sum" },
-  n_submissions: TOTAL,
-  trip_duration_hrs: AVERAGE,
+  n_fishers: { overMonths: "mean", overDistricts: "sum", districtsOnly: true },
+  n_submissions: { ...TOTAL, districtsOnly: true },
+  trip_duration_hrs: { ...AVERAGE, districtsOnly: true },
   mean_price_kg: AVERAGE,
   estimated_revenue: { ...TOTAL, inMillions: true },
   estimated_catch_tn: TOTAL,
@@ -42,11 +44,12 @@ export const METRIC_KEYS = Object.keys(METRICS) as [MetricKey, ...MetricKey[]];
 /** Metrics the gear summaries also carry, under their `gearIndicator` name. */
 export const GEAR_METRIC_KEYS = METRIC_KEYS.filter((k) => METRICS[k].gearIndicator) as [MetricKey, ...MetricKey[]];
 
+/** Metrics the monthly summaries carry. */
+export const MONTHLY_METRIC_KEYS = METRIC_KEYS.filter((k) => !METRICS[k].districtsOnly) as [MetricKey, ...MetricKey[]];
+
 /** Per-species metrics in `taxa_summaries`. */
 export const TAXA_METRICS = catalogue({
   catch_kg: TOTAL,
-  n_individuals: TOTAL,
-  total_value: TOTAL,
   mean_length: AVERAGE,
   price_kg: AVERAGE,
 });
