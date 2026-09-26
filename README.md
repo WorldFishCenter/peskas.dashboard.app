@@ -14,12 +14,14 @@ Each country has its own dashboard, built from this same code. The dashboards ar
 
 ## What you can do
 
-- Follow catch, revenue, trip length and the number of recorded landings month by month, for the whole country or for chosen districts.
+- See the headline figures for the last complete months against the same months a year earlier, with how confident each estimate is.
+- Follow catch, revenue, catch and revenue per trip, trip length and the number of recorded landings month by month, for the whole country or for chosen districts.
 - Compare districts on a map, in a ranked chart and in a table.
 - See where tracked boats spend their fishing time on a 1 km grid map of fishing effort.
-- Compare fishing gears by how much each fisher catches and earns per hour.
-- Explore catch composition: which species are landed, their length distribution, and how species differ between districts.
-- Read the About page for background on Peskas.
+- Compare fishing gears: how often each is used, what it catches and earns per hour, and how much of its catch is below the size at which fish first reproduce.
+- Explore the species landed: their share of the catch, their price, the size of the fish against the size at maturity, and the catch's mean trophic level.
+- Check vulnerable species: catch by vulnerability to fishing, sharks and rays, and IUCN and CITES status.
+- Read how every figure is made, and its limits, on the Data and methods page, and download any chart's data.
 
 ## Where the data comes from
 

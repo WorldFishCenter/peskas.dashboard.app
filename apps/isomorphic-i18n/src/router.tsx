@@ -14,7 +14,7 @@ import {
 import { SiteHeader } from "@/components/site-header";
 import { languages, preferredLang, rememberLang } from "@/i18n/settings";
 import { useT } from "@/i18n/use-lang";
-import { allPages } from "@/config/routes";
+import { allPages, useCurrentPage } from "@/config/routes";
 
 /** Load a page on first visit, so each route ships its own chunk. */
 const page = (load: () => Promise<{ default: ComponentType }>) => async () => ({
@@ -44,11 +44,19 @@ function LangLayout() {
   return valid ? <Outlet /> : <LangRedirect />;
 }
 
+/** The question the current page answers. */
+function PageIntro() {
+  const { t } = useT();
+  const introKey = useCurrentPage()?.introKey;
+  return introKey ? <p className="max-w-4xl text-sm text-muted-foreground">{t(introKey)}</p> : null;
+}
+
 function DashboardLayout() {
   return (
     <div className="flex min-h-svh flex-col">
       <SiteHeader />
       <main className="@container/main flex flex-1 flex-col gap-4 p-4">
+        <PageIntro />
         <Outlet />
       </main>
     </div>

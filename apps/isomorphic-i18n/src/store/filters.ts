@@ -4,10 +4,11 @@ import { activeCountry } from '@/config/countryConfig';
 import type { MetricKey } from '@repo/domain/metrics';
 import { monthsAtom } from '@/store/time-range';
 
-// Default district selection comes from countryConfig.defaultSelectedDistricts
+// Default district selection comes from countryConfig.defaultSelectedDistricts, else every district.
+const DEFAULT_DISTRICTS = activeCountry.defaultSelectedDistricts ?? activeCountry.districts;
 const districtsStorageAtom = atomWithStorage<string[]>(
   'districts',
-  activeCountry.defaultSelectedDistricts,
+  DEFAULT_DISTRICTS,
   undefined,
   { getOnInit: true }
 );
@@ -27,7 +28,7 @@ const KNOWN_DISTRICTS = new Set(activeCountry.districts);
 function reconcileDistricts(stored: string[]): string[] {
   if (stored.length === 0) return stored;
   const valid = dedupe(stored.filter((d) => KNOWN_DISTRICTS.has(d)));
-  return valid.length > 0 ? valid : activeCountry.defaultSelectedDistricts;
+  return valid.length > 0 ? valid : DEFAULT_DISTRICTS;
 }
 
 /**
@@ -61,5 +62,6 @@ export const homeMetricAtom = atom<MetricKey>('mean_cpue');
 export function useDistrictScope() {
   const districts = useAtomValue(districtsAtom);
   const months = useAtomValue(monthsAtom);
-  return { input: { districts, months }, options: { enabled: districts.length > 0 } };
+  const input = { districts, months };
+  return { input, options: { enabled: districts.length > 0 } };
 }

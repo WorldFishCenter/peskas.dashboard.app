@@ -10,6 +10,7 @@ export interface MapViewState {
   longitude: number;
   latitude: number;
   zoom: number;
+  /** 0 opens the map flat, so cell and district colours read as they are; ⌘ + drag tilts it. */
   pitch?: number;
   bearing?: number;
   minZoom?: number;
@@ -44,8 +45,17 @@ export interface CountryConfig {
   districtColors: Record<string, string>;
   /** Initial view of the home-page fishing-effort grid map */
   gridMapViewState: MapViewState;
-  /** Districts pre-selected in the district filter on first visit */
-  defaultSelectedDistricts: string[];
+  /** Districts pre-selected in the district filter on first visit; all of them when left out. */
+  defaultSelectedDistricts?: string[];
+  /** How the country's landing survey records the catch; the explanations and size views follow it. */
+  survey: {
+    /** The whole catch is weighed and only a sample identified, so catch by species describes the sample. */
+    speciesFromSample?: true;
+    /** Each species in a catch has its own price; otherwise one value covers the whole trip. */
+    pricedBySpecies?: true;
+    /** A catch row carries the mean length of the fish measured, not a length class; the size views say so. */
+    meanLengths?: true;
+  };
   features: {
     /** Region bars on the home page metric cards: display order and colours.
      *  Both must name exactly the regions of districtToRegion. */
@@ -114,10 +124,10 @@ const zanzibarConfig: CountryConfig = {
     longitude: 39.19,
     latitude: -6.16,
     zoom: 8,
-    pitch: 45,
-    bearing: 10,
+    pitch: 0,
+    bearing: 0,
   },
-  defaultSelectedDistricts: ['Wete', 'Kati', 'Kaskazini A', 'Kaskazini B', 'Kusini', 'Magharibi A', 'Magharibi B', 'Micheweni', 'Mjini', 'Mkoani', 'Chake Chake'],
+  survey: {},
   features: {
     regionBreakdown: {
       regions: ['Unguja', 'Pemba'],
@@ -208,10 +218,14 @@ const kenyaConfig: CountryConfig = {
     longitude: 39.6,
     latitude: -3.5,
     zoom: 7,
-    pitch: 42,
-    bearing: 7,
+    pitch: 0,
+    bearing: 0,
   },
-  defaultSelectedDistricts: ['Malindi', 'Kinango', 'Lamu'],
+  // No default selection, so every district: several have gone months without
+  // a survey, and a selection of those opens the dashboard on empty charts.
+  // KEFS weighs the whole catch, prices and identifies a sample of it, and
+  // records the mean length of the fish it measures.
+  survey: { speciesFromSample: true, pricedBySpecies: true, meanLengths: true },
   features: {
     regionBreakdown: {
       regions: ['Central', 'North', 'South'],
@@ -303,10 +317,11 @@ const mozambiqueConfig: CountryConfig = {
     longitude: 32.61,
     latitude: -19.09,
     zoom: 5,
-    pitch: 45,
+    pitch: 0,
     bearing: 0,
   },
   defaultSelectedDistricts: ['Pemba', 'Angoche', 'Beira'],
+  survey: {},
   features: {
     regionBreakdown: {
       regions: ['Central', 'North', 'South'],

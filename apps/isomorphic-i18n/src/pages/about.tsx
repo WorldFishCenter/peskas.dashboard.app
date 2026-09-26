@@ -1,74 +1,113 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card";
-import { Separator } from "@workspace/ui/components/separator";
+import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card";
+import { COVERAGE_MONTHS, CoverageMatrix } from "@/components/dashboard/coverage-matrix";
+import { activeCountry } from "@/config/countryConfig";
 import { useT } from "@/i18n/use-lang";
+import { METRIC_KEYS } from "@repo/domain/metrics";
+import { metricInfo, metricTitle, metricUnit } from "@/lib/dashboard/metrics";
+import { api } from "@/trpc/react";
 
-type Subsection = { key: string; items?: string[] };
-type Section = { key: string; subsections?: Subsection[]; items?: string[]; conclusion?: boolean };
+// Every string lives in the locales as methods-<section>-{title,body,item-*}.
+const READING_ITEMS = ["few", "complete", "weighted", "recorded", "map", "indicators"];
+const GLOSSARY = ["landing", "district", "trip", "cpue", "rpue", "recorded", "estimated", "taxon", "length-class", "maturity", "optimum", "trophic", "vulnerability"];
 
-// Every string lives in the locales as about-<section>-{title,body,item-*}.
-const SECTIONS: Section[] = [
-  { key: "purpose" },
-  {
-    key: "data",
-    subsections: [
-      { key: "catch" },
-      { key: "economic", items: ["revenue", "costs", "market", "indicators"] },
-      { key: "community", items: ["performance", "patterns", "strategies", "compare"] },
-      { key: "sustainability", items: ["thresholds", "trends", "ecosystem", "practices"] },
-    ],
-  },
-  { key: "implementation" },
-  { key: "knowledge" },
-  { key: "vision", items: ["decisions", "economy", "ecosystems", "transparency", "capacity"], conclusion: true },
-];
-
-function Items({ prefix, items }: { prefix: string; items?: string[] }) {
-  const { t } = useT();
-  if (!items) return null;
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <ul className="flex list-disc flex-col gap-1 pl-5 text-muted-foreground">
-      {items.map((item) => (
-        <li key={item}>{t(`${prefix}-item-${item}`)}</li>
-      ))}
-    </ul>
+    <Card size="sm">
+      <CardHeader>
+        <CardTitle>{title}</CardTitle>
+      </CardHeader>
+      <CardContent className="flex max-w-4xl flex-col gap-3 leading-relaxed">{children}</CardContent>
+    </Card>
   );
 }
 
+/** Data and methods: where the numbers come from, how each is made and how to read it. */
 export default function AboutPage() {
-  const { t } = useT();
+  const { t, lang } = useT();
+  const { data: coverage } = api.summaries.coverage.useQuery({ months: COVERAGE_MONTHS });
+  const { countryCode: code, survey } = activeCountry;
 
   return (
-    <Card className="mx-auto w-full max-w-4xl">
-      <CardHeader>
-        <CardTitle>{t("about-title")}</CardTitle>
-        <CardDescription>{t("about-intro")}</CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-6 leading-relaxed">
-        {SECTIONS.map((section) => (
-          <section key={section.key} className="flex flex-col gap-3">
-            <Separator />
-            <h2 className="text-lg font-semibold">{t(`about-${section.key}-title`)}</h2>
-            {section.subsections ? (
-              <div className="grid gap-6 md:grid-cols-2">
-                {section.subsections.map((sub) => {
-                  const prefix = `about-${section.key}-${sub.key}`;
-                  return (
-                    <div key={sub.key} className="flex flex-col gap-2">
-                      <h3 className="font-medium">{t(`${prefix}-title`)}</h3>
-                      <p className="text-muted-foreground">{t(`${prefix}-body`)}</p>
-                      <Items prefix={prefix} items={sub.items} />
-                    </div>
-                  );
-                })}
+    <>
+      <Section title={t("methods-sources-title")}>
+        <p>{t(`methods-sources-body-${code}`)}</p>
+        <p>
+          {t(`methods-update-${code}`)}
+          {coverage?.updatedAt &&
+            ` ${t("methods-updated-at", { date: coverage.updatedAt.toLocaleDateString(lang, { dateStyle: "long" }) })}`}
+        </p>
+      </Section>
+
+      <Section title={t("methods-estimates-title")}>
+        <p>{t("methods-estimates-body")}</p>
+        <p>{t("methods-confidence-body")}</p>
+      </Section>
+
+      <Section title={t("methods-measures-title")}>
+        <dl className="flex flex-col gap-4">
+          {METRIC_KEYS.map((key) => {
+            const info = metricInfo(t, key);
+            const unit = metricUnit(t, key);
+            return (
+              <div key={key} className="flex flex-col gap-1">
+                <dt className="font-medium">
+                  {metricTitle(t, key)}
+                  {unit && <span className="font-normal text-muted-foreground"> ({unit})</span>}
+                </dt>
+                <dd className="text-muted-foreground">{info.what}</dd>
+                <dd className="text-muted-foreground">
+                  <strong className="font-medium text-foreground">{t("text-info-how")}:</strong> {info.how}
+                </dd>
+                <dd className="text-muted-foreground">
+                  <strong className="font-medium text-foreground">{t("text-info-limits")}:</strong> {info.limits}
+                </dd>
               </div>
-            ) : (
-              <p className="text-muted-foreground">{t(`about-${section.key}-body`)}</p>
-            )}
-            <Items prefix={`about-${section.key}`} items={section.items} />
-            {section.conclusion && <p className="text-muted-foreground">{t(`about-${section.key}-conclusion`)}</p>}
-          </section>
-        ))}
-      </CardContent>
-    </Card>
+            );
+          })}
+        </dl>
+      </Section>
+
+      <Section title={t("methods-species-title")}>
+        <p>{t("methods-species-body")}</p>
+        <p>{t(survey.meanLengths ? "methods-sizes-body-means" : "methods-sizes-body")}</p>
+        <p>{t(survey.pricedBySpecies ? "methods-prices-body-species" : "methods-prices-body-trip")}</p>
+      </Section>
+
+      <Section title={t("methods-reading-title")}>
+        <ul className="flex list-disc flex-col gap-2 pl-5">
+          {READING_ITEMS.map((item) => (
+            <li key={item}>{t(`methods-reading-item-${item}`)}</li>
+          ))}
+          {survey.speciesFromSample && <li>{t("methods-reading-item-sample")}</li>}
+        </ul>
+      </Section>
+
+      <CoverageMatrix />
+
+      <Section title={t("methods-glossary-title")}>
+        <dl className="grid gap-3 md:grid-cols-2">
+          {GLOSSARY.map((term) => (
+            <div key={term}>
+              <dt className="font-medium">{t(`methods-glossary-${term}-term`)}</dt>
+              <dd className="text-muted-foreground">{t(`methods-glossary-${term}`)}</dd>
+            </div>
+          ))}
+        </dl>
+      </Section>
+
+      <Section title={t("methods-contact-title")}>
+        <p>
+          {t("methods-contact-body")}{" "}
+          <a className="text-primary underline-offset-4 hover:underline" href="mailto:peskas.platform@gmail.com">
+            peskas.platform@gmail.com
+          </a>
+          . {t("methods-api-body")}{" "}
+          <a className="text-primary underline-offset-4 hover:underline" href="https://api.peskas.org/docs" target="_blank" rel="noreferrer">
+            api.peskas.org
+          </a>
+          .
+        </p>
+      </Section>
+    </>
   );
 }

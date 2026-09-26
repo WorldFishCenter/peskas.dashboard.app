@@ -24,14 +24,10 @@ export const SPECIES_COLORS = [
 ];
 export const OTHERS_COLOR = '#9CA3AF';
 
-export const TREEMAP_COLORS = [
-  '#167288', '#3cb464', '#b45248', '#a89a49', '#643c6a', '#8cdaec',
-  '#9bddb1', '#d48c84', '#d6cfa2', '#836394', '#00B4D8', '#F97316',
-];
-
-// Box plot fills: Q1 → median, median → Q3.
-export const BOX_LOWER_COLOR = '#96ACB7';
-export const BOX_UPPER_COLOR = '#CA1551';
+// Catch landed below the length at which its species first reproduces: a warning, so amber.
+export const BELOW_MATURITY_COLOR = '#d97706';
+// Catch in a length class that includes the maturity length: can't be placed either side.
+export const SPANNING_MATURITY_COLOR = '#fcd34d';
 
 // YlGnBu-8, used by the heatmap tables.
 export const YLGNBU_8 = [

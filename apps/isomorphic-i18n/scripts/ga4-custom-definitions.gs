@@ -114,6 +114,11 @@ const DIMENSIONS = [
     displayName: 'Effort range enabled',
     description: 'Whether the toggled effort band was switched on or off',
   },
+  {
+    parameterName: 'chart',
+    displayName: 'Chart',
+    description: 'Chart whose explanation was opened or whose data was downloaded',
+  },
 ];
 
 /** Numeric parameters. These are custom metrics, not dimensions. */

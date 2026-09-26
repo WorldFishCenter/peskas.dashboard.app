@@ -133,6 +133,8 @@ loaded. Add new event names to the `AnalyticsEvent` union there so typos fail th
 | `filter_district_change` | `action`, `district`, `peskas_region`, `district_count` | District selection changed |
 | `map_basemap_change` | `basemap` (`satellite` \| `map`) | Basemap toggled on the grid map |
 | `map_effort_range_toggle` | `effort_range`, `enabled` | Effort band toggled in the map info panel |
+| `chart_info_open` | `chart` | A chart's explanation (the ⓘ button) opened |
+| `chart_download` | `chart` | A chart's data downloaded as CSV |
 
 `filter_district_change.action` is one of `add`, `remove`, `clear`, `region_add` or
 `region_remove`.

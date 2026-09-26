@@ -6,12 +6,14 @@ import {
   ChartTooltipContent,
 } from "@workspace/ui/components/chart";
 import { ToggleGroup, ToggleGroupItem } from "@workspace/ui/components/toggle-group";
+import type { RouterOutputs } from "@isomorphic/api";
 import { useT } from "@/i18n/use-lang";
 import { ChartCard } from "@/components/charts/chart-card";
 import { categoryChartHeight, ChartGate } from "@/components/charts/chart-state";
 import { useSeriesToggle, type Series } from "@/components/charts/series-legend";
 import { TooltipRow } from "@/components/charts/tooltip-row";
-import { truncateLabel } from "@/lib/dashboard/format";
+import { gearLabel, truncateLabel } from "@/lib/dashboard/format";
+import { compositionInfo } from "@/lib/dashboard/metrics";
 import { OTHERS_COLOR, SPECIES_COLORS } from "@/lib/dashboard/palettes";
 import { useDistrictScope } from "@/store/filters";
 import { api } from "@/trpc/react";
@@ -23,7 +25,7 @@ type Mode = "relative" | "absolute";
 
 const tonnes = (v: number) => (v >= 1000 ? `${(v / 1000).toFixed(1)}K` : v.toFixed(1));
 
-// Share of each district's catch, or catch in tonnes.
+// Share of each group's catch, or catch in tonnes.
 const MODES = {
   relative: {
     axisKey: "text-percentage",
@@ -41,36 +43,51 @@ const MODES = {
   },
 } satisfies Record<Mode, unknown>;
 type Row = { name: string } & Record<string, number | null | string>;
+type CompositionRow = RouterOutputs["summaries"]["composition"][number];
 
-/** Share of catch by species in each selected district: top 10 species plus "Others". */
-export function SpeciesComposition({ className }: { className?: string }) {
+/**
+ * Recorded catch by species in each group (a district or a gear): the top 10
+ * species plus "Others", as shares or tonnes.
+ */
+function CompositionChart({
+  id,
+  title,
+  query,
+  data,
+  groups,
+  emptyDescription,
+  className,
+}: {
+  id: string;
+  title: string;
+  query: Parameters<typeof ChartGate>[0]["query"];
+  data: CompositionRow[] | undefined;
+  groups: { key: string | null; label: string }[];
+  emptyDescription: string;
+  className?: string;
+}) {
   const { t } = useT();
   const scope = useDistrictScope();
-  const { districts } = scope.input;
   const [mode, setMode] = useState<Mode>("relative");
-
-  const query = api.summaries.composition.useQuery({ ...scope.input, metric: "catch_kg" }, scope.options);
-  const { data } = query;
 
   const { rows, species } = useMemo(() => {
     const all = data ?? []; // largest total first
     const top = all.slice(0, TOP_N);
     const rest = all.slice(TOP_N);
-    const districtValue = (s: (typeof all)[number], district: string) =>
-      s.districts.find((d) => d.district === district)?.value ?? 0;
+    const groupValue = (s: CompositionRow, group: string | null) => s.groups.find((g) => g.group === group)?.value ?? 0;
 
-    const rows: Row[] = districts
-      .map((district) => {
+    const rows: Row[] = groups
+      .map(({ key, label }) => {
         // kg → tonnes
         const values: Record<string, number> = Object.fromEntries(
-          top.map((s) => [s.taxon ?? t("text-unknown"), districtValue(s, district) / 1000])
+          top.map((s) => [s.taxon ?? t("text-unknown"), groupValue(s, key) / 1000])
         );
-        values[OTHERS] = rest.reduce((sum, s) => sum + districtValue(s, district), 0) / 1000;
+        values[OTHERS] = rest.reduce((sum, s) => sum + groupValue(s, key), 0) / 1000;
         const total = Object.values(values).reduce((a, b) => a + b, 0);
         const shown = Object.fromEntries(
           Object.entries(values).map(([k, v]) => [k, v > 0 ? MODES[mode].toDisplay(v, total) : null])
         );
-        return { name: district, total, ...shown };
+        return { name: label, total, ...shown };
       })
       .filter((row) => row.total > 0);
 
@@ -79,7 +96,7 @@ export function SpeciesComposition({ className }: { className?: string }) {
       { key: OTHERS, label: t("text-others"), color: OTHERS_COLOR },
     ];
     return { rows, species };
-  }, [data, districts, mode, t]);
+  }, [data, groups, mode, t]);
 
   const { format, domain, tick, axisKey } = MODES[mode];
   // "Others" always stays visible.
@@ -88,8 +105,13 @@ export function SpeciesComposition({ className }: { className?: string }) {
 
   return (
     <ChartCard
+      id={id}
       className={className}
-      title={t("text-species-composition")}
+      title={title}
+      description={t("text-species-composition-description")}
+      info={compositionInfo(t)}
+      download={(data ?? []).flatMap((s) => s.groups.map((g) => ({ taxon: s.taxon, group: g.group, recorded_catch_kg: g.value })))}
+      scope={scope}
       action={
         <ToggleGroup
           variant="outline"
@@ -103,7 +125,7 @@ export function SpeciesComposition({ className }: { className?: string }) {
         </ToggleGroup>
       }
     >
-      <ChartGate query={query} isEmpty={!rows.length} emptyDescription={t("text-no-data-available-for-districts")}>
+      <ChartGate query={query} isEmpty={!rows.length} emptyDescription={emptyDescription}>
         <>
           <ChartContainer
             config={chartConfig}
@@ -173,5 +195,49 @@ export function SpeciesComposition({ className }: { className?: string }) {
         </>
       </ChartGate>
     </ChartCard>
+  );
+}
+
+/** Recorded catch by species in each selected district. */
+export function SpeciesComposition({ className }: { className?: string }) {
+  const { t } = useT();
+  const scope = useDistrictScope();
+  const query = api.summaries.composition.useQuery({ ...scope.input, metric: "catch_kg" }, scope.options);
+  const groups = useMemo(() => scope.input.districts.map((d) => ({ key: d, label: d })), [scope.input.districts]);
+  return (
+    <CompositionChart
+      id="species-composition"
+      className={className}
+      title={t("title-species-composition")}
+      query={query}
+      data={query.data}
+      groups={groups}
+      emptyDescription={t("text-no-data-available-for-districts")}
+    />
+  );
+}
+
+/** Recorded catch by species for each gear. */
+export function GearSpeciesComposition({ className }: { className?: string }) {
+  const { t } = useT();
+  const scope = useDistrictScope();
+  const query = api.summaries.gearComposition.useQuery(scope.input, scope.options);
+  const groups = useMemo(() => {
+    const gears = new Map<string | null, number>();
+    for (const s of query.data?.rows ?? []) for (const g of s.groups) gears.set(g.group, (gears.get(g.group) ?? 0) + g.value);
+    return [...gears]
+      .sort(([, a], [, b]) => b - a)
+      .map(([key]) => ({ key, label: gearLabel(key, t("text-unknown")) }));
+  }, [query.data, t]);
+  return (
+    <CompositionChart
+      id="gear-species"
+      className={className}
+      title={t("title-gear-species")}
+      query={query}
+      data={query.data?.rows}
+      groups={groups}
+      emptyDescription={t(query.data?.available === false ? "text-gear-species-not-published" : "text-no-data-available-for-filters")}
+    />
   );
 }

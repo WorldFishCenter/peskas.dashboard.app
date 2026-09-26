@@ -12,12 +12,12 @@ export function SiteHeader() {
   const titleKey = useCurrentPage()?.titleKey;
 
   return (
-    <header className="sticky top-0 z-10 bg-background">
+    <header className="sticky top-0 z-10 bg-background print:static">
       <div className="flex h-12 items-center gap-2 px-4 md:gap-4">
         <MobileNav />
         <Brand />
         <MainNav />
-        <div className="ml-auto flex items-center gap-1">
+        <div className="ml-auto flex items-center gap-1 print:hidden">
           <LanguageMenu />
           <ThemeToggle />
         </div>
@@ -25,7 +25,7 @@ export function SiteHeader() {
       <Separator />
       <div className="flex h-11 items-center gap-2 px-4">
         {titleKey && <h1 className="truncate text-base font-medium">{t(titleKey)}</h1>}
-        <div className="ml-auto">
+        <div className="ml-auto print:hidden">
           <HeaderFilters />
         </div>
       </div>

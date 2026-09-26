@@ -66,7 +66,8 @@ export function EffortToolbar({
       </ToggleGroup>
       <div className="ml-auto flex items-center gap-1 text-xs text-muted-foreground">
         <span>
-          {t("info-total-visits", { count: stats.totalVisits })} · {t("info-active-cells", { count: stats.gridCells })}
+          {t("info-effort-scope")} · {t("info-total-visits", { count: stats.totalVisits })} ·{" "}
+          {t("info-active-cells", { count: stats.gridCells })}
         </span>
         <HoverCard>
           <HoverCardTrigger

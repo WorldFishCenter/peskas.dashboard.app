@@ -1,3 +1,34 @@
+# peskas.dashboard 2.1.0
+
+## Dashboards that explain themselves
+
+- New Fishing gear page: which gears are used, how much they catch and earn per hour, and how much of their catch is smaller than the size at which the fish first reproduce.
+- New Vulnerable species page: catch by vulnerability to fishing, sharks and rays, and each species' IUCN Red List and CITES status.
+- The About page is now Data and methods: where the data comes from, how every figure is calculated and its limits, a glossary, and a table of landings surveyed per district and month.
+- Every chart asks the question it answers, has an ⓘ button explaining what it shows, how it is calculated and what it cannot tell you, a button to download its data (CSV), and a line saying how many landings it rests on, the latest month of data and whether that sample is small, medium or large.
+- The home page shows headline figures for complete months, compared with the same months a year earlier, and says how confident each estimate is.
+- New figures: catch and revenue per trip, estimated fishing trips, price per kg by species, what each gear catches, the mean trophic level of the catch, and the size of the catch: how much is below the size at which each species first reproduces, at its optimum size, or large spawners.
+- Figures resting on fewer than 10 landings carry a warning sign; in the time series they are drawn as hollow points and in the district table they are greyed out.
+- Pages print cleanly.
+
+## Changes
+
+- Averages across districts, months and gears count each value by the landings behind it, so a district with 5 landings no longer weighs as much as one with 500.
+- Seasonality is a month-by-district table over every year of data. With less than two years of it, the table says it shows a single year rather than a seasonal pattern.
+- Gear performance is a ranked bar chart with the number of landings per gear, instead of a treemap.
+- Catch by species is labelled as recorded catch: it comes from the surveyed landings, not the total catch.
+- "No. of fishers" is now "Fishers per trip", which is what it always measured.
+- The fishing-effort map opens flat and says that it covers all time and only boats with GPS trackers.
+- The Kenya dashboard opens on every district: the three it opened on have had almost no surveys this year.
+- On the Kenya dashboard the sizes of the catch are drawn from the average length of the fish measured on each landing, which is what its survey records; the charts and the Data and methods page say so.
+
+## Removed
+
+- The "length distribution" chart, which showed how district averages differed rather than the sizes of fish.
+- The "Beta" labels.
+
+---
+
 # peskas.dashboard 2.0.0
 
 ## Redesign

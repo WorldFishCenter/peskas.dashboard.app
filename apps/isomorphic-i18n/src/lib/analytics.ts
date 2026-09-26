@@ -16,7 +16,9 @@ export type AnalyticsEvent =
   | 'filter_metric_change'
   | 'filter_district_change'
   | 'map_basemap_change'
-  | 'map_effort_range_toggle';
+  | 'map_effort_range_toggle'
+  | 'chart_info_open'
+  | 'chart_download';
 
 type AnalyticsParams = Record<string, string | number | boolean>;
 

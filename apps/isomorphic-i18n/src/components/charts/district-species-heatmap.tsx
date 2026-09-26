@@ -9,19 +9,13 @@ import {
   useTable,
   type SortingState,
 } from "@tanstack/react-table";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@workspace/ui/components/table";
 import { useT } from "@/i18n/use-lang";
 import { ChartCard } from "@/components/charts/chart-card";
 import { ChartGate } from "@/components/charts/chart-state";
+import { DataTable } from "@/components/data-table/data-table";
 import { SortableHeader } from "@/components/data-table/sortable-header";
 import { HeatCell, sortNullsAsZero, valueRange } from "@/components/charts/heat-cell";
+import { compositionInfo } from "@/lib/dashboard/metrics";
 import { useDistrictScope } from "@/store/filters";
 import { api } from "@/trpc/react";
 
@@ -121,35 +115,16 @@ export function DistrictSpeciesHeatmap({ className }: { className?: string }) {
 
   return (
     <ChartCard
+      id="district-species"
       className={className}
-      title={t("text-district-species-breakdown")}
+      title={t("title-district-species")}
       description={t("text-district-species-description")}
+      info={compositionInfo(t)}
+      download={rows}
+      scope={scope}
     >
       <ChartGate query={query} isEmpty={!rows.length} className="h-64">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((group) => (
-              <TableRow key={group.id}>
-                {group.headers.map((header) => (
-                  <TableHead key={header.id}>
-                    <table.FlexRender header={header} />
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows.map((row) => (
-              <TableRow key={row.id}>
-                {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id}>
-                    <table.FlexRender cell={cell} />
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+        <DataTable table={table} />
       </ChartGate>
     </ChartCard>
   );

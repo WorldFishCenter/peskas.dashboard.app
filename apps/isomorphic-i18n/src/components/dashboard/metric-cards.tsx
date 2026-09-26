@@ -1,146 +1,149 @@
-import { Bar, BarChart, LabelList, XAxis } from "recharts";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@workspace/ui/components/card";
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-  type ChartConfig,
-} from "@workspace/ui/components/chart";
-import { ScrollArea, ScrollBar } from "@workspace/ui/components/scroll-area";
+import { useAtomValue } from "jotai";
+import { ArrowDownRightIcon, ArrowUpRightIcon, MinusIcon } from "lucide-react";
+import { Line, LineChart, YAxis } from "recharts";
+import { Badge } from "@workspace/ui/components/badge";
+import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@workspace/ui/components/card";
+import { ChartContainer, type ChartConfig } from "@workspace/ui/components/chart";
 import { Skeleton } from "@workspace/ui/components/skeleton";
 import { useT } from "@/i18n/use-lang";
+import { InfoPopover } from "@/components/charts/chart-card";
 import { ChartState } from "@/components/charts/chart-state";
-import { TooltipRow } from "@/components/charts/tooltip-row";
-import { REGION_COLORS, REGIONS } from "@/lib/dashboard/regions";
-import { formatDashboardNumber, monthLabel } from "@/lib/dashboard/format";
 import type { RouterOutputs } from "@isomorphic/api";
-import type { MetricKey } from "@repo/domain/metrics";
-import { metricDescription, metricTitle, metricUnit } from "@/lib/dashboard/metrics";
+import { confidenceBand, METRICS, type Confidence, type MetricKey } from "@repo/domain/metrics";
+import { formatDashboardNumber, monthLabel } from "@/lib/dashboard/format";
+import { metricInfo, metricTitle, metricUnit } from "@/lib/dashboard/metrics";
+import { REGION_COLORS, REGIONS } from "@/lib/dashboard/regions";
+import { monthsAtom } from "@/store/time-range";
 import { api } from "@/trpc/react";
 
-const CARD_METRICS: MetricKey[] = [
-  "n_submissions",
-  "trip_duration_hrs",
-  "mean_cpue",
-  "mean_rpue",
+/** The headline figures, in reading order: how much, how much fishing, what a trip brings. */
+const HEADLINE_METRICS: MetricKey[] = [
   "estimated_catch_tn",
   "estimated_revenue",
+  "estimated_fishing_trips",
+  "mean_catch_kg",
+  "mean_catch_price",
+  "mean_cpue",
 ];
 
-const chartConfig = Object.fromEntries(REGIONS.map((r) => [r, { label: r }])) satisfies ChartConfig;
+type Headline = NonNullable<RouterOutputs["summaries"]["headline"]>;
 
-// A trend strip: always the last 3 months, whatever the header's time range.
-const CARD_MONTHS = 3;
+const sparkConfig = { value: { label: "value" } } satisfies ChartConfig;
 
-type RegionMonth = RouterOutputs["summaries"]["regionTrend"][MetricKey][number];
-
-function MetricCard({ metric, rows }: { metric: MetricKey; rows: RegionMonth[] }) {
+/** Change on the same months a year earlier, without judging it: a rise is not always good news. */
+function Change({ value, previous }: { value: number | null; previous: number | null }) {
   const { t, lang } = useT();
-  const format = (value: unknown) => formatDashboardNumber(value, metric, lang);
-  const unit = metricUnit(t, metric);
+  if (value == null || previous == null || previous === 0) {
+    return <span className="text-xs text-muted-foreground">{t("text-no-comparison")}</span>;
+  }
+  const pct = ((value - previous) / Math.abs(previous)) * 100;
+  const Icon = Math.abs(pct) < 1 ? MinusIcon : pct > 0 ? ArrowUpRightIcon : ArrowDownRightIcon;
+  return (
+    <Badge variant="outline" className="tabular-nums">
+      <Icon data-icon="inline-start" />
+      {`${pct > 0 ? "+" : ""}${pct.toLocaleString(lang, { maximumFractionDigits: 0 })}%`}
+    </Badge>
+  );
+}
 
-  const chartData = rows.map((row) => ({
-    month: monthLabel(row.month, lang),
-    ...Object.fromEntries(REGIONS.map((r) => [r, row[r] ?? null])),
-  }));
-  const latest = rows.at(-1);
+function HeadlineCard({
+  metric,
+  data,
+  confidence,
+}: {
+  metric: MetricKey;
+  data: Headline["metrics"][MetricKey];
+  confidence: Confidence | null;
+}) {
+  const { t, lang } = useT();
+  const unit = metricUnit(t, metric);
+  const title = metricTitle(t, metric);
+  const format = (v: unknown) => formatDashboardNumber(v, metric, lang);
+  const points = data.series.filter((p) => p.value != null);
 
   return (
-    <Card size="sm" className="@container/card w-72 shrink-0">
+    <Card size="sm">
       <CardHeader>
-        <CardTitle>
-          {metricTitle(t, metric)}
-          {unit && ` (${unit})`}
+        <CardTitle className="flex items-center gap-2">
+          {title}
+          <Badge variant="secondary">{t(METRICS[metric].estimated ? "text-estimated" : "text-recorded")}</Badge>
         </CardTitle>
         <CardDescription>
-          {metricDescription(t, metric)} {t("text-last-3-months")}.
+          {unit || "\u00a0"}
+          {METRICS[metric].estimated && confidence && (
+            <span className={confidence === "low" ? "font-medium text-amber-700 dark:text-amber-400" : undefined}>
+              {` · ${t("text-confidence")}: ${t(`text-confidence-${confidence}`)}`}
+            </span>
+          )}
         </CardDescription>
+        <CardAction>
+          <InfoPopover id={`headline-${metric}`} title={title} info={metricInfo(t, metric)} />
+        </CardAction>
       </CardHeader>
-      <CardContent className="flex flex-col gap-3">
+      <CardContent className="flex flex-col gap-2">
+        <div className="flex items-end justify-between gap-2">
+          <span className="text-3xl font-semibold tabular-nums">{format(data.value)}</span>
+          <Change value={data.value} previous={data.previous} />
+        </div>
+        {points.length > 1 && (
+          <ChartContainer config={sparkConfig} className="aspect-auto h-10 w-full">
+            <LineChart data={points} margin={{ top: 4, bottom: 4, left: 0, right: 0 }}>
+              <YAxis hide domain={["dataMin", "dataMax"]} />
+              <Line dataKey="value" stroke="var(--primary)" strokeWidth={2} dot={false} isAnimationActive={false} />
+            </LineChart>
+          </ChartContainer>
+        )}
         <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs">
           {REGIONS.map((region) => (
             <span key={region} className="flex items-center gap-1.5">
               <span className="size-2 rounded-full" style={{ backgroundColor: REGION_COLORS[region] }} />
               {region}:
-              <span className="font-medium tabular-nums">{format(latest?.[region])}</span>
+              <span className="font-medium tabular-nums">{format(data.regions[region])}</span>
             </span>
           ))}
         </div>
-        <ChartContainer config={chartConfig} className="aspect-auto h-24 w-full">
-          <BarChart accessibilityLayer data={chartData} margin={{ top: 16 }} barCategoryGap={0}>
-            <XAxis dataKey="month" tickLine={false} axisLine={false} />
-            <ChartTooltip
-              content={
-                <ChartTooltipContent
-                  formatter={(value, name, item) => (
-                    <TooltipRow color={item.color} label={name} value={format(value)} />
-                  )}
-                />
-              }
-            />
-            {REGIONS.map((region) => (
-              <Bar
-                key={region}
-                dataKey={region}
-                fill={REGION_COLORS[region]}
-                radius={[4, 4, 0, 0]}
-                barSize={18}
-                minPointSize={6}
-              >
-                <LabelList
-                  position="top"
-                  formatter={format}
-                  fill={REGION_COLORS[region]}
-                  className="text-[11px] font-semibold"
-                />
-              </Bar>
-            ))}
-          </BarChart>
-        </ChartContainer>
       </CardContent>
     </Card>
   );
 }
 
-/** One horizontally scrollable row of cards. */
-function CardRow({ children }: { children: React.ReactNode }) {
-  return (
-    <ScrollArea className="w-full">
-      <div className="flex w-max gap-4 pb-3">{children}</div>
-      <ScrollBar orientation="horizontal" />
-    </ScrollArea>
-  );
-}
-
+/**
+ * The country's headline figures over the complete months of the header's
+ * time range, each against the same months a year earlier.
+ */
 export function MetricCards() {
-  const { data, isLoading, error } = api.summaries.regionTrend.useQuery({ months: CARD_MONTHS });
+  const { t, lang } = useT();
+  const months = useAtomValue(monthsAtom);
+  const { data, isLoading, error } = api.summaries.headline.useQuery({ months });
 
   if (isLoading) {
     return (
-      <CardRow>
-        {CARD_METRICS.map((m) => (
-          <Skeleton key={m} className="h-52 w-72 shrink-0" />
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {HEADLINE_METRICS.map((m) => (
+          <Skeleton key={m} className="h-44" />
         ))}
-      </CardRow>
+      </div>
     );
   }
+  if (error || !data) return <ChartState status={error ? "error" : "empty"} className="h-40" />;
 
-  const metrics = CARD_METRICS.filter((m) => data?.[m].length);
-  if (error || !metrics.length) {
-    return <ChartState status={error ? "error" : "empty"} className="h-40" />;
-  }
+  // A measure this database doesn't carry (older coasts output) gets no card rather than a "-".
+  const shown = HEADLINE_METRICS.filter((m) => data.metrics[m].value != null || data.metrics[m].previous != null);
+  const span = (w: { start: string; end: string }) => `${monthLabel(w.start, lang, "long")} – ${monthLabel(w.end, lang, "long")}`;
+  const landings = formatDashboardNumber(data.metrics.n_submissions.value, "n_submissions", lang);
 
   return (
-    <CardRow>
-      {metrics.map((m) => (
-        <MetricCard key={m} metric={m} rows={data![m]} />
-      ))}
-    </CardRow>
+    <section className="flex flex-col gap-3">
+      <p className="text-sm">
+        {data.previous
+          ? t("text-headline-window", { window: span(data.window), previous: span(data.previous), landings })
+          : t("text-headline-window-all", { window: span(data.window), landings })}
+      </p>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {shown.map((m) => (
+          <HeadlineCard key={m} metric={m} data={data.metrics[m]} confidence={confidenceBand(data.samplingRate)} />
+        ))}
+      </div>
+    </section>
   );
 }

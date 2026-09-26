@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { MenuIcon, SailboatIcon } from "lucide-react";
 import { Link, useLocation } from "react-router";
-import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
 import {
   NavigationMenu,
@@ -50,7 +49,7 @@ export function Brand() {
 export function MainNav() {
   const { t } = useT();
   return (
-    <NavigationMenu className="hidden md:flex">
+    <NavigationMenu className="hidden xl:flex">
       <NavigationMenuList>
         {useNavItems().map((item) => (
           <NavigationMenuItem key={item.href}>
@@ -62,7 +61,6 @@ export function MainNav() {
               className={cn(navigationMenuTriggerStyle(), "data-active:bg-muted/50")}
             >
               {t(item.labelKey)}
-              {item.beta && <Badge variant="secondary">{t("text-beta")}</Badge>}
             </NavigationMenuLink>
           </NavigationMenuItem>
         ))}
@@ -80,7 +78,7 @@ export function MobileNav() {
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger
-        render={<Button variant="ghost" size="icon" className="md:hidden" aria-label={t("text-open-menu")} />}
+        render={<Button variant="ghost" size="icon" className="xl:hidden" aria-label={t("text-open-menu")} />}
       >
         <MenuIcon />
       </SheetTrigger>
@@ -100,11 +98,6 @@ export function MobileNav() {
             >
               <item.icon data-icon="inline-start" />
               {t(item.labelKey)}
-              {item.beta && (
-                <Badge variant="outline" className="ml-auto">
-                  {t("text-beta")}
-                </Badge>
-              )}
             </Button>
           ))}
         </nav>

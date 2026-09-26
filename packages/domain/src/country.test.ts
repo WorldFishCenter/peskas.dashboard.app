@@ -33,6 +33,6 @@ describe.each(Object.entries(COUNTRY_REGISTRY))("%s registry", (code, country) =
 
   test("colours and pre-selects only its own districts", () => {
     expect(sorted(Object.keys(country.districtColors))).toEqual(sorted(country.districts));
-    expect(country.districts).toEqual(expect.arrayContaining(country.defaultSelectedDistricts));
+    expect(country.districts).toEqual(expect.arrayContaining(country.defaultSelectedDistricts ?? []));
   });
 });

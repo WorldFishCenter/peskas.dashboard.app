@@ -48,8 +48,10 @@ const kenyaConfig: CountryConfig = {
     'Kilifi':  '#8cdaec',
     'Mombasa': '#b45248',
   },
-  gridMapViewState: { longitude: 39.7, latitude: -2.0, zoom: 7, pitch: 45, bearing: 10 },
-  defaultSelectedDistricts: ['Kilifi', 'Kwale'],
+  gridMapViewState: { longitude: 39.7, latitude: -2.0, zoom: 7, pitch: 0, bearing: 0 },
+  defaultSelectedDistricts: ['Kilifi', 'Kwale'], // optional: every district when left out
+  survey: {},                                   // how the landing survey records the catch (see CountryConfig);
+                                                // e.g. { pricedBySpecies: true } when each species has its own price
   features: {
     regionBreakdown: {
       regions: ['Coast North', 'Coast South'],  // display order of the region bars
@@ -81,6 +83,9 @@ apps/isomorphic-i18n/src/i18n/locales/<lang>/common.json
 
 Copy from `locales/en/common.json` and update country-specific strings.
 Strings to check: `metric-mean_rpue-unit`, `metric-mean_price_kg-unit` (currency label).
+Add the Data and methods page's country entries, keyed by the country code, to every language:
+`methods-sources-body-<CODE>` (who runs the survey and what it records) and `methods-update-<CODE>`
+(how often the pipeline runs; read its workflow cron).
 
 ---
 
