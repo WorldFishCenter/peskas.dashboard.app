@@ -39,7 +39,7 @@ export default function getDb() {
   );
 }
 
-/** Coasts connection (`MONGODB_URI_COASTS`): only the `wio_gaul2` boundaries. */
+/** Coasts connection (`MONGODB_URI_COASTS`): the `wio_gaul2` boundaries and the fishing effort cells and grounds. */
 export function getPortalDb() {
   return once("coasts", async () =>
     mongoose

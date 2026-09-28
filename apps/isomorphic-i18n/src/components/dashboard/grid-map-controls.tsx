@@ -6,6 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@workspace/ui/component
 import { Separator } from "@workspace/ui/components/separator";
 import { ToggleGroup, ToggleGroupItem } from "@workspace/ui/components/toggle-group";
 import { cn } from "@workspace/ui/lib/utils";
+import { Legend } from "@/components/charts/legend";
 import { useT } from "@/i18n/use-lang";
 import { TIME_BREAKS } from "@/lib/grid-map/config";
 import { calculateStats } from "@/lib/grid-map/stats";
@@ -79,6 +80,9 @@ export function EffortToolbar({
           </ToggleGroupItem>
         ))}
       </ToggleGroup>
+      <Legend
+        items={[{ label: t("info-fishing-ground"), color: "var(--foreground)", shape: "line" }]}
+      />
       <div className="ml-auto flex items-center gap-1 text-xs text-muted-foreground">
         <span>
           {t("info-total-visits", { count: stats.totalVisits })} ·{" "}
@@ -107,7 +111,6 @@ export function EffortToolbar({
               <ul className="flex flex-col gap-1 text-muted-foreground">
                 <li>{t("info-avg-time", { value: decimal(stats.avgTime) })}</li>
                 <li>{t("info-max-time", { value: decimal(stats.maxTime) })}</li>
-                <li>{t("info-avg-speed", { value: decimal(stats.avgSpeed) })}</li>
               </ul>
               <p className="text-xs text-muted-foreground">{t("info-rotate-hint")}</p>
             </div>

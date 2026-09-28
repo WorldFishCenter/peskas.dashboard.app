@@ -48,22 +48,22 @@ const TOOLTIP_STYLE = {
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 
 /**
- * Grid cell size for a zoom level: about 4 px on screen and never below the
- * data's 1 km, so the grid still shows across Mozambique's 2,500 km of coast.
- * A larger cell is coloured by its busiest 1 km square.
+ * Grid cell size for a zoom level: about 4 px on screen and never below 500 m,
+ * a few of the data's hexagons, so the grid still shows across Mozambique's
+ * 2,500 km of coast. A cell is coloured by its busiest hexagon.
  */
 function cellSizeFor(zoom: number, latitude: number) {
   const metresPerPixel = (156543.03 * Math.cos((latitude * Math.PI) / 180)) / 2 ** zoom;
   return (
-    [1000, 2000, 5000, 10000, 20000, 50000].find((size) => size >= 4 * metresPerPixel) ?? 50000
+    [500, 1000, 2000, 5000, 10000, 20000, 50000].find((size) => size >= 4 * metresPerPixel) ?? 50000
   );
 }
 
 /**
  * The country's map, `className` setting its height. "districts" colours each
  * district by the home page's measure over the time range; "effort" draws the
- * 1 km grid of where tracked boats spent their fishing time (all time) over
- * the district outlines. One question per map.
+ * coasts portal's fishing effort (all time), its cells as a grid over the
+ * fishing grounds they form, and the district outlines. One question per map.
  */
 export function GridMap({ mode, className }: { mode: "districts" | "effort"; className?: string }) {
   const { t, lang } = useT();
@@ -72,7 +72,10 @@ export function GridMap({ mode, className }: { mode: "districts" | "effort"; cla
   const { months } = useScope();
   const [hovered, setHovered] = useState<string | null>(null);
 
-  const { data: gridData = [] } = api.gridSummary.all.useQuery(undefined, {
+  const { data: cells = [] } = api.fishingEffort.cells.useQuery(undefined, {
+    enabled: mode === "effort",
+  });
+  const { data: grounds } = api.fishingEffort.grounds.useQuery(undefined, {
     enabled: mode === "effort",
   });
   const { data: boundaries } = api.gaul2Boundaries.getByCountry.useQuery();
@@ -83,15 +86,12 @@ export function GridMap({ mode, className }: { mode: "districts" | "effort"; cla
 
   const points: DataPoint[] = useMemo(
     () =>
-      (gridData as any[])
-        .filter((d) => !d.type?.includes("metadata"))
-        .map((d) => ({
-          position: [d.lng_grid_1km, d.lat_grid_1km] as [number, number],
-          avgTimeHours: d.avg_time_hours || 0,
-          totalVisits: parseInt(d.total_visits) || 0,
-          avgSpeed: parseFloat(d.avg_speed) || 0,
-        })),
-    [gridData],
+      cells.map((d) => ({
+        position: [d.lng, d.lat] as [number, number],
+        avgTimeHours: d.avg_hours_per_day,
+        totalVisits: d.unique_trips,
+      })),
+    [cells],
   );
 
   const cellColors = useMemo(() => forTheme(COLOR_RANGE, isDark), [isDark]);
@@ -165,6 +165,18 @@ export function GridMap({ mode, className }: { mode: "districts" | "effort"; cla
         };
       }
 
+      if (layer?.id === "grounds") {
+        const { avg_hours_per_day, unique_trips } = object.properties;
+        const avg = avg_hours_per_day.toLocaleString(lang, { maximumFractionDigits: 2 });
+        return {
+          html: `
+            <strong>${esc(t("info-fishing-ground"))}</strong>
+            <div>${esc(t("info-avg-time", { value: avg }))}</div>
+            <div>${esc(t("info-total-visits", { count: unique_trips }))}</div>`,
+          style: TOOLTIP_STYLE,
+        };
+      }
+
       if (!object.points) return null;
       const cellPoints = object.points as { source: DataPoint }[];
       const avgTime =
@@ -225,6 +237,19 @@ export function GridMap({ mode, className }: { mode: "districts" | "effort"; cla
       });
     if (mode === "districts") return districts ? [districts] : [];
 
+    // The grounds are made of the grid's own cells, so only their outline shows over it.
+    const fishingGrounds = new GeoJsonLayer({
+      id: "grounds",
+      data: (grounds?.features ?? []) as any,
+      pickable: true,
+      filled: false,
+      getLineColor: isDark ? [250, 250, 249, 180] : [12, 10, 9, 180],
+      getLineWidth: 1,
+      lineWidthUnits: "pixels",
+      parameters: { depthTest: false },
+      updateTriggers: { getLineColor: [isDark] },
+    });
+
     const grid = new GridLayer<DataPoint>({
       ...GRID_LAYER_SETTINGS,
       id: "grid-layer",
@@ -242,11 +267,12 @@ export function GridMap({ mode, className }: { mode: "districts" | "effort"; cla
       getColorWeight: (d) => getColorForValue(d.avgTimeHours) + 0.5,
       updateTriggers: { getColorWeight: [selectedLabels] },
     });
-    return districts ? [grid, districts] : [grid];
+    return districts ? [grid, fishingGrounds, districts] : [grid, fishingGrounds];
   }, [
     mode,
     isDark,
     visiblePoints,
+    grounds,
     cellSize,
     cellColors,
     choropleth,

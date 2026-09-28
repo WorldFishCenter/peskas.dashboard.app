@@ -1,9 +1,9 @@
-import { gaul2BoundariesRouter, gridSummaryRouter, summariesRouter } from "./router";
+import { fishingEffortRouter, gaul2BoundariesRouter, summariesRouter } from "./router";
 import { createTRPCRouter } from "./trpc";
 
 export const appRouter = createTRPCRouter({
   summaries: summariesRouter,
-  gridSummary: gridSummaryRouter,
+  fishingEffort: fishingEffortRouter,
   gaul2Boundaries: gaul2BoundariesRouter,
 });
 

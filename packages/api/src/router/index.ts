@@ -1,5 +1,5 @@
 import { gaul2BoundariesRouter } from "./gaul2-boundaries";
-import { gridSummaryRouter } from "./grid-summary";
+import { fishingEffortRouter } from "./fishing-effort";
 import { summariesRouter } from "./summaries";
 
-export { gaul2BoundariesRouter, gridSummaryRouter, summariesRouter };
+export { fishingEffortRouter, gaul2BoundariesRouter, summariesRouter };

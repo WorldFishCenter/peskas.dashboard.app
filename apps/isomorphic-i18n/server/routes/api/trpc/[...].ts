@@ -4,7 +4,11 @@ import { defineHandler } from "nitro/h3";
 
 // Megabytes that change only when the pipeline runs: Vercel's CDN serves them
 // for a day, then refreshes in the background, so most visits never reach Mongo.
-const CDN_CACHED = new Set(["gaul2Boundaries.getByCountry", "gridSummary.all"]);
+const CDN_CACHED = new Set([
+  "gaul2Boundaries.getByCountry",
+  "fishingEffort.cells",
+  "fishingEffort.grounds",
+]);
 const CDN_CACHE_CONTROL = `s-maxage=${60 * 60 * 24}, stale-while-revalidate=${60 * 60 * 24 * 7}`;
 
 // https://trpc.io/docs/server/adapters/fetch

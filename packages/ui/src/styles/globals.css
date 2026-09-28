@@ -232,5 +232,6 @@
   [data-slot="table"] th,
   [data-slot="table"] td {
     white-space: normal !important;
+    padding-inline: 0.25rem;
   }
 }

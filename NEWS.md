@@ -8,9 +8,10 @@
 - On the Catch and Revenue pages, the figures at the top choose what the charts show: the selected districts as one line against the same months a year earlier, then each district in its own small chart on the same scale.
 - Species show their common names. Species and sizes has three tabs: what is caught, at what size (with every measured species ranked by how much of its catch is below the size at which it first reproduces), and the food web.
 - The Fishing gear page compares every gear in one table: how much it is used, what it catches and earns per hour, how much of its catch is below maturity size, and its main species.
-- Vulnerable species opens with four figures. Data and methods opens with where the data is thin.
+- Vulnerable species opens with four figures. Data and methods draws how the figures are made and estimated, and sets out each survey, every measure and the chart symbols in one place each.
 - A page's address keeps its time range, districts and measure, so a shared link opens the same view.
 - The fishing-effort map shows the whole Mozambique coast legibly, in its own section.
+- The fishing-effort map shows the same fishing activity as the Peskas Coasts regional map, for this country only: the hours boats spent fishing, told apart from travel, with the fishing grounds they keep returning to outlined.
 - Pages print on landscape A4 with their time range and districts written on them.
 
 ## Changes
@@ -29,6 +30,7 @@
 - The length chart draws each size class as wide as it is, so a wide class no longer looks like a large catch.
 - In Kenya and Mozambique, the number of landings in a page's summary line now matches its figures.
 - For estimated totals, the grey line behind each district panel is the average district rather than the sum of all districts, which flattened every district's line.
+- Data and methods now says that species information covers the Western and Eastern Indian Ocean, that length classes widen above 30 cm, and that in Zanzibar and Mozambique the catch weight is worked out from fish lengths or buckets.
 
 ## Removed
 

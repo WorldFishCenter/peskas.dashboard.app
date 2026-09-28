@@ -8,6 +8,5 @@ export function calculateStats(data: DataPoint[]) {
     gridCells: data.length,
     avgTime: data.reduce((sum, d) => sum + (d.avgTimeHours || 0), 0) / n,
     maxTime: Math.max(...data.map((d) => d.avgTimeHours || 0), 0),
-    avgSpeed: data.reduce((sum, d) => sum + (d.avgSpeed || 0), 0) / n,
   };
 }

@@ -8,7 +8,6 @@ export interface DataPoint {
   position: [number, number];
   avgTimeHours: number;
   totalVisits: number;
-  avgSpeed: number;
 }
 
 export interface ChoroplethLegend {

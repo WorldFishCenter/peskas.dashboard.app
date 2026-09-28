@@ -1,13 +1,13 @@
 import type { TimeBreak } from "@/lib/grid-map/types";
 
-// Average time spent per 1 km grid cell, in hours.
+// Fishing hours per active day in a cell, summed over boats (the coasts portal's avg_hours_per_day).
 export const TIME_BREAKS: TimeBreak[] = [
-  { min: 0, max: 0.5, label: "0-0.5h" },
+  { min: 0, max: 0.25, label: "0-0.25h" },
+  { min: 0.25, max: 0.5, label: "0.25-0.5h" },
   { min: 0.5, max: 1, label: "0.5-1h" },
-  { min: 1, max: 2, label: "1-2h" },
-  { min: 2, max: 3, label: "2-3h" },
-  { min: 3, max: 5, label: "3-5h" },
-  { min: 5, max: Infinity, label: ">5h" },
+  { min: 1, max: 1.5, label: "1-1.5h" },
+  { min: 1.5, max: 2, label: "1.5-2h" },
+  { min: 2, max: Infinity, label: ">2h" },
 ];
 
 // One colour per TIME_BREAKS entry, the choropleth's ramp without its palest step.

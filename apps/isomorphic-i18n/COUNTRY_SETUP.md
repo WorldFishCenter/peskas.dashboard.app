@@ -78,9 +78,13 @@ apps/isomorphic-i18n/src/i18n/locales/<lang>/common.json
 
 Copy from `locales/en/common.json` and update country-specific strings.
 Strings to check: `metric-mean_rpue-unit`, `metric-mean_price_kg-unit` (currency label).
-Add the Data and methods page's country entries, keyed by the country code, to every language:
-`methods-sources-body-<CODE>` (who runs the survey and what it records) and `methods-update-<CODE>`
-(how often the pipeline runs; read its workflow cron).
+Add the Data and methods page's country facts, keyed by the country code, to every language, each
+checked against the country pipeline rather than written from memory:
+`methods-fact-survey-<CODE>` (who runs the survey), `methods-fact-recorded-<CODE>` (what the form
+records), `methods-fact-weight-<CODE>` (weighed, or worked out from lengths or buckets),
+`methods-fact-excluded-<CODE>` (survey forms the pipeline processes but keeps off the dashboard:
+`exclude_dashboard_ids` and the API export) and `methods-update-<CODE>` (how often the pipeline runs;
+read its workflow cron).
 
 ---
 
