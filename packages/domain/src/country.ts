@@ -30,6 +30,14 @@ export interface CountryConfig {
   siteDescription: string;
   /** Optional country flag asset path (e.g. for header/branding) */
   flagIconSrc?: string;
+  /** The organisation the dashboard is developed with, beside the brand in the top bar; `text-partner-<CODE>` names it in full */
+  partner: {
+    /** Its acronym, e.g. 'KEFS' */
+    name: string;
+    /** Logo in public/, shown on white in both themes */
+    logoSrc: string;
+    url?: string;
+  };
   /** ISO 4217 currency code, e.g. 'TZS' */
   currencyCode: string;
   /** BCP 47 locale for number/date formatting, e.g. 'sw-TZ' */
@@ -71,6 +79,7 @@ const zanzibarConfig: CountryConfig = {
   siteTitle: "PESKAS | Zanzibar Fisheries",
   siteDescription: "Peskas | Zanzibar Fisheries Dashboard",
   flagIconSrc: "/zanzibar-flag.svg",
+  partner: { name: "ZAFIRI", logoSrc: "/zafiri-logo.png" },
   currencyCode: "TZS",
   locale: "sw-TZ",
   languages: ["sw", "en"],
@@ -127,6 +136,7 @@ const kenyaConfig: CountryConfig = {
   siteTitle: "PESKAS | Kenya Fisheries",
   siteDescription: "Peskas | Kenya Fisheries Dashboard",
   flagIconSrc: "/kenya-flag.svg",
+  partner: { name: "KEFS", logoSrc: "/kefs-logo.png", url: "https://kefs.go.ke/" },
   currencyCode: "KES",
   locale: "sw-KE",
   languages: ["sw", "en"],
@@ -200,6 +210,7 @@ const mozambiqueConfig: CountryConfig = {
   siteTitle: "PESKAS | Mozambique Fisheries",
   siteDescription: "Peskas | Mozambique Fisheries Dashboard",
   flagIconSrc: "/mozambique-flag.svg",
+  partner: { name: "ADNAP", logoSrc: "/adnap-logo.png", url: "https://adnap.gov.mz/" },
   currencyCode: "MZN",
   locale: "pt-MZ",
   languages: ["pt", "en", "sw"],

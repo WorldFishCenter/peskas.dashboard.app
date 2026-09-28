@@ -13,6 +13,7 @@
 - The fishing-effort map shows the whole Mozambique coast legibly, in its own section.
 - The fishing-effort map shows the same fishing activity as the Peskas Coasts regional map, for this country only: the hours boats spent fishing, told apart from travel, with the fishing grounds they keep returning to outlined. It opens tilted so the columns show their height, and hovering over a fishing ground highlights it and shows its figures.
 - Pages print on landscape A4 with their time range and districts written on them.
+- The top bar shows the partner the dashboard is developed with, by logo and name, beside the Peskas brand: ZAFIRI in Zanzibar, KEFS in Kenya and ADNAP in Mozambique, linked to their websites. Data and methods names the partner first.
 
 ## Changes
 

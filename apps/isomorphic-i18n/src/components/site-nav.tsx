@@ -9,6 +9,7 @@ import {
   NavigationMenuList,
   navigationMenuTriggerStyle,
 } from "@workspace/ui/components/navigation-menu";
+import { Separator } from "@workspace/ui/components/separator";
 import {
   Sheet,
   SheetContent,
@@ -50,6 +51,34 @@ export function Brand() {
         <img src={activeCountry.flagIconSrc} alt="" width={24} height={16} className="rounded-sm" />
       )}
     </Link>
+  );
+}
+
+/** The partner the dashboard is developed with, beside the brand; hovering shows the full line. */
+export function Partner() {
+  const { t } = useT();
+  const { partner, countryCode } = activeCountry;
+  return (
+    <>
+      <Separator orientation="vertical" className="data-vertical:h-6 data-vertical:self-center" />
+      {/* Without a url the <a> is a placeholder, not a link (ZAFIRI has no website). */}
+      <a
+        href={partner.url}
+        target="_blank"
+        rel="noreferrer"
+        title={t(`text-partner-${countryCode}`)}
+        className="flex shrink-0 items-center gap-2"
+      >
+        {/* The logos are drawn for a light page, so they sit on white in dark mode too. */}
+        <img src={partner.logoSrc} alt="" className="h-8 w-auto rounded-md bg-white p-0.5" />
+        {/* No room for the words in a phone's top bar, nor beside the full nav until 1320px (its
+            Portuguese labels, the longest, need 1296px); screen readers still get them. */}
+        <span className="sr-only grid leading-tight sm:max-xl:not-sr-only min-[1320px]:not-sr-only">
+          <span className="text-xs text-muted-foreground">{t("text-partner-with")}</span>
+          <span className="text-sm font-semibold">{partner.name}</span>
+        </span>
+      </a>
+    </>
   );
 }
 

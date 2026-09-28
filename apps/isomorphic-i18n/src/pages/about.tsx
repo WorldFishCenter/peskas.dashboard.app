@@ -111,6 +111,7 @@ export default function AboutPage() {
   }, [hash]);
 
   const facts: [string, string][] = [
+    ["partner", t(`text-partner-${code}`)],
     ["survey", t(`methods-fact-survey-${code}`)],
     ["recorded", t(`methods-fact-recorded-${code}`)],
     ["weight", t(`methods-fact-weight-${code}`)],
@@ -120,7 +121,6 @@ export default function AboutPage() {
     ],
     ["trackers", t("methods-fact-trackers")],
     ["checks", t("methods-fact-checks")],
-    ["excluded", t(`methods-fact-excluded-${code}`)],
     [
       "updates",
       [t(`methods-update-${code}`), updated && t("methods-updated-at", { date: updated })]
@@ -257,9 +257,27 @@ export default function AboutPage() {
           <a className="link" href="mailto:peskas.platform@gmail.com">
             peskas.platform@gmail.com
           </a>
+          . {t("methods-website-body")}{" "}
+          <a className="link" href="https://peskas.org" target="_blank" rel="noreferrer">
+            peskas.org
+          </a>
+          . {t("methods-platform-body")}{" "}
+          <a
+            className="link"
+            href="https://validation.peskas.org/"
+            target="_blank"
+            rel="noreferrer"
+          >
+            validation.peskas.org
+          </a>
           . {t("methods-api-body")}{" "}
-          <a className="link" href="https://api.peskas.org/docs" target="_blank" rel="noreferrer">
-            api.peskas.org
+          <a
+            className="link"
+            href="https://github.com/WorldFishCenter/peskas-api"
+            target="_blank"
+            rel="noreferrer"
+          >
+            github.com/WorldFishCenter/peskas-api
           </a>
           .
         </p>

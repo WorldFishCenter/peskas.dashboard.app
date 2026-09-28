@@ -34,6 +34,7 @@ const kenyaConfig: CountryConfig = {
   siteTitle: 'PESKAS | Kenya Fisheries',
   siteDescription: 'Peskas | Kenya Fisheries Dashboard',
   flagIconSrc: '/kenya-flag.svg',
+  partner: { name: 'KEFS', logoSrc: '/kefs-logo.png', url: 'https://kefs.go.ke/' }, // top bar, beside the brand
   currencyCode: 'KES',                          // ISO 4217
   locale: 'sw-KE',                              // BCP 47, for the Open Graph locale
   languages: ['sw', 'en'],                      // locale folder names (Step 2); first is the fallback
@@ -81,10 +82,10 @@ Strings to check: `metric-mean_rpue-unit`, `metric-mean_price_kg-unit` (currency
 Add the Data and methods page's country facts, keyed by the country code, to every language, each
 checked against the country pipeline rather than written from memory:
 `methods-fact-survey-<CODE>` (who runs the survey), `methods-fact-recorded-<CODE>` (what the form
-records), `methods-fact-weight-<CODE>` (weighed, or worked out from lengths or buckets),
-`methods-fact-excluded-<CODE>` (survey forms the pipeline processes but keeps off the dashboard:
-`exclude_dashboard_ids` and the API export) and `methods-update-<CODE>` (how often the pipeline runs;
-read its workflow cron).
+records), `methods-fact-weight-<CODE>` (weighed, or worked out from lengths or buckets) and
+`methods-update-<CODE>` (how often the pipeline runs; read its workflow cron).
+Add `text-partner-<CODE>`, the line naming the organisation the dashboard is developed with in full:
+Data and methods lists it first among the facts, and the partner's logo in the top bar shows it on hover.
 
 ---
 
