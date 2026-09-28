@@ -26,6 +26,7 @@ import {
   EstimateFormula,
   SizeDiagram,
 } from "@/components/methods/diagrams";
+import { ExternalLink, Linked } from "@/components/linked-text";
 import { activeCountry } from "@/config/countryConfig";
 import { useT } from "@/i18n/use-lang";
 import { metricInfo, metricTitle, metricUnit } from "@/lib/dashboard/metrics";
@@ -47,6 +48,13 @@ const GLOSSARY = [
   "trophic",
   "vulnerability",
 ];
+/** Where the contact section sends each reader, in order: its locale keys are methods-contact-<key>(-term). */
+const CONTACTS = [
+  ["questions", "mailto:peskas.platform@gmail.com", "peskas.platform@gmail.com"],
+  ["platform", "https://validation.peskas.org/", "validation.peskas.org"],
+  ["api", "https://github.com/WorldFishCenter/peskas-api", "github.com/WorldFishCenter/peskas-api"],
+  ["peskas", "https://peskas.org", "peskas.org"],
+] as const;
 /** The page's sections, in order, with their anchors. `#estimates` is linked from the home page. */
 const CONTENTS = [
   ["sources", "methods-sources-title"],
@@ -153,7 +161,9 @@ export default function AboutPage() {
           {facts.map(([key, text]) => (
             <div key={key} className="grid gap-1 sm:grid-cols-[11rem_minmax(0,1fr)] sm:gap-4">
               <dt className="text-sm font-medium">{t(`methods-fact-${key}-term`)}</dt>
-              <dd className="text-sm leading-relaxed text-muted-foreground">{text}</dd>
+              <dd className="text-sm leading-relaxed text-muted-foreground">
+                <Linked text={text} />
+              </dd>
             </div>
           ))}
         </dl>
@@ -202,12 +212,14 @@ export default function AboutPage() {
                       <div className="font-medium">{metricTitle(t, key)}</div>
                       {unit && <div className="text-xs text-muted-foreground">{unit}</div>}
                     </TableCell>
-                    <TableCell className="align-top whitespace-normal">{info.what}</TableCell>
-                    <TableCell className="align-top whitespace-normal text-muted-foreground">
-                      {info.how}
+                    <TableCell className="align-top whitespace-normal">
+                      <Linked text={info.what} />
                     </TableCell>
                     <TableCell className="align-top whitespace-normal text-muted-foreground">
-                      {info.limits}
+                      <Linked text={info.how} />
+                    </TableCell>
+                    <TableCell className="align-top whitespace-normal text-muted-foreground">
+                      <Linked text={info.limits} />
                     </TableCell>
                   </TableRow>
                 );
@@ -220,7 +232,9 @@ export default function AboutPage() {
       <Section id="species" title={t("methods-species-title")}>
         <Beside>
           <Prose>
-            <p>{t("methods-species-body")}</p>
+            <p>
+              <Linked text={t("methods-species-body")} />
+            </p>
             <p>{t("methods-sizes-body")}</p>
             {survey.meanLengths && <p>{t("methods-sizes-body-means")}</p>}
           </Prose>
@@ -245,42 +259,28 @@ export default function AboutPage() {
           {GLOSSARY.map((term) => (
             <div key={term}>
               <dt className="text-sm font-medium">{t(`methods-glossary-${term}-term`)}</dt>
-              <dd className="text-sm text-muted-foreground">{t(`methods-glossary-${term}`)}</dd>
+              <dd className="text-sm text-muted-foreground">
+                <Linked text={t(`methods-glossary-${term}`)} />
+              </dd>
             </div>
           ))}
         </dl>
       </Section>
 
       <Section id="contact" title={t("methods-contact-title")}>
-        <p className="leading-relaxed">
-          {t("methods-contact-body")}{" "}
-          <a className="link" href="mailto:peskas.platform@gmail.com">
-            peskas.platform@gmail.com
-          </a>
-          . {t("methods-website-body")}{" "}
-          <a className="link" href="https://peskas.org" target="_blank" rel="noreferrer">
-            peskas.org
-          </a>
-          . {t("methods-platform-body")}{" "}
-          <a
-            className="link"
-            href="https://validation.peskas.org/"
-            target="_blank"
-            rel="noreferrer"
-          >
-            validation.peskas.org
-          </a>
-          . {t("methods-api-body")}{" "}
-          <a
-            className="link"
-            href="https://github.com/WorldFishCenter/peskas-api"
-            target="_blank"
-            rel="noreferrer"
-          >
-            github.com/WorldFishCenter/peskas-api
-          </a>
-          .
-        </p>
+        <dl className="grid gap-x-10 gap-y-5 sm:grid-cols-2 xl:grid-cols-4">
+          {CONTACTS.map(([key, href, label]) => (
+            <div key={key} className="flex flex-col gap-1 text-sm">
+              <dt className="font-medium">{t(`methods-contact-${key}-term`)}</dt>
+              <dd className="leading-relaxed text-muted-foreground">
+                <Linked text={t(`methods-contact-${key}`)} />
+              </dd>
+              <dd>
+                <ExternalLink href={href}>{label}</ExternalLink>
+              </dd>
+            </div>
+          ))}
+        </dl>
       </Section>
     </div>
   );

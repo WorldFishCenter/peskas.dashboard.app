@@ -10,6 +10,7 @@ import {
 } from "@workspace/ui/components/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@workspace/ui/components/popover";
 import { cn } from "@workspace/ui/lib/utils";
+import { Linked } from "@/components/linked-text";
 import { useT } from "@/i18n/use-lang";
 import { downloadCsv } from "@/lib/csv";
 import { trackEvent } from "@/lib/analytics";
@@ -59,7 +60,9 @@ export function InfoPopover({
           {sections.map(([key, text]) => (
             <div key={key} className="flex flex-col gap-1">
               <p className="text-xs font-medium text-muted-foreground">{t(key)}</p>
-              <p className="leading-relaxed">{text}</p>
+              <p className="leading-relaxed">
+                <Linked text={text} />
+              </p>
             </div>
           ))}
         </div>
