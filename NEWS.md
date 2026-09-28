@@ -29,6 +29,7 @@
 
 ## Fixed
 
+- Explanations checked against the pipelines that make the figures. Catch and revenue per unit effort are per hour of the trip as reported at landing, travel included, not per hour spent fishing. Length classes are described as they are (under 10 cm, then 5 cm wide to 30 cm, 10 cm to 1 m, wider above). Flagged records are said to be left out, without implying that a review brings them back. The size-at-maturity and gear explanations describe the charts they sit on.
 - Months without data no longer show as dots along the top edge of the trend charts.
 - The length chart draws each size class as wide as it is, so a wide class no longer looks like a large catch.
 - In Kenya and Mozambique, the number of landings in a page's summary line now matches its figures.

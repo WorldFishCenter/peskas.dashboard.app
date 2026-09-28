@@ -32,7 +32,7 @@ Each country's Peskas data pipeline cleans and summarises these records by month
 
 Terms used on the dashboards:
 
-- **Catch per unit effort**: kilograms of catch per fisher per hour of fishing.
+- **Catch per unit effort**: kilograms of catch per fisher per hour of the trip.
 - **Revenue per unit effort**: revenue per fisher per hour, in local currency (Tanzanian shillings for Zanzibar, Kenyan shillings for Kenya, meticais for Mozambique).
 
 ## Who runs it

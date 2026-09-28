@@ -29,7 +29,7 @@ export function froeseBands(maturityCm?: number | null, optimumCm?: number | nul
 
 /**
  * Least and most share (0–1) of the catch weight that can lie in a band.
- * Classes are 5 to 10 cm wide, so a class that straddles an edge holds fish
+ * Classes are 5 to 10 cm wide below 1 m, so a class that straddles an edge holds fish
  * on both sides: it counts towards the most, never the least. Null with no catch.
  */
 export function shareInBand(
