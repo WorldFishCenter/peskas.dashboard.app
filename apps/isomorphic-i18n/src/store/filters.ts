@@ -6,7 +6,7 @@ import type { MetricKey } from "@repo/domain/metrics";
 
 export type TimeRange = 3 | 6 | 12 | "all";
 export const TIME_RANGES: TimeRange[] = [3, 6, 12, "all"];
-const DEFAULT_RANGE: TimeRange = 6;
+const DEFAULT_RANGE: TimeRange = "all";
 
 const ALL = activeCountry.districts;
 const KNOWN = new Set(ALL);

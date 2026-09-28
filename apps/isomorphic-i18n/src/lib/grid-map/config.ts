@@ -20,10 +20,13 @@ export const COLOR_RANGE: [number, number, number][] = [
   [0, 89, 117],
 ];
 
+// The effort map's opening camera angle (degrees), over each country's view state.
+export const EFFORT_VIEW_ANGLE = { pitch: 35, bearing: 0 };
+
 export const GRID_LAYER_SETTINGS = {
   opacity: 0.85,
   elevationAggregation: "MEAN" as const,
-  elevationScale: 100,
+  // With elevationScale = cell width / 100, the tallest column is twice as high as it is wide.
   elevationRange: [0, 200] as [number, number],
   material: {
     ambient: 0.64,

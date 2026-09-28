@@ -11,12 +11,13 @@
 - Vulnerable species opens with four figures. Data and methods draws how the figures are made and estimated, and sets out each survey, every measure and the chart symbols in one place each.
 - A page's address keeps its time range, districts and measure, so a shared link opens the same view.
 - The fishing-effort map shows the whole Mozambique coast legibly, in its own section.
-- The fishing-effort map shows the same fishing activity as the Peskas Coasts regional map, for this country only: the hours boats spent fishing, told apart from travel, with the fishing grounds they keep returning to outlined.
+- The fishing-effort map shows the same fishing activity as the Peskas Coasts regional map, for this country only: the hours boats spent fishing, told apart from travel, with the fishing grounds they keep returning to outlined. It opens tilted so the columns show their height, and hovering over a fishing ground highlights it and shows its figures.
 - Pages print on landscape A4 with their time range and districts written on them.
 
 ## Changes
 
 - Every figure covers complete months: the current month is left out until its data is in, as the home page already did.
+- Pages open on all the data (all time) rather than the last 6 months. Pick 3, 6 or 12 months to compare with the same months a year earlier.
 - The month-by-month pattern (seasonality) appears once the selected districts have two years of data.
 - Large numbers read "62 billion TZS" instead of "61,884.1M", in the page's language.
 - Colours mean the same thing on every page and stay distinct for colour-blind readers; districts no longer have colours of their own.
@@ -29,6 +30,7 @@
 - Months without data no longer show as dots along the top edge of the trend charts.
 - The length chart draws each size class as wide as it is, so a wide class no longer looks like a large catch.
 - In Kenya and Mozambique, the number of landings in a page's summary line now matches its figures.
+- The species bar charts no longer repeat the species name in their tooltip.
 - For estimated totals, the grey line behind each district panel is the average district rather than the sum of all districts, which flattened every district's line.
 - Data and methods now says that species information covers the Western and Eastern Indian Ocean, that length classes widen above 30 cm, and that in Zanzibar and Mozambique the catch weight is worked out from fish lengths or buckets.
 

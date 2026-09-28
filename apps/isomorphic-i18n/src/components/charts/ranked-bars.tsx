@@ -54,11 +54,11 @@ export function RankedBars({
           content={
             <ChartTooltipContent
               hideIndicator
+              // The tooltip's own heading is the bar's name, so the rows start at its value.
               formatter={(_value, _name, item) => {
                 const row = item.payload as RankedRow;
                 return (
                   <div className="grid w-full gap-1.5">
-                    <div className="font-medium">{row.label}</div>
                     <TooltipRow label={name} value={format(row.value)} />
                     {row.detail && <div className="text-muted-foreground">{row.detail}</div>}
                   </div>

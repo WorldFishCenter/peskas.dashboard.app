@@ -22,11 +22,15 @@ export default function HomePage() {
           {t("section-recorded")}
           {data && (
             <span className="text-[13px] font-normal text-muted-foreground">
-              {hasComparison(data)
-                ? t("section-recorded-note", {
-                    landings: (landings ?? 0).toLocaleString(numberLocale(lang)),
-                  })
-                : t("section-recorded-first-year")}
+              {t(
+                // All time has no year earlier to compare with; a first year of data has none yet.
+                months === undefined
+                  ? "section-recorded-all-time"
+                  : hasComparison(data)
+                    ? "section-recorded-note"
+                    : "section-recorded-first-year",
+                { landings: (landings ?? 0).toLocaleString(numberLocale(lang)) },
+              )}
             </span>
           )}
         </h2>

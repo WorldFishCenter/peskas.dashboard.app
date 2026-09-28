@@ -23,8 +23,13 @@ import {
   isInBreak,
   MAP_STYLES,
 } from "@/lib/grid-map/colors";
-import { COLOR_RANGE, GRID_LAYER_SETTINGS, TIME_BREAKS } from "@/lib/grid-map/config";
-import type { ChoroplethLegend, DataPoint } from "@/lib/grid-map/types";
+import {
+  COLOR_RANGE,
+  EFFORT_VIEW_ANGLE,
+  GRID_LAYER_SETTINGS,
+  TIME_BREAKS,
+} from "@/lib/grid-map/config";
+import type { ChoroplethLegend, DataPoint, EffortLayer } from "@/lib/grid-map/types";
 import { usePageMetric, useScope } from "@/store/filters";
 import { api } from "@/trpc/react";
 
@@ -33,6 +38,7 @@ import "mapbox-gl/dist/mapbox-gl.css";
 type Rgba = [number, number, number, number];
 
 const ALL_RANGE_LABELS = TIME_BREAKS.map((r) => r.label);
+const ALL_EFFORT_LAYERS: EffortLayer[] = ["bars", "grounds"];
 
 // deck.gl renders tooltips as a plain DOM node, so style it with the theme tokens
 // (its translucent background is the popup rule in globals.css).
@@ -126,6 +132,8 @@ export function GridMap({ mode, className }: { mode: "districts" | "effort"; cla
 
   // Effort ranges shown on the grid; at least one always stays selected.
   const [selectedLabels, setSelectedLabels] = useState<string[]>(ALL_RANGE_LABELS);
+  // Effort overlays: both on by default; either may be hidden (Mapbox layer visibility).
+  const [visibleLayers, setVisibleLayers] = useState<EffortLayer[]>(ALL_EFFORT_LAYERS);
   const handleRangesChange = useCallback(
     (next: string[]) => {
       if (next.length === 0) return;
@@ -141,6 +149,21 @@ export function GridMap({ mode, className }: { mode: "districts" | "effort"; cla
       setSelectedLabels(next);
     },
     [selectedLabels],
+  );
+  const handleLayersChange = useCallback(
+    (next: EffortLayer[]) => {
+      const toggled =
+        next.find((l) => !visibleLayers.includes(l)) ??
+        visibleLayers.find((l) => !next.includes(l));
+      if (toggled) {
+        trackEvent("map_effort_layer_toggle", {
+          layer: toggled,
+          enabled: next.includes(toggled),
+        });
+      }
+      setVisibleLayers(next);
+    },
+    [visibleLayers],
   );
 
   const visiblePoints = useMemo(() => {
@@ -167,11 +190,11 @@ export function GridMap({ mode, className }: { mode: "districts" | "effort"; cla
 
       if (layer?.id === "grounds") {
         const { avg_hours_per_day, unique_trips } = object.properties;
-        const avg = avg_hours_per_day.toLocaleString(lang, { maximumFractionDigits: 2 });
+        const avgLabel = avg_hours_per_day.toLocaleString(lang, { maximumFractionDigits: 2 });
         return {
           html: `
             <strong>${esc(t("info-fishing-ground"))}</strong>
-            <div>${esc(t("info-avg-time", { value: avg }))}</div>
+            <div>${esc(t("info-avg-time", { value: avgLabel }))}</div>
             <div>${esc(t("info-total-visits", { count: unique_trips }))}</div>`,
           style: TOOLTIP_STYLE,
         };
@@ -198,8 +221,18 @@ export function GridMap({ mode, className }: { mode: "districts" | "effort"; cla
     [mode, metricByDistrict, metric, lang, t, cellColors],
   );
 
+  // Satellite is a raster style billed per tile, so the vector basemap is the default.
+  const [basemap, setBasemap] = useState<"map" | "satellite">("map");
+  const nextBasemap = basemap === "satellite" ? "map" : "satellite";
+  const basemapLabel = t(
+    nextBasemap === "map" ? "text-switch-to-map-view" : "text-switch-to-satellite-view",
+  );
+  // Dark theme and satellite imagery both need light strokes; the light vector
+  // basemap keeps the dark ones.
+  const lightStroke = isDark || basemap === "satellite";
+
   const layers = useMemo(() => {
-    const outline: Rgba = isDark ? [255, 255, 255, 110] : [68, 64, 60, 110];
+    const outline: Rgba = lightStroke ? [255, 255, 255, 110] : [68, 64, 60, 110];
     const districts =
       boundaries &&
       new GeoJsonLayer({
@@ -231,47 +264,73 @@ export function GridMap({ mode, className }: { mode: "districts" | "effort"; cla
         parameters: { depthTest: false },
         updateTriggers: {
           getFillColor: [metricByDistrict, minVal, maxVal, hovered, isDark],
-          getLineColor: [hovered, mode, isDark],
+          getLineColor: [hovered, mode, lightStroke],
           getLineWidth: [hovered],
         },
       });
     if (mode === "districts") return districts ? [districts] : [];
 
-    // The grounds are made of the grid's own cells, so only their outline shows over it.
-    const fishingGrounds = new GeoJsonLayer({
-      id: "grounds",
-      data: (grounds?.features ?? []) as any,
-      pickable: true,
-      filled: false,
-      getLineColor: isDark ? [250, 250, 249, 180] : [12, 10, 9, 180],
-      getLineWidth: 1,
-      lineWidthUnits: "pixels",
-      parameters: { depthTest: false },
-      updateTriggers: { getLineColor: [isDark] },
-    });
+    const showBars = visibleLayers.includes("bars");
+    const showGrounds = visibleLayers.includes("grounds");
 
-    const grid = new GridLayer<DataPoint>({
-      ...GRID_LAYER_SETTINGS,
-      id: "grid-layer",
-      data: visiblePoints,
-      cellSize,
-      pickable: true,
-      extruded: true,
-      getPosition: (d) => d.position,
-      getElevationWeight: (d) => d.avgTimeHours,
-      colorRange: cellColors,
-      // Each band's index, on a fixed scale: hiding a band doesn't recolour the others.
-      colorScaleType: "quantize",
-      colorDomain: [0, COLOR_RANGE.length],
-      colorAggregation: "MAX",
-      getColorWeight: (d) => getColorForValue(d.avgTimeHours) + 0.5,
-      updateTriggers: { getColorWeight: [selectedLabels] },
-    });
-    return districts ? [grid, fishingGrounds, districts] : [grid, fishingGrounds];
+    // The grounds are made of the grid's own cells, so over it they are an outline and a
+    // transparent fill, which deck.gl still picks: hovering anywhere on a ground tints it.
+    // Until coasts matched cells to grounds by their centre, many grounds came without trips
+    // or hours: the portal hides those, and so does this map.
+    const activeGrounds = (grounds?.features ?? []).filter(
+      (f) => f.properties?.avg_hours_per_day != null,
+    );
+    const groundStroke: [number, number, number] = lightStroke ? [250, 250, 249] : [12, 10, 9];
+    const fishingGrounds =
+      showGrounds &&
+      new GeoJsonLayer({
+        id: "grounds",
+        data: activeGrounds as any,
+        pickable: true,
+        autoHighlight: true,
+        highlightColor: [...groundStroke, 70],
+        getFillColor: [0, 0, 0, 0],
+        getLineColor: [...groundStroke, 180],
+        getLineWidth: 1,
+        lineWidthUnits: "pixels",
+        parameters: { depthTest: false },
+        updateTriggers: { getLineColor: [lightStroke] },
+      });
+
+    const grid =
+      showBars &&
+      new GridLayer<DataPoint>({
+        ...GRID_LAYER_SETTINGS,
+        id: "grid-layer",
+        data: visiblePoints,
+        cellSize,
+        // Heights in step with the cell width, so columns keep their shape at every zoom.
+        elevationScale: cellSize / 100,
+        pickable: true,
+        extruded: true,
+        getPosition: (d) => d.position,
+        getElevationWeight: (d) => d.avgTimeHours,
+        colorRange: cellColors,
+        // Each band's index, on a fixed scale: hiding a band doesn't recolour the others.
+        colorScaleType: "quantize",
+        colorDomain: [0, COLOR_RANGE.length],
+        colorAggregation: "MAX",
+        getColorWeight: (d) => getColorForValue(d.avgTimeHours) + 0.5,
+        updateTriggers: { getColorWeight: [selectedLabels] },
+      });
+
+    // Bottom → top: bars, grounds outlines, district outlines (Mapbox-style stack).
+    const effort = [];
+    if (grid) effort.push(grid);
+    if (fishingGrounds) effort.push(fishingGrounds);
+    if (districts) effort.push(districts);
+    return effort;
   }, [
     mode,
     isDark,
+    lightStroke,
     visiblePoints,
+    visibleLayers,
     grounds,
     cellSize,
     cellColors,
@@ -284,18 +343,27 @@ export function GridMap({ mode, className }: { mode: "districts" | "effort"; cla
     hovered,
   ]);
 
-  // Satellite is a raster style billed per tile, so the vector basemap is the default.
-  const [basemap, setBasemap] = useState<"map" | "satellite">("map");
-  const nextBasemap = basemap === "satellite" ? "map" : "satellite";
-  const basemapLabel = t(
-    nextBasemap === "map" ? "text-switch-to-map-view" : "text-switch-to-satellite-view",
-  );
-
   return (
-    <div className={cn("flex flex-col gap-3", className)}>
+    <div className={cn("flex flex-col gap-4", className)}>
+      {mode === "effort" && (
+        <EffortToolbar
+          data={visiblePoints}
+          cellSize={cellSize}
+          colors={cellColors}
+          selectedLabels={selectedLabels}
+          onSelectedLabelsChange={handleRangesChange}
+          visibleLayers={visibleLayers}
+          onVisibleLayersChange={handleLayersChange}
+        />
+      )}
       <div className="relative min-h-0 flex-1 overflow-hidden rounded-lg">
         <DeckGL
-          initialViewState={activeCountry.gridMapViewState}
+          // The effort map opens tilted so its columns show their height; the choropleth stays flat.
+          initialViewState={
+            mode === "effort"
+              ? { ...activeCountry.gridMapViewState, ...EFFORT_VIEW_ANGLE }
+              : activeCountry.gridMapViewState
+          }
           controller
           layers={layers}
           getTooltip={getTooltip as any}
@@ -350,14 +418,6 @@ export function GridMap({ mode, className }: { mode: "districts" | "effort"; cla
           <MetricLegend legend={choroplethLegend} className="absolute top-3 left-3" />
         )}
       </div>
-      {mode === "effort" && (
-        <EffortToolbar
-          data={visiblePoints}
-          colors={cellColors}
-          selectedLabels={selectedLabels}
-          onSelectedLabelsChange={handleRangesChange}
-        />
-      )}
     </div>
   );
 }

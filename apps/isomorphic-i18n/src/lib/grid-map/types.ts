@@ -16,3 +16,6 @@ export interface ChoroplethLegend {
   minLabel: string;
   maxLabel: string;
 }
+
+/** Effort map overlays the user can show or hide (Mapbox-style layer visibility). */
+export type EffortLayer = "bars" | "grounds";
