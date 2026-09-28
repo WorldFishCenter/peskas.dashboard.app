@@ -1,15 +1,23 @@
-import { useAtomValue } from "jotai";
-import { MetricTimeSeries } from "@/components/charts/metric-time-series";
+import { DistrictMultiples } from "@/components/charts/district-multiples";
+import { MetricTrend } from "@/components/charts/metric-trend";
 import { SeasonalityHeatmap } from "@/components/charts/seasonality-heatmap";
+import { MetricPicker } from "@/components/dashboard/headline";
 import type { PageMetric } from "@/config/routes";
+import { usePageMetric } from "@/store/filters";
 
-/** Catch and value pages: time series and seasonality for the header metric. */
+/**
+ * Catch and revenue pages: the page's measures as tiles (the one picked is
+ * charted), its trend against a year earlier, each district on its own, and
+ * the month-of-year pattern once there are two years of data.
+ */
 export function MetricAnalysis({ metric: page }: { metric: PageMetric }) {
-  const metric = useAtomValue(page.atom);
+  const [metric] = usePageMetric(page);
 
   return (
     <>
-      <MetricTimeSeries metric={metric} />
+      <MetricPicker page={page} />
+      <MetricTrend metric={metric} />
+      <DistrictMultiples metric={metric} />
       <SeasonalityHeatmap metric={metric} />
     </>
   );

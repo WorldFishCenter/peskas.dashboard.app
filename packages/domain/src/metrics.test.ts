@@ -5,7 +5,6 @@ import {
   isMetricKey,
   METRICS,
   MONTHLY_METRIC_KEYS,
-  sampleSize,
   vulnerabilityBand,
 } from "./metrics";
 
@@ -28,7 +27,12 @@ test("a mean with weights counts each value by the landings behind it", () => {
 
 // The rules agreed in CONTEXT.md: a region's catch is its districts' total, never their mean.
 test("totals add up across months and districts; crew size and rates average", () => {
-  for (const key of ["n_submissions", "estimated_catch_tn", "estimated_revenue", "estimated_fishing_trips"] as const) {
+  for (const key of [
+    "n_submissions",
+    "estimated_catch_tn",
+    "estimated_revenue",
+    "estimated_fishing_trips",
+  ] as const) {
     expect(METRICS[key]).toMatchObject({ overMonths: "sum", overDistricts: "sum" });
   }
   for (const key of ["n_fishers", "mean_cpue", "mean_catch_kg"] as const) {
@@ -72,8 +76,4 @@ test("vulnerability bands are quarters of the 0-100 scale", () => {
     "very_high",
   ]);
   expect(vulnerabilityBand(undefined)).toBeNull();
-});
-
-test("a figure's sample is small under 10 landings and large from 100", () => {
-  expect([0, 9, 10, 99, 100].map(sampleSize)).toEqual(["small", "small", "medium", "medium", "large"]);
 });

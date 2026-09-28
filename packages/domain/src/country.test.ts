@@ -25,14 +25,7 @@ describe.each(Object.entries(COUNTRY_REGISTRY))("%s registry", (code, country) =
     expect(sorted(Object.keys(country.districtToRegion))).toEqual(sorted(country.districts));
   });
 
-  test.runIf(country.features.regionBreakdown)("names the same regions in the region bars", () => {
-    const breakdown = country.features.regionBreakdown!;
-    expect(sorted(breakdown.regions)).toEqual(regions);
-    expect(sorted(Object.keys(breakdown.colors))).toEqual(regions);
-  });
-
-  test("colours and pre-selects only its own districts", () => {
-    expect(sorted(Object.keys(country.districtColors))).toEqual(sorted(country.districts));
-    expect(country.districts).toEqual(expect.arrayContaining(country.defaultSelectedDistricts ?? []));
+  test.runIf(country.features.regionBreakdown)("orders exactly its own regions", () => {
+    expect(sorted(country.features.regionBreakdown!.regions)).toEqual(regions);
   });
 });

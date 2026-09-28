@@ -1,26 +1,36 @@
-import { getPaletteColor, getTextColor } from "@/lib/dashboard/palettes";
+import { cn } from "@workspace/ui/lib/utils";
 
-/** YlGnBu-coloured value pill for the heatmap tables; missing values (`null`) show "-". */
+/**
+ * A value on the portal's one-hue ramp (the `--tint-*` tokens), for heat tables:
+ * five steps from `min` to `max`, text in the foreground colour on every one.
+ * Missing values (`null`) show "-".
+ */
 export function HeatCell({
   value,
   min,
   max,
   label,
   title,
+  dense,
 }: {
   value: number | null;
   min: number;
   max: number;
   label: string;
   title?: string;
+  /** Smaller, for tables with many columns (24 months). */
+  dense?: boolean;
 }) {
   if (value === null) return <span className="text-muted-foreground">-</span>;
-  const bg = getPaletteColor(value, min, max);
+  const step = max === min ? 5 : 1 + Math.min(4, Math.floor((5 * (value - min)) / (max - min)));
   return (
     <span
       title={title}
-      className="inline-block min-w-12 rounded-md px-2 py-1 text-center font-medium tabular-nums"
-      style={{ backgroundColor: bg, color: getTextColor(bg) }}
+      className={cn(
+        "inline-block rounded-md text-center tabular-nums",
+        dense ? "min-w-8 px-1 py-0.5 text-xs" : "min-w-12 px-2 py-1",
+      )}
+      style={{ backgroundColor: `var(--tint-${step})` }}
     >
       {label}
     </span>
@@ -29,12 +39,14 @@ export function HeatCell({
 
 /** Min/max for colour scaling (0..1 when there are no values). */
 export function valueRange(values: number[]) {
-  return values.length ? { min: Math.min(...values), max: Math.max(...values) } : { min: 0, max: 1 };
+  return values.length
+    ? { min: Math.min(...values), max: Math.max(...values) }
+    : { min: 0, max: 1 };
 }
 
 /** Column sort that treats missing values as 0. */
 export const sortNullsAsZero = (
   a: { getValue: (id: string) => unknown },
   b: { getValue: (id: string) => unknown },
-  id: string
+  id: string,
 ) => (Number(a.getValue(id)) || 0) - (Number(b.getValue(id)) || 0);

@@ -46,4 +46,4 @@ districtSummarySchema.index({ timestamp: -1 });
  */
 export const DistrictSummaryModel =
   (mongoose.models.DistrictSummary as mongoose.Model<TDistrictSummary>) ??
-  mongoose.model<TDistrictSummary>("DistrictSummary", districtSummarySchema); 
+  mongoose.model<TDistrictSummary>("DistrictSummary", districtSummarySchema);

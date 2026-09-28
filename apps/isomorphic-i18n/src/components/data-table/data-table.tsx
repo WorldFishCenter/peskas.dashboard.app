@@ -1,5 +1,12 @@
 import type { ReactTable, RowData, TableFeatures } from "@tanstack/react-table";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@workspace/ui/components/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@workspace/ui/components/table";
 
 /** A TanStack table drawn with the shadcn Table parts, per the shadcn Data Table guide. */
 export function DataTable<TFeatures extends TableFeatures, TData extends RowData>({
@@ -15,7 +22,9 @@ export function DataTable<TFeatures extends TableFeatures, TData extends RowData
         {table.getHeaderGroups().map((group) => (
           <TableRow key={group.id}>
             {group.headers.map((header) => (
-              <TableHead key={header.id}>{header.isPlaceholder ? null : <table.FlexRender header={header} />}</TableHead>
+              <TableHead key={header.id}>
+                {header.isPlaceholder ? null : <table.FlexRender header={header} />}
+              </TableHead>
             ))}
           </TableRow>
         ))}

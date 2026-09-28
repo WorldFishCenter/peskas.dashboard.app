@@ -7,12 +7,24 @@ type SortableColumn = {
 };
 
 /** Header cell that toggles ascending/descending sort, per the shadcn Data Table guide. */
-export function SortableHeader({ column, children }: { column: SortableColumn; children: React.ReactNode }) {
+export function SortableHeader({
+  column,
+  children,
+}: {
+  column: SortableColumn;
+  children: React.ReactNode;
+}) {
   const sorted = column.getIsSorted();
-  const Icon = sorted === "desc" ? ArrowDownIcon : sorted === "asc" ? ArrowUpIcon : ChevronsUpDownIcon;
+  const Icon =
+    sorted === "desc" ? ArrowDownIcon : sorted === "asc" ? ArrowUpIcon : ChevronsUpDownIcon;
 
   return (
-    <Button variant="ghost" size="sm" className="-ml-2" onClick={() => column.toggleSorting(sorted === "asc")}>
+    <Button
+      variant="ghost"
+      size="sm"
+      className="-ml-2"
+      onClick={() => column.toggleSorting(sorted === "asc")}
+    >
       {children}
       <Icon data-icon="inline-end" />
     </Button>

@@ -1,35 +1,40 @@
-import { TIME_BREAKS } from '@/lib/grid-map/config';
-import type { TimeBreak } from '@/lib/grid-map/types';
+import { TIME_BREAKS } from "@/lib/grid-map/config";
+import type { TimeBreak } from "@/lib/grid-map/types";
 
-// Sequential Blues palette (light → dark), used for the district choropleth.
+// The portal's one-hue magnitude ramp (hue 225°, light → dark), as in the tint tokens of globals.css.
 export const CHOROPLETH_COLORS: [number, number, number][] = [
-  [247, 251, 255],
-  [198, 219, 239],
-  [107, 174, 214],
-  [33, 113, 181],
-  [8, 69, 148],
-  [8, 37, 82],
+  [228, 245, 252],
+  [195, 228, 242],
+  [146, 206, 231],
+  [86, 178, 212],
+  [14, 148, 186],
+  [0, 117, 150],
+  [0, 89, 117],
 ];
+
+/** A ramp for the basemap: light to dark on a light map, dark to light on a dark one, so more always stands out. */
+export const forTheme = <T>(ramp: T[], dark: boolean) => (dark ? [...ramp].reverse() : ramp);
 
 export function interpolateChoroplethColor(
   value: number,
   min: number,
-  max: number
+  max: number,
+  colors: [number, number, number][] = CHOROPLETH_COLORS,
 ): [number, number, number, number] {
-  if (min === max) return [...CHOROPLETH_COLORS[2], 180];
+  if (min === max) return [...colors[2], 180];
   const t = Math.max(0, Math.min(1, (value - min) / (max - min)));
-  const scaled = t * (CHOROPLETH_COLORS.length - 1);
+  const scaled = t * (colors.length - 1);
   const lo = Math.floor(scaled);
-  const hi = Math.min(lo + 1, CHOROPLETH_COLORS.length - 1);
+  const hi = Math.min(lo + 1, colors.length - 1);
   const frac = scaled - lo;
-  const mix = (i: number) => Math.round(CHOROPLETH_COLORS[lo][i] * (1 - frac) + CHOROPLETH_COLORS[hi][i] * frac);
+  const mix = (i: number) => Math.round(colors[lo][i] * (1 - frac) + colors[hi][i] * frac);
   return [mix(0), mix(1), mix(2), 180];
 }
 
 export const MAP_STYLES = {
-  light: 'mapbox://styles/mapbox/light-v11',
-  dark: 'mapbox://styles/mapbox/dark-v11',
-  satellite: 'mapbox://styles/mapbox/satellite-v9',
+  light: "mapbox://styles/mapbox/light-v11",
+  dark: "mapbox://styles/mapbox/dark-v11",
+  satellite: "mapbox://styles/mapbox/satellite-v9",
 };
 
 /** Whether an average-hours value falls in an effort band (upper bound exclusive). */

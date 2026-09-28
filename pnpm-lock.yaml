@@ -91,6 +91,9 @@ importers:
       '@workspace/ui':
         specifier: workspace:*
         version: link:../../packages/ui
+      d3-scale:
+        specifier: 4.0.2
+        version: 4.0.2
       i18next:
         specifier: ^23.11.4
         version: 23.11.4
@@ -131,6 +134,9 @@ importers:
       '@tailwindcss/vite':
         specifier: ^4.3.3
         version: 4.3.3(vite@8.3.1(@types/node@24.13.6)(jiti@2.7.0)(yaml@2.9.0))
+      '@types/d3-scale':
+        specifier: 4.0.8
+        version: 4.0.8
       '@types/node':
         specifier: ^24.13.3
         version: 24.13.6

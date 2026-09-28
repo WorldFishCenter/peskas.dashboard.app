@@ -128,15 +128,15 @@ loaded. Add new event names to the `AnalyticsEvent` union there so typos fail th
 
 | Event | Parameters | Fired when |
 |---|---|---|
-| `filter_time_range_change` | `time_range` (`"3"`, `"6"`, `"12"`, `"all"`) | Header time range option picked |
-| `filter_metric_change` | `metric`, `control_source` (`header` \| `district_widget`) | Metric picked in either control |
+| `filter_time_range_change` | `time_range` (`"3"`, `"6"`, `"12"`, `"all"`) | Time range picked in the page header |
+| `filter_metric_change` | `metric`, `control_source` (`page` \| `district_widget`) | Metric picked: a tile on the catch or revenue page (`page`), or a measure in the overview's district card (`district_widget`) |
 | `filter_district_change` | `action`, `district`, `peskas_region`, `district_count` | District selection changed |
 | `map_basemap_change` | `basemap` (`satellite` \| `map`) | Basemap toggled on the grid map |
 | `map_effort_range_toggle` | `effort_range`, `enabled` | Effort band toggled in the map info panel |
 | `chart_info_open` | `chart` | A chart's explanation (the ⓘ button) opened |
 | `chart_download` | `chart` | A chart's data downloaded as CSV |
 
-`filter_district_change.action` is one of `add`, `remove`, `clear`, `region_add` or
+`filter_district_change.action` is one of `add`, `remove`, `clear`, `select_all`, `region_add` or
 `region_remove`.
 `district` is absent on region and clear actions; `peskas_region` is only present on region
 actions.
@@ -153,18 +153,20 @@ Two deliberate choices in how these fire:
   and deselecting the last remaining effort band (which the map rejects), are all
   suppressed. Without this the funnel is full of no-op "changes".
 - **Nothing fires on mount, hydration, or navigation.** Only user gestures are tracked. In
-  particular the district list is restored from `localStorage` and the metric is reset by
-  route-driven effects in the header metric select (`components/filters/metric-select.tsx`);
-  neither is a user action.
+  particular the time range, districts and metric read from the page address
+  (`?months=12&d=Kati&metric=mean_rpue`, `store/filters.ts`) are not user actions.
 
 Continuous interactions are intentionally not tracked: map pan/zoom
 (`onViewStateChange`) and hover tooltips would each produce hundreds of events per session
 and blow through GA4 event quotas.
 
-### Not instrumented: exports
+### Chart ids
 
-There is no export or download feature in the fisheries dashboard today. When one is
-added, fire a `data_export` event with the dataset and format.
+`chart_info_open` and `chart_download` carry the card's `id` (also the CSV file name), e.g.
+`district-comparison`, `trend-mean_cpue`, `districts-mean_cpue`, `species-ranking`,
+`length-frequency`, `caught-small`, `gear-profile`, `gear-species`, `vulnerability-bands`,
+`species-status`, `coverage`. Tiles' explanations fire `chart_info_open` with `headline-<metric>`
+or `vulnerable-<name>`.
 
 ---
 

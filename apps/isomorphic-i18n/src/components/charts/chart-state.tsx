@@ -15,7 +15,8 @@ import { useT } from "@/i18n/use-lang";
 export const CHART_HEIGHT = "h-[250px]";
 
 /** Height for a horizontal bar chart: one row per category plus the axis, never below 160px. */
-export const categoryChartHeight = (rows: number, rowHeight = 28) => Math.max(160, rows * rowHeight + 56);
+export const categoryChartHeight = (rows: number, rowHeight = 28) =>
+  Math.max(160, rows * rowHeight + 56);
 
 export type ChartStatus = "loading" | "error" | "empty";
 
@@ -42,7 +43,8 @@ export function ChartState({
         </EmptyMedia>
         <EmptyTitle>{isError ? t("text-error") : t("text-no-data")}</EmptyTitle>
         <EmptyDescription>
-          {description ?? (isError ? t("text-no-data-available") : t("text-no-data-available-for-filters"))}
+          {description ??
+            (isError ? t("text-no-data-available") : t("text-no-data-available-for-filters"))}
         </EmptyDescription>
       </EmptyHeader>
     </Empty>
@@ -50,7 +52,12 @@ export function ChartState({
 }
 
 /** The parts of a query result (React Query) that decide what a chart shows. */
-type QueryState = { isPending: boolean; isFetching: boolean; error: unknown; dataUpdatedAt: number };
+type QueryState = {
+  isPending: boolean;
+  isFetching: boolean;
+  error: unknown;
+  dataUpdatedAt: number;
+};
 
 /**
  * Renders `children` once the query has something to draw, otherwise its
@@ -75,20 +82,29 @@ export function ChartGate({
   const { t } = useT();
 
   if (query.isPending && !query.isFetching) {
-    return <ChartState status="empty" className={className} description={t("text-select-districts")} />;
+    return (
+      <ChartState status="empty" className={className} description={t("text-select-districts")} />
+    );
   }
   if (query.isPending) return <ChartState status="loading" className={className} />;
   if (query.error) return <ChartState status="error" className={className} />;
-  if (isEmpty) return <ChartState status="empty" className={className} description={emptyDescription} />;
+  if (isEmpty)
+    return <ChartState status="empty" className={className} description={emptyDescription} />;
   // New data remounts the guard, so a chart that failed on one response can draw the next.
   return (
-    <RenderGuard key={query.dataUpdatedAt} fallback={<ChartState status="error" className={className} />}>
+    <RenderGuard
+      key={query.dataUpdatedAt}
+      fallback={<ChartState status="error" className={className} />}
+    >
       {children}
     </RenderGuard>
   );
 }
 
-class RenderGuard extends Component<{ fallback: ReactNode; children: ReactNode }, { failed: boolean }> {
+class RenderGuard extends Component<
+  { fallback: ReactNode; children: ReactNode },
+  { failed: boolean }
+> {
   state = { failed: false };
 
   static getDerivedStateFromError() {

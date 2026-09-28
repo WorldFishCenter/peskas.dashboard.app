@@ -32,7 +32,10 @@ export function froeseBands(maturityCm?: number | null, optimumCm?: number | nul
  * Classes are 5 to 10 cm wide, so a class that straddles an edge holds fish
  * on both sides: it counts towards the most, never the least. Null with no catch.
  */
-export function shareInBand(classes: readonly LengthClass[], band: Band): { least: number; most: number } | null {
+export function shareInBand(
+  classes: readonly LengthClass[],
+  band: Band,
+): { least: number; most: number } | null {
   let least = 0;
   let most = 0;
   let total = 0;
@@ -47,22 +50,36 @@ export function shareInBand(classes: readonly LengthClass[], band: Band): { leas
 
 /** Where a length class sits against the length at maturity; one that straddles it can't be placed. */
 export type MaturityPosition = "below" | "spanning" | "above";
-export function maturityPosition(c: Pick<LengthClass, "length_min" | "length_max">, maturityCm: number): MaturityPosition {
+export function maturityPosition(
+  c: Pick<LengthClass, "length_min" | "length_max">,
+  maturityCm: number,
+): MaturityPosition {
   if (c.length_max != null && c.length_max <= maturityCm) return "below";
   if (c.length_min >= maturityCm) return "above";
   return "spanning";
 }
 
 /** Length classes of one taxon and gear, with the trips measured behind them. */
-export type MeasuredCatch = { taxon: string; gear: string | null; classes: LengthClass[]; trips: number };
+export type MeasuredCatch = {
+  taxon: string;
+  gear: string | null;
+  classes: LengthClass[];
+  trips: number;
+};
 
 /**
  * Per gear, the least and most share of the measured catch below maturity,
  * counting only taxa with a known maturity length, and the trips behind it.
  * Gears with fewer than MIN_MEASURED_TRIPS are left out.
  */
-export function immatureByGear(measured: readonly MeasuredCatch[], maturity: Record<string, number>) {
-  const gears = new Map<string | null, { least: number; most: number; kg: number; trips: number }>();
+export function immatureByGear(
+  measured: readonly MeasuredCatch[],
+  maturity: Record<string, number>,
+) {
+  const gears = new Map<
+    string | null,
+    { least: number; most: number; kg: number; trips: number }
+  >();
   for (const m of measured) {
     const lm = maturity[m.taxon];
     const share = lm ? shareInBand(m.classes, { from: 0, to: lm }) : null;
@@ -79,4 +96,54 @@ export function immatureByGear(measured: readonly MeasuredCatch[], maturity: Rec
     .filter(([, g]) => g.trips >= MIN_MEASURED_TRIPS)
     .map(([gear, g]) => ({ gear, least: g.least / g.kg, most: g.most / g.kg, trips: g.trips }))
     .sort((a, b) => b.least - a.least);
+}
+
+/** One species' measured catch over every gear, with its lengths at maturity and optimum when FishBase has them. */
+export type MeasuredSpecies = {
+  taxon: string;
+  trips: number;
+  classes: LengthClass[];
+  catch_kg: number;
+  maturity?: number;
+  optimum?: number;
+};
+
+/**
+ * The species measured on at least MIN_MEASURED_TRIPS landings, each with its
+ * length classes summed over every gear, most measured catch first.
+ */
+export function measuredSpecies(
+  measured: readonly MeasuredCatch[],
+  maturity: Record<string, number>,
+  optimum: Record<string, number>,
+): MeasuredSpecies[] {
+  const bySpecies = new Map<string, { trips: number; classes: Map<number, LengthClass> }>();
+  for (const m of measured) {
+    const s = bySpecies.get(m.taxon) ?? { trips: 0, classes: new Map() };
+    s.trips += m.trips;
+    for (const c of m.classes) {
+      const k = s.classes.get(c.length_min) ?? {
+        length_min: c.length_min,
+        length_max: c.length_max,
+        catch_kg: 0,
+      };
+      k.catch_kg += c.catch_kg;
+      s.classes.set(c.length_min, k);
+    }
+    bySpecies.set(m.taxon, s);
+  }
+  return [...bySpecies]
+    .filter(([, s]) => s.trips >= MIN_MEASURED_TRIPS)
+    .map(([taxon, s]) => {
+      const classes = [...s.classes.values()].sort((a, b) => a.length_min - b.length_min);
+      return {
+        taxon,
+        trips: s.trips,
+        classes,
+        catch_kg: classes.reduce((sum, c) => sum + c.catch_kg, 0),
+        maturity: maturity[taxon],
+        optimum: optimum[taxon],
+      };
+    })
+    .sort((a, b) => b.catch_kg - a.catch_kg);
 }

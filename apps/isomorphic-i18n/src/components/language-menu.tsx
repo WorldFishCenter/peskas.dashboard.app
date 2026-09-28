@@ -23,14 +23,19 @@ export function LanguageMenu() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger render={<Button variant="ghost" size="sm" aria-label={t("text-language")} />}>
+      <DropdownMenuTrigger
+        render={<Button variant="ghost" size="sm" aria-label={t("text-language")} />}
+      >
         <LanguagesIcon data-icon="inline-start" />
         {lang.toUpperCase()}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-40">
         <DropdownMenuGroup>
           <DropdownMenuLabel>{t("text-language")}</DropdownMenuLabel>
-          <DropdownMenuRadioGroup value={lang} onValueChange={(value) => navigate(`/${value}${route === "/" ? "" : route}${search}`)}>
+          <DropdownMenuRadioGroup
+            value={lang}
+            onValueChange={(value) => navigate(`/${value}${route === "/" ? "" : route}${search}`)}
+          >
             {languages.map((code) => (
               <DropdownMenuRadioItem key={code} value={code}>
                 {LANGUAGE_NAMES[code] ?? code}

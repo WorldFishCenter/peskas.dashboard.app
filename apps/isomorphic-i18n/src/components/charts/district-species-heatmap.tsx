@@ -10,12 +10,14 @@ import {
   type SortingState,
 } from "@tanstack/react-table";
 import { useT } from "@/i18n/use-lang";
+import { formatNumber } from "@/lib/dashboard/format";
 import { ChartCard } from "@/components/charts/chart-card";
 import { ChartGate } from "@/components/charts/chart-state";
 import { DataTable } from "@/components/data-table/data-table";
 import { SortableHeader } from "@/components/data-table/sortable-header";
 import { HeatCell, sortNullsAsZero, valueRange } from "@/components/charts/heat-cell";
 import { compositionInfo } from "@/lib/dashboard/metrics";
+import { useSpeciesName } from "@/lib/dashboard/species";
 import { useDistrictScope } from "@/store/filters";
 import { api } from "@/trpc/react";
 
@@ -31,16 +33,18 @@ const features = tableFeatures({
 type HeatRow = { taxon: string; total: number } & Record<string, number | string>;
 const columnHelper = createColumnHelper<typeof features, HeatRow>();
 
-const fmt = (v: number) => (v >= 1000 ? `${(v / 1000).toFixed(1)}K` : v.toFixed(1));
-
 /** Catch (kg) of the top species in each selected district. */
 export function DistrictSpeciesHeatmap({ className }: { className?: string }) {
-  const { t } = useT();
+  const { t, lang } = useT();
   const scope = useDistrictScope();
   const { districts } = scope.input;
   const [sorting, setSorting] = useState<SortingState>([]);
+  const name = useSpeciesName();
 
-  const query = api.summaries.taxa.useQuery({ ...scope.input, metrics: ["catch_kg"] }, scope.options);
+  const query = api.summaries.taxa.useQuery(
+    { ...scope.input, metrics: ["catch_kg"] },
+    scope.options,
+  );
   const { data } = query;
 
   const rows = useMemo(() => {
@@ -62,18 +66,29 @@ export function DistrictSpeciesHeatmap({ className }: { className?: string }) {
       .slice(0, TOP_N) as HeatRow[];
   }, [data, districts, t]);
 
+  // Districts with catch among these species; one colour scale for every cell, so a shade means the same weight anywhere.
+  const shown = useMemo(
+    () => districts.filter((d) => rows.some((r) => Number(r[d]) > 0)),
+    [rows, districts],
+  );
   const columns = useMemo(() => {
-    // No catch counts as missing, both for the colour scale and the cell.
-    const range = (key: string) => valueRange(rows.map((r) => Number(r[key])).filter((v) => v > 0));
-    const totals = range("total");
+    const fmt = (v: number) => formatNumber(v, lang);
+    const range = valueRange(
+      rows.flatMap((r) => shown.map((d) => Number(r[d]))).filter((v) => v > 0),
+    );
 
     return columnHelper.columns([
       columnHelper.accessor("taxon", {
-        header: ({ column }) => <SortableHeader column={column}>{t("text-species")}</SortableHeader>,
+        header: ({ column }) => (
+          <SortableHeader column={column}>{t("text-species")}</SortableHeader>
+        ),
         sortFn: "alphanumeric",
         cell: ({ getValue }) => (
-          <span title={getValue()} className="block max-w-48 truncate font-medium">
-            {getValue()}
+          <span title={getValue()} className="flex max-w-56 flex-col">
+            <span className="truncate font-medium">{name(getValue())}</span>
+            {name(getValue()) !== getValue() && (
+              <span className="truncate text-xs text-muted-foreground italic">{getValue()}</span>
+            )}
           </span>
         ),
       }),
@@ -81,11 +96,11 @@ export function DistrictSpeciesHeatmap({ className }: { className?: string }) {
         header: ({ column }) => <SortableHeader column={column}>{t("text-total")}</SortableHeader>,
         sortFn: sortNullsAsZero,
         cell: ({ getValue }) => (
-          <HeatCell value={getValue()} {...totals} label={fmt(getValue())} title={`${fmt(getValue())} kg`} />
+          <span className="block text-right font-medium tabular-nums">{fmt(getValue())}</span>
         ),
       }),
-      ...districts.map((district) => {
-        const { min, max } = range(district);
+      ...shown.map((district) => {
+        const { min, max } = range;
         return columnHelper.accessor((row) => Number(row[district]) || 0, {
           id: district,
           header: ({ column }) => <SortableHeader column={column}>{district}</SortableHeader>,
@@ -102,7 +117,7 @@ export function DistrictSpeciesHeatmap({ className }: { className?: string }) {
         });
       }),
     ]);
-  }, [rows, districts, t]);
+  }, [rows, shown, t, name, lang]);
 
   const table = useTable({
     features,
@@ -121,7 +136,6 @@ export function DistrictSpeciesHeatmap({ className }: { className?: string }) {
       description={t("text-district-species-description")}
       info={compositionInfo(t)}
       download={rows}
-      scope={scope}
     >
       <ChartGate query={query} isEmpty={!rows.length} className="h-64">
         <DataTable table={table} />

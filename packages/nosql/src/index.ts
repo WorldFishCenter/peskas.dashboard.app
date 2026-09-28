@@ -34,12 +34,16 @@ function requireEnv(name: string) {
 
 /** Default connection (`MONGODB_URI`): the portal summaries every model reads. */
 export default function getDb() {
-  return once("summaries", async () => mongoose.connect(requireEnv("MONGODB_URI"), { ...OPTIONS, maxPoolSize: 10 }));
+  return once("summaries", async () =>
+    mongoose.connect(requireEnv("MONGODB_URI"), { ...OPTIONS, maxPoolSize: 10 }),
+  );
 }
 
 /** Coasts connection (`MONGODB_URI_COASTS`): only the `wio_gaul2` boundaries. */
 export function getPortalDb() {
   return once("coasts", async () =>
-    mongoose.createConnection(requireEnv("MONGODB_URI_COASTS"), { ...OPTIONS, maxPoolSize: 5 }).asPromise()
+    mongoose
+      .createConnection(requireEnv("MONGODB_URI_COASTS"), { ...OPTIONS, maxPoolSize: 5 })
+      .asPromise(),
   );
 }

@@ -12,27 +12,23 @@
 
 /** GA4 event names must be snake_case and 40 characters or fewer. */
 export type AnalyticsEvent =
-  | 'filter_time_range_change'
-  | 'filter_metric_change'
-  | 'filter_district_change'
-  | 'map_basemap_change'
-  | 'map_effort_range_toggle'
-  | 'chart_info_open'
-  | 'chart_download';
+  | "filter_time_range_change"
+  | "filter_metric_change"
+  | "filter_district_change"
+  | "map_basemap_change"
+  | "map_effort_range_toggle"
+  | "chart_info_open"
+  | "chart_download";
 
 type AnalyticsParams = Record<string, string | number | boolean>;
 
 declare global {
   interface Window {
-    gtag?: (
-      command: 'event',
-      eventName: string,
-      params?: AnalyticsParams
-    ) => void;
+    gtag?: (command: "event", eventName: string, params?: AnalyticsParams) => void;
   }
 }
 
 export function trackEvent(event: AnalyticsEvent, params?: AnalyticsParams) {
-  if (typeof window === 'undefined') return;
-  window.gtag?.('event', event, params);
+  if (typeof window === "undefined") return;
+  window.gtag?.("event", event, params);
 }

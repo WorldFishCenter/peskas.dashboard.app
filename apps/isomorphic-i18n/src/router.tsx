@@ -11,10 +11,11 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@workspace/ui/components/empty";
+import { PageHeader } from "@/components/page-header";
 import { SiteHeader } from "@/components/site-header";
 import { languages, preferredLang, rememberLang } from "@/i18n/settings";
 import { useT } from "@/i18n/use-lang";
-import { allPages, useCurrentPage } from "@/config/routes";
+import { allPages } from "@/config/routes";
 
 /** Load a page on first visit, so each route ships its own chunk. */
 const page = (load: () => Promise<{ default: ComponentType }>) => async () => ({
@@ -24,7 +25,9 @@ const page = (load: () => Promise<{ default: ComponentType }>) => async () => ({
 /** Send a path without a valid language prefix to the same path under the preferred language. */
 function LangRedirect() {
   const { pathname, search } = useLocation();
-  return <Navigate replace to={`/${preferredLang(pathname)}${pathname.replace(/\/$/, "")}${search}`} />;
+  return (
+    <Navigate replace to={`/${preferredLang(pathname)}${pathname.replace(/\/$/, "")}${search}`} />
+  );
 }
 
 /** The `:lang` segment sets the UI language, `<html lang dir>` and the remembered choice. */
@@ -44,19 +47,12 @@ function LangLayout() {
   return valid ? <Outlet /> : <LangRedirect />;
 }
 
-/** The question the current page answers. */
-function PageIntro() {
-  const { t } = useT();
-  const introKey = useCurrentPage()?.introKey;
-  return introKey ? <p className="max-w-4xl text-sm text-muted-foreground">{t(introKey)}</p> : null;
-}
-
 function DashboardLayout() {
   return (
     <div className="flex min-h-svh flex-col">
       <SiteHeader />
-      <main className="@container/main flex flex-1 flex-col gap-4 p-4">
-        <PageIntro />
+      <main className="@container/main mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-4 p-4 lg:px-6 lg:pt-6">
+        <PageHeader />
         <Outlet />
       </main>
     </div>
@@ -96,7 +92,9 @@ export const router = createBrowserRouter([
       {
         Component: DashboardLayout,
         children: allPages.map((p) =>
-          p.path === "/" ? { index: true, lazy: page(p.load) } : { path: p.path.slice(1), lazy: page(p.load) }
+          p.path === "/"
+            ? { index: true, lazy: page(p.load) }
+            : { path: p.path.slice(1), lazy: page(p.load) },
         ),
       },
       { path: "*", lazy: page(() => import("@/pages/not-found")) },

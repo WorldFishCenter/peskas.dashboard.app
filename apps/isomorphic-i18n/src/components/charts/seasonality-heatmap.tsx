@@ -4,10 +4,10 @@ import { useT } from "@/i18n/use-lang";
 import { ChartCard } from "@/components/charts/chart-card";
 import { ChartGate } from "@/components/charts/chart-state";
 import { HeatCell, valueRange } from "@/components/charts/heat-cell";
-import { WarningIcon } from "@/components/charts/scope-note";
+import { WarningIcon } from "@/components/charts/warning-icon";
 import { DataTable } from "@/components/data-table/data-table";
 import type { MetricKey } from "@repo/domain/metrics";
-import { calendarMonthLabel, formatDashboardNumber } from "@/lib/dashboard/format";
+import { calendarMonthLabel, formatNumber } from "@/lib/dashboard/format";
 import { metricTitle, metricUnit } from "@/lib/dashboard/metrics";
 import { useDistrictScope } from "@/store/filters";
 import { api } from "@/trpc/react";
@@ -21,11 +21,16 @@ const columnHelper = createColumnHelper<typeof features, DistrictRow>();
 
 /**
  * Month-of-year pattern per selected district, over every year of data (the
- * header's time range doesn't apply). Under two years of data most calendar
- * months have been seen once, so the table says it shows a year rather than a
- * season.
+ * time range doesn't apply). Under two years of data most calendar months
+ * have been seen once, so it shows a line saying so instead of the table.
  */
-export function SeasonalityHeatmap({ metric, className }: { metric: MetricKey; className?: string }) {
+export function SeasonalityHeatmap({
+  metric,
+  className,
+}: {
+  metric: MetricKey;
+  className?: string;
+}) {
   const { t, lang } = useT();
   const scope = useDistrictScope();
   const { districts } = scope.input;
@@ -45,7 +50,9 @@ export function SeasonalityHeatmap({ metric, className }: { metric: MetricKey; c
 
   const columns = useMemo(() => {
     const range = valueRange(
-      rows.flatMap((r) => Array.from({ length: 12 }, (_, i) => r[i + 1])).filter((v): v is number => v != null)
+      rows
+        .flatMap((r) => Array.from({ length: 12 }, (_, i) => r[i + 1]))
+        .filter((v): v is number => v != null),
     );
     return columnHelper.columns([
       columnHelper.accessor("district", {
@@ -55,19 +62,32 @@ export function SeasonalityHeatmap({ metric, className }: { metric: MetricKey; c
       ...Array.from({ length: 12 }, (_, i) =>
         columnHelper.accessor((row) => row[i + 1] ?? null, {
           id: String(i + 1),
-          header: () => <span className="block text-center">{calendarMonthLabel(i + 1, lang)}</span>,
+          header: () => (
+            <span className="block text-center">{calendarMonthLabel(i + 1, lang)}</span>
+          ),
           cell: ({ getValue }) => (
             <span className="block text-center">
-              <HeatCell value={getValue()} {...range} label={formatDashboardNumber(getValue(), metric, lang)} />
+              <HeatCell value={getValue()} {...range} label={formatNumber(getValue(), lang)} />
             </span>
           ),
-        })
+        }),
       ),
     ]);
-  }, [rows, metric, lang, t]);
+  }, [rows, lang, t]);
 
   const table = useTable({ features, data: rows, columns });
   const unit = metricUnit(t, metric);
+
+  // Under two years most calendar months have been seen once: that is a year, not a season.
+  if (query.isPending) return null;
+  if (query.data && months < MIN_MONTHS) {
+    return (
+      <p className="flex items-center gap-2 text-[13px] text-muted-foreground">
+        <WarningIcon />
+        {t("text-seasonality-needs", { count: months, min: MIN_MONTHS })}
+      </p>
+    );
+  }
 
   return (
     <ChartCard
@@ -77,18 +97,10 @@ export function SeasonalityHeatmap({ metric, className }: { metric: MetricKey; c
       description={`${t("text-seasonality-description")}${unit ? ` (${unit})` : ""}`}
       info="info-seasonality"
       download={rows}
-      scope={{ input: { districts }, options: scope.options }}
+      footer={t("text-seasonality-footer", { count: months })}
     >
       <ChartGate query={query} isEmpty={!rows.length} className="h-40">
-        <>
-          {months < MIN_MONTHS && (
-            <p className="flex items-start gap-1.5 text-sm text-amber-700 dark:text-amber-400">
-              <WarningIcon className="mt-0.5 size-4" />
-              {t("text-seasonality-too-short", { count: months, min: MIN_MONTHS })}
-            </p>
-          )}
-          <DataTable table={table} />
-        </>
+        <DataTable table={table} />
       </ChartGate>
     </ChartCard>
   );

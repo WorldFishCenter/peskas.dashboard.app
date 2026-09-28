@@ -36,4 +36,4 @@ monthlySummaryDistrictSchema.index({ date: -1 });
  */
 export const MonthlySummaryDistrictModel =
   (mongoose.models.MonthlySummaryDistrict as mongoose.Model<TMonthlySummaryDistrict>) ??
-  mongoose.model<TMonthlySummaryDistrict>("MonthlySummaryDistrict", monthlySummaryDistrictSchema); 
+  mongoose.model<TMonthlySummaryDistrict>("MonthlySummaryDistrict", monthlySummaryDistrictSchema);

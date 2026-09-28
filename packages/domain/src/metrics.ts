@@ -15,8 +15,6 @@ type MetricSpec = {
   gearIndicator?: "cpue" | "rpue";
   /** Only in the district summaries: the monthly summaries don't carry it. */
   districtsOnly?: true;
-  /** Always shown in millions ("0.9M"), so an axis never mixes "850,000" and "1.2M". */
-  inMillions?: true;
   /** Scaled up from the surveyed landings to the district's fleet, rather than recorded. */
   estimated?: true;
 };
@@ -38,16 +36,18 @@ export const METRICS = catalogue({
   trip_duration_hrs: { ...AVERAGE, districtsOnly: true },
   mean_price_kg: AVERAGE,
   estimated_fishing_trips: { ...TOTAL, estimated: true },
-  estimated_revenue: { ...TOTAL, inMillions: true, estimated: true },
+  estimated_revenue: { ...TOTAL, estimated: true },
   estimated_catch_tn: { ...TOTAL, estimated: true },
 });
 
 export type MetricKey = keyof typeof METRICS;
 export const METRIC_KEYS = Object.keys(METRICS) as [MetricKey, ...MetricKey[]];
 
-
 /** Metrics the monthly summaries carry. */
-export const MONTHLY_METRIC_KEYS = METRIC_KEYS.filter((k) => !METRICS[k].districtsOnly) as [MetricKey, ...MetricKey[]];
+export const MONTHLY_METRIC_KEYS = METRIC_KEYS.filter((k) => !METRICS[k].districtsOnly) as [
+  MetricKey,
+  ...MetricKey[],
+];
 
 /** Per-species metrics in `taxa_summaries`. */
 export const TAXA_METRICS = catalogue({
@@ -59,7 +59,8 @@ export const TAXA_METRICS = catalogue({
 export type TaxaMetricKey = keyof typeof TAXA_METRICS;
 export const TAXA_METRIC_KEYS = Object.keys(TAXA_METRICS) as [TaxaMetricKey, ...TaxaMetricKey[]];
 
-export const isMetricKey = (key: string): key is MetricKey => (METRIC_KEYS as string[]).includes(key);
+export const isMetricKey = (key: string): key is MetricKey =>
+  (METRIC_KEYS as string[]).includes(key);
 
 /**
  * Combine values by a rule. Null, undefined and NaN are skipped; nothing left
@@ -70,9 +71,10 @@ export const isMetricKey = (key: string): key is MetricKey => (METRIC_KEYS as st
 export function combine(
   values: readonly (number | null | undefined)[],
   how: Combine,
-  weights?: readonly (number | null | undefined)[]
+  weights?: readonly (number | null | undefined)[],
 ): number | null {
-  const valid = (v: number | null | undefined): v is number => typeof v === "number" && !Number.isNaN(v);
+  const valid = (v: number | null | undefined): v is number =>
+    typeof v === "number" && !Number.isNaN(v);
   const vals = values.filter(valid);
   if (!vals.length) return null;
   if (how === "sum") return vals.reduce((a, b) => a + b, 0);
@@ -91,11 +93,6 @@ export function combine(
 
 /** Fewer landings than this behind a value and the dashboard marks it as thin. */
 export const FEW_LANDINGS = 10;
-
-/** How many landings a figure rests on: small below FEW_LANDINGS, large from 100. */
-export type SampleSize = "small" | "medium" | "large";
-export const sampleSize = (landings: number): SampleSize =>
-  landings < FEW_LANDINGS ? "small" : landings < 100 ? "medium" : "large";
 
 /**
  * Confidence in an estimated total from the share of the district's boats that

@@ -11,7 +11,7 @@ Adding a country means one registry entry, locale files and the deployment's env
 ```
 packages/domain/src/country.ts  (COUNTRY_REGISTRY, resolveCountry)
   ├─ vite.config.ts            title, description, Open Graph and GA tags
-  ├─ app: activeCountry        districts, colours, map view, languages, region bars
+  ├─ app: activeCountry        districts, regions, map view, languages
   └─ api: activeCountry()      district list, district → region grouping, boundaries
 ```
 
@@ -43,33 +43,28 @@ const kenyaConfig: CountryConfig = {
     'Kilifi':   'Coast North',
     'Mombasa':  'Coast North',
   },
-  districtColors: {
-    'Kwale':   '#167288',
-    'Kilifi':  '#8cdaec',
-    'Mombasa': '#b45248',
-  },
   gridMapViewState: { longitude: 39.7, latitude: -2.0, zoom: 7, pitch: 0, bearing: 0 },
-  defaultSelectedDistricts: ['Kilifi', 'Kwale'], // optional: every district when left out
   survey: {},                                   // how the landing survey records the catch (see CountryConfig);
                                                 // e.g. { pricedBySpecies: true } when each species has its own price
   features: {
     regionBreakdown: {
-      regions: ['Coast North', 'Coast South'],  // display order of the region bars
-      colors: { 'Coast North': '#F28F3B', 'Coast South': '#75ABBC' },
+      regions: ['Coast North', 'Coast South'],  // display order in the district picker
     },
   },
 };
 
 export const COUNTRY_REGISTRY: Record<string, CountryConfig> = {
   TZ: zanzibarConfig,
-  KE: kenyaConfig,   // ← add this line
+  KE: kenyaConfig,
+  MZ: mozambiqueConfig,   // ← add this line
 };
 ```
 
 **Rules**, checked by `pnpm --filter @repo/domain test`:
 - `districts` holds the exact `gaul_2_name` values stored in the country's summaries.
-- Every district has one region in `districtToRegion` and one colour in `districtColors`.
-- `regionBreakdown.regions` and the `colors` keys name exactly the regions of `districtToRegion`.
+- Every district has one region in `districtToRegion`.
+- `regionBreakdown.regions` names exactly the regions of `districtToRegion`. A region whose name is a
+  word rather than a place ("North") gets a `region-<name>` key in each locale file.
   Leave `regionBreakdown` out if the country has no meaningful regions.
 
 ---

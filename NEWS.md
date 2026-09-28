@@ -1,3 +1,41 @@
+# peskas.dashboard 2.2.0
+
+## Clearer pages: the answer first, one district at a time
+
+- Every page opens with its name, the question it answers, its filters, and one line saying how many landings, districts and months its figures rest on and when the data was last updated.
+- The home page leads with what the surveyed landings show (catch rate, catch and revenue per trip, landings surveyed), each against the same months a year earlier. Estimated totals for all boats sit together with how confident they are; while few boats carry a tracker they are rounded and their change is not shown.
+- Districts are compared in one ranked table with their change on a year earlier. Select a district to see it on its own. Districts with no surveyed landings are listed once instead of filling the table with dashes.
+- On the Catch and Revenue pages, the figures at the top choose what the charts show: the selected districts as one line against the same months a year earlier, then each district in its own small chart on the same scale.
+- Species show their common names. Species and sizes has three tabs: what is caught, at what size (with every measured species ranked by how much of its catch is below the size at which it first reproduces), and the food web.
+- The Fishing gear page compares every gear in one table: how much it is used, what it catches and earns per hour, how much of its catch is below maturity size, and its main species.
+- Vulnerable species opens with four figures. Data and methods opens with where the data is thin.
+- A page's address keeps its time range, districts and measure, so a shared link opens the same view.
+- The fishing-effort map shows the whole Mozambique coast legibly, in its own section.
+- Pages print on landscape A4 with their time range and districts written on them.
+
+## Changes
+
+- Every figure covers complete months: the current month is left out until its data is in, as the home page already did.
+- The month-by-month pattern (seasonality) appears once the selected districts have two years of data.
+- Large numbers read "62 billion TZS" instead of "61,884.1M", in the page's language.
+- Colours mean the same thing on every page and stay distinct for colour-blind readers; districts no longer have colours of their own.
+- Mozambique opens on all its districts, like Zanzibar and Kenya.
+- Buttons, links and the chosen figure look clickable, and popups and chart tooltips let the chart show through.
+- Bars drawn in two shades (catch below maturity size, the vulnerability of a group of species) and the district panels have a legend, and the trend charts say how the districts are combined.
+
+## Fixed
+
+- Months without data no longer show as dots along the top edge of the trend charts.
+- The length chart draws each size class as wide as it is, so a wide class no longer looks like a large catch.
+- In Kenya and Mozambique, the number of landings in a page's summary line now matches its figures.
+- For estimated totals, the grey line behind each district panel is the average district rather than the sum of all districts, which flattened every district's line.
+
+## Removed
+
+- The stacked bars of species by district and by gear, and the four separate gear charts.
+
+---
+
 # peskas.dashboard 2.1.0
 
 ## Dashboards that explain themselves

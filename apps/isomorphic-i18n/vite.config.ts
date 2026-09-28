@@ -1,15 +1,15 @@
-import path from "path"
-import tailwindcss from "@tailwindcss/vite"
-import react from "@vitejs/plugin-react"
-import { nitro } from "nitro/vite"
-import { defineConfig, loadEnv, type HtmlTagDescriptor } from "vite"
+import path from "path";
+import tailwindcss from "@tailwindcss/vite";
+import react from "@vitejs/plugin-react";
+import { nitro } from "nitro/vite";
+import { defineConfig, loadEnv, type HtmlTagDescriptor } from "vite";
 
-import { resolveCountry, type CountryConfig } from "@repo/domain/country"
+import { resolveCountry, type CountryConfig } from "@repo/domain/country";
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd())
-  const country = resolveCountry(env.VITE_COUNTRY_CODE)
+  const env = loadEnv(mode, process.cwd());
+  const country = resolveCountry(env.VITE_COUNTRY_CODE);
 
   return {
     plugins: [
@@ -18,7 +18,8 @@ export default defineConfig(({ mode }) => {
       nitro(),
       {
         name: "country-head",
-        transformIndexHtml: () => countryHead(country, env).map((tag): HtmlTagDescriptor => ({ ...tag, injectTo: "head" })),
+        transformIndexHtml: () =>
+          countryHead(country, env).map((tag): HtmlTagDescriptor => ({ ...tag, injectTo: "head" })),
       },
     ],
     nitro: { serverDir: "./server" },
@@ -28,8 +29,8 @@ export default defineConfig(({ mode }) => {
       },
     },
     server: { port: 3001 },
-  }
-})
+  };
+});
 
 /**
  * Static <head> tags for the deployment's country, so link previews and
@@ -45,7 +46,7 @@ function countryHead(country: CountryConfig, env: Record<string, string>): HtmlT
   const og = (property: string, content: string): HtmlTagDescriptor => ({
     tag: "meta",
     attrs: { property: `og:${property}`, content },
-  })
+  });
   const tags: HtmlTagDescriptor[] = [
     { tag: "title", children: country.siteTitle },
     { tag: "meta", attrs: { name: "description", content: country.siteDescription } },
@@ -54,18 +55,18 @@ function countryHead(country: CountryConfig, env: Record<string, string>): HtmlT
     og("site_name", country.siteTitle),
     og("locale", country.locale.replace("-", "_")),
     og("type", "website"),
-  ]
+  ];
 
-  const measurementId = env.VITE_GA_MEASUREMENT_ID
-  if (!measurementId) return tags
+  const measurementId = env.VITE_GA_MEASUREMENT_ID;
+  if (!measurementId) return tags;
 
-  const destinations = [measurementId, env.VITE_GA_ROLLUP_ID].filter(Boolean)
+  const destinations = [measurementId, env.VITE_GA_ROLLUP_ID].filter(Boolean);
   // Attached to every event so one property can be broken down by country;
   // gtag('set') must precede gtag('config') for the first page_view to carry it.
   const globalParams = {
     peskas_country: country.countryName,
     peskas_country_code: country.countryCode,
-  }
+  };
   return [
     ...tags,
     {
@@ -82,5 +83,5 @@ function countryHead(country: CountryConfig, env: Record<string, string>): HtmlT
         ...destinations.map((id) => `gtag('config', ${JSON.stringify(id)});`),
       ].join("\n"),
     },
-  ]
+  ];
 }

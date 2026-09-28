@@ -23,7 +23,7 @@ A page that charts the district selection over the time range: catch, revenue, s
 _Avoid_: data page, detail page
 
 **District selection**:
-The districts a viewer picked in the header filter. The analysis pages follow it; the home page always covers every district of the country.
+The districts a viewer picked in the page's district filter, kept in the page address. The analysis pages follow it; the home page always covers every district of the country.
 _Avoid_: filter, selected districts
 
 ### Measures
@@ -83,12 +83,12 @@ _Avoid_: percentage mature, Pmat
 ### Time
 
 **Month window**:
-The span of months a view covers: the last N months, or all time. Summaries are monthly, so a window always covers whole months.
+The span of months a view covers: the last N complete months, or all of them. The current month is left out while its landings come in, so it never reads as a drop. Summaries are monthly, so a window always covers whole months.
 _Avoid_: date range, period
 
-**Headline window**:
-The home page's figures cover the last N *complete* months (the current month is left out while its landings come in) and compare them with the same months a year earlier.
-_Avoid_: current period
+**Same months a year earlier**:
+The comparison for a figure: its month window moved back twelve months.
+_Avoid_: previous period, last year
 
 **Portal summary**:
 One of the collections that `peskas.coasts` writes for the dashboard: monthly, taxa, district, gear, grid and length summaries, and taxa traits. The dashboard only reads them.

@@ -1,0 +1,6 @@
+# shadcn CLI owns these; keep them as the registry writes them so `shadcn add --diff` stays clean
+packages/ui/src/components
+# prose, formatted by hand
+*.md
+pnpm-lock.yaml
+.output

@@ -1,3 +1,4 @@
+import { scaleLinear } from "d3-scale";
 import { Bar, BarChart, CartesianGrid, Cell, LabelList, XAxis, YAxis } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@workspace/ui/components/chart";
 import { categoryChartHeight } from "@/components/charts/chart-state";
@@ -19,6 +20,10 @@ export function RankedBars({
   format: (value: number) => string;
   color?: string;
 }) {
+  const ticks = scaleLinear()
+    .domain([0, Math.max(0, ...rows.map((r) => r.value))])
+    .nice(4)
+    .ticks(4);
   return (
     <ChartContainer
       config={{ value: { label: name } }}
@@ -27,14 +32,22 @@ export function RankedBars({
     >
       <BarChart accessibilityLayer data={rows} layout="vertical" margin={{ right: 64 }}>
         <CartesianGrid horizontal={false} />
-        <XAxis type="number" tickLine={false} axisLine={false} tickFormatter={(v: number) => format(v)} />
+        {/* Round ticks that end just past the longest bar, not a whole step beyond it. */}
+        <XAxis
+          type="number"
+          tickLine={false}
+          axisLine={false}
+          domain={[0, ticks.at(-1) ?? "auto"]}
+          ticks={ticks}
+          tickFormatter={(v: number) => format(v)}
+        />
         <YAxis
           dataKey="label"
           type="category"
-          width={140}
+          width={180}
           tickLine={false}
           axisLine={false}
-          tickFormatter={(v: string) => truncateLabel(v, 18)}
+          tickFormatter={(v: string) => truncateLabel(v, 24)}
         />
         <ChartTooltip
           cursor={false}
@@ -58,7 +71,12 @@ export function RankedBars({
           {rows.map((row) => (
             <Cell key={row.label} fill={color} fillOpacity={row.thin ? 0.35 : 1} />
           ))}
-          <LabelList dataKey="value" position="right" formatter={(v) => format(Number(v))} className="fill-foreground" />
+          <LabelList
+            dataKey="value"
+            position="right"
+            formatter={(v) => format(Number(v))}
+            className="fill-foreground"
+          />
         </Bar>
       </BarChart>
     </ChartContainer>

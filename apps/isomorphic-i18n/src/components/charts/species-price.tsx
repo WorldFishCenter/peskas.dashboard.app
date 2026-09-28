@@ -4,6 +4,7 @@ import { ChartGate } from "@/components/charts/chart-state";
 import { RankedBars, type RankedRow } from "@/components/charts/ranked-bars";
 import { activeCountry } from "@/config/countryConfig";
 import { speciesPriceInfo } from "@/lib/dashboard/metrics";
+import { useSpeciesName } from "@/lib/dashboard/species";
 import { useDistrictScope } from "@/store/filters";
 import { api } from "@/trpc/react";
 
@@ -14,13 +15,21 @@ export function SpeciesPrice({ className }: { className?: string }) {
   const { t, lang } = useT();
   const scope = useDistrictScope();
   const query = api.summaries.speciesPrice.useQuery(scope.input, scope.options);
+  const name = useSpeciesName();
 
   const rows: RankedRow[] = (query.data?.rows ?? [])
     .slice(0, TOP_N)
     .map((s) => ({
-      label: s.taxon,
+      label: name(s.taxon),
       value: s.price_kg,
-      detail: t("text-recorded-kg", { value: s.catch_kg.toLocaleString(lang, { maximumFractionDigits: 0 }) }),
+      detail: [
+        name(s.taxon) !== s.taxon && s.taxon,
+        t("text-recorded-kg", {
+          value: s.catch_kg.toLocaleString(lang, { maximumFractionDigits: 0 }),
+        }),
+      ]
+        .filter(Boolean)
+        .join(" · "),
     }))
     .sort((a, b) => b.value - a.value);
 
@@ -32,12 +41,13 @@ export function SpeciesPrice({ className }: { className?: string }) {
       description={t("text-species-price-description", { currency: activeCountry.currencyCode })}
       info={speciesPriceInfo(t)}
       download={query.data?.rows}
-      scope={scope}
     >
       <ChartGate
         query={query}
         isEmpty={!rows.length}
-        emptyDescription={t(query.data?.available === false ? "text-traits-not-published" : "text-no-species-price")}
+        emptyDescription={t(
+          query.data?.available === false ? "text-traits-not-published" : "text-no-species-price",
+        )}
       >
         <RankedBars
           rows={rows}

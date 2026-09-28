@@ -9,28 +9,36 @@ import {
   NavigationMenuList,
   navigationMenuTriggerStyle,
 } from "@workspace/ui/components/navigation-menu";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@workspace/ui/components/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@workspace/ui/components/sheet";
 import { cn } from "@workspace/ui/lib/utils";
-import { useLocalizedHref, useT } from "@/i18n/use-lang";
+import { useLocalizedHref, useScopedHref, useT } from "@/i18n/use-lang";
 import { activeCountry } from "@/config/countryConfig";
 import { allPages, pages } from "@/config/routes";
 
 const NAV_ITEMS = allPages.flatMap((p) => (p.nav ? [{ ...p.nav, href: p.path }] : []));
 
-/** Nav items with their localized href and whether they are the current page. */
+/** Nav items with their href (keeping the time range and districts) and whether they are the current page. */
 function useNavItems() {
   const { pathname } = useLocation();
   const localized = useLocalizedHref();
-  return NAV_ITEMS.map((item) => {
-    const href = localized(item.href);
-    return { ...item, href, active: pathname === href };
-  });
+  const scoped = useScopedHref();
+  return NAV_ITEMS.map((item) => ({
+    ...item,
+    href: scoped(item.href),
+    active: pathname === localized(item.href),
+  }));
 }
 
 export function Brand() {
-  const localized = useLocalizedHref();
+  const scoped = useScopedHref();
   return (
-    <Link to={localized(pages.home.path)} className="flex shrink-0 items-center gap-2">
+    <Link to={scoped(pages.home.path)} className="flex shrink-0 items-center gap-2">
       <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
         <SailboatIcon className="size-4" />
       </div>
@@ -78,7 +86,14 @@ export function MobileNav() {
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger
-        render={<Button variant="ghost" size="icon" className="xl:hidden" aria-label={t("text-open-menu")} />}
+        render={
+          <Button
+            variant="ghost"
+            size="icon"
+            className="xl:hidden print:hidden"
+            aria-label={t("text-open-menu")}
+          />
+        }
       >
         <MenuIcon />
       </SheetTrigger>

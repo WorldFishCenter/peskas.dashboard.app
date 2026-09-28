@@ -1,4 +1,4 @@
-import type { DataPoint } from '@/lib/grid-map/types';
+import type { DataPoint } from "@/lib/grid-map/types";
 
 /** Summary shown in the map info panel. Raw numbers; format at render time. */
 export function calculateStats(data: DataPoint[]) {

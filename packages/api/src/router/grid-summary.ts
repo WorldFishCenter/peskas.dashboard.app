@@ -6,4 +6,4 @@ export const gridSummaryRouter = createTRPCRouter({
     // Fetch all grid summaries (optionally add filters later)
     return await GridSummaryModel.find({}).lean();
   }),
-}); 
+});

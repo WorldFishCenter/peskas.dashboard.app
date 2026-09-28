@@ -11,7 +11,6 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@workspace/ui/components/popover";
 import { cn } from "@workspace/ui/lib/utils";
 import { useT } from "@/i18n/use-lang";
-import { ScopeNote, type Scope } from "@/components/charts/scope-note";
 import { downloadCsv } from "@/lib/csv";
 import { trackEvent } from "@/lib/analytics";
 
@@ -21,9 +20,20 @@ export type ChartText = { what: string; how?: string; limits?: string };
 export type ChartInfo = ChartText | string;
 
 /** The explanation behind a chart, opened on click or tap (hover doesn't exist on phones). */
-export function InfoPopover({ id, title, info }: { id: string; title: React.ReactNode; info: ChartInfo }) {
+export function InfoPopover({
+  id,
+  title,
+  info,
+}: {
+  id: string;
+  title: React.ReactNode;
+  info: ChartInfo;
+}) {
   const { t } = useT();
-  const text = typeof info === "string" ? { what: t(`${info}-what`), how: t(`${info}-how`), limits: t(`${info}-limits`) } : info;
+  const text =
+    typeof info === "string"
+      ? { what: t(`${info}-what`), how: t(`${info}-how`), limits: t(`${info}-limits`) }
+      : info;
   const sections = [
     ["text-info-what", text.what],
     ["text-info-how", text.how],
@@ -31,7 +41,16 @@ export function InfoPopover({ id, title, info }: { id: string; title: React.Reac
   ].filter((s): s is [string, string] => !!s[1]);
   return (
     <Popover onOpenChange={(open) => open && trackEvent("chart_info_open", { chart: id })}>
-      <PopoverTrigger render={<Button variant="ghost" size="icon-sm" aria-label={t("text-info-open")} className="print:hidden" />}>
+      <PopoverTrigger
+        render={
+          <Button
+            variant="outline"
+            size="icon-sm"
+            aria-label={t("text-info-open")}
+            className="print:hidden"
+          />
+        }
+      >
         <InfoIcon />
       </PopoverTrigger>
       <PopoverContent align="end" className="w-80">
@@ -39,7 +58,7 @@ export function InfoPopover({ id, title, info }: { id: string; title: React.Reac
           <p className="font-medium">{title}</p>
           {sections.map(([key, text]) => (
             <div key={key} className="flex flex-col gap-1">
-              <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{t(key)}</p>
+              <p className="text-xs font-medium text-muted-foreground">{t(key)}</p>
               <p className="leading-relaxed">{text}</p>
             </div>
           ))}
@@ -51,8 +70,8 @@ export function InfoPopover({ id, title, info }: { id: string; title: React.Reac
 
 /**
  * Card shell shared by the charts: title and description, the explanation
- * popover, a CSV download of the chart's rows, and a footer that says what
- * the chart rests on (`scope`, see ScopeNote) plus anything in `footer`. `id`
+ * popover, a CSV download of the chart's rows, and a `footer` for what only
+ * this chart rests on (the page header already says what they all do). `id`
  * names the CSV file and the chart in analytics events.
  */
 export function ChartCard({
@@ -62,7 +81,6 @@ export function ChartCard({
   action,
   info,
   download,
-  scope,
   footer,
   className,
   children,
@@ -73,7 +91,6 @@ export function ChartCard({
   id: string;
   info?: ChartInfo;
   download?: Record<string, unknown>[];
-  scope?: Scope;
   footer?: React.ReactNode;
   className?: string;
   children: React.ReactNode;
@@ -91,7 +108,7 @@ export function ChartCard({
             {info && <InfoPopover id={id} title={title} info={info} />}
             {canDownload && (
               <Button
-                variant="ghost"
+                variant="outline"
                 size="icon-sm"
                 aria-label={t("text-download-csv")}
                 title={t("text-download-csv")}
@@ -109,11 +126,8 @@ export function ChartCard({
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         {children}
-        {(scope || footer) && (
-          <div className="flex flex-col gap-1 text-xs text-muted-foreground">
-            {footer}
-            {scope && <ScopeNote {...scope} />}
-          </div>
+        {footer && (
+          <div className="flex flex-col gap-1 text-xs text-muted-foreground">{footer}</div>
         )}
       </CardContent>
     </Card>

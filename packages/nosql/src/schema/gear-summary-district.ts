@@ -38,4 +38,4 @@ gearSummaryDistrictSchema.index({ timestamp: -1 });
  */
 export const GearSummaryDistrictModel =
   (mongoose.models.GearSummaryDistrict as mongoose.Model<TGearSummaryDistrict>) ??
-  mongoose.model<TGearSummaryDistrict>("GearSummaryDistrict", gearSummaryDistrictSchema); 
+  mongoose.model<TGearSummaryDistrict>("GearSummaryDistrict", gearSummaryDistrictSchema);

@@ -41,12 +41,8 @@ export interface CountryConfig {
   districts: string[];
   /** Region of every district (see Region in CONTEXT.md) */
   districtToRegion: Record<string, string>;
-  /** Per-district hex colors for chart visualization */
-  districtColors: Record<string, string>;
   /** Initial view of the home-page fishing-effort grid map */
   gridMapViewState: MapViewState;
-  /** Districts pre-selected in the district filter on first visit; all of them when left out. */
-  defaultSelectedDistricts?: string[];
   /** How the country's landing survey records the catch; the explanations and size views follow it. */
   survey: {
     /** The whole catch is weighed and only a sample identified, so catch by species describes the sample. */
@@ -57,11 +53,9 @@ export interface CountryConfig {
     meanLengths?: true;
   };
   features: {
-    /** Region bars on the home page metric cards: display order and colours.
-     *  Both must name exactly the regions of districtToRegion. */
+    /** Regions in display order (district picker, district table); must name exactly the regions of districtToRegion. */
     regionBreakdown?: {
       regions: [string, ...string[]];
-      colors: Record<string, string>;
     };
   };
 }
@@ -71,67 +65,53 @@ export interface CountryConfig {
 // ---------------------------------------------------------------------------
 
 const zanzibarConfig: CountryConfig = {
-  countryCode: 'TZ',
-  iso3Code: 'TZA',
-  countryName: 'Zanzibar',
-  siteTitle: 'PESKAS | Zanzibar Fisheries',
-  siteDescription: 'Peskas | Zanzibar Fisheries Dashboard',
-  flagIconSrc: '/zanzibar-flag.svg',
-  currencyCode: 'TZS',
-  locale: 'sw-TZ',
-  languages: ['sw', 'en'],
+  countryCode: "TZ",
+  iso3Code: "TZA",
+  countryName: "Zanzibar",
+  siteTitle: "PESKAS | Zanzibar Fisheries",
+  siteDescription: "Peskas | Zanzibar Fisheries Dashboard",
+  flagIconSrc: "/zanzibar-flag.svg",
+  currencyCode: "TZS",
+  locale: "sw-TZ",
+  languages: ["sw", "en"],
   districts: [
-    'Chake Chake',
-    'Kaskazini A',
-    'Kaskazini B',
-    'Kati',
-    'Kusini',
-    'Magharibi A',
-    'Magharibi B',
-    'Micheweni',
-    'Mjini',
-    'Mkoani',
-    'Wete',
+    "Chake Chake",
+    "Kaskazini A",
+    "Kaskazini B",
+    "Kati",
+    "Kusini",
+    "Magharibi A",
+    "Magharibi B",
+    "Micheweni",
+    "Mjini",
+    "Mkoani",
+    "Wete",
   ],
   districtToRegion: {
-    'Chake Chake': 'Pemba',
-    'Kaskazini A': 'Unguja',
-    'Kaskazini B': 'Unguja',
-    'Kati': 'Unguja',
-    'Kusini': 'Unguja',
-    'Magharibi A': 'Unguja',
-    'Magharibi B': 'Unguja',
-    'Micheweni': 'Pemba',
-    'Mjini': 'Unguja',
-    'Mkoani': 'Pemba',
-    'Wete': 'Pemba',
+    "Chake Chake": "Pemba",
+    "Kaskazini A": "Unguja",
+    "Kaskazini B": "Unguja",
+    Kati: "Unguja",
+    Kusini: "Unguja",
+    "Magharibi A": "Unguja",
+    "Magharibi B": "Unguja",
+    Micheweni: "Pemba",
+    Mjini: "Unguja",
+    Mkoani: "Pemba",
+    Wete: "Pemba",
   },
-  // Based on the ColorsWall palette (https://colorswall.com/palette/178887) + Blue-grey lighten-2
-  districtColors: {
-    'Chake Chake': '#167288',  // Semi dark teal
-    'Kaskazini A': '#8cdaec',  // Light sky blue
-    'Kaskazini B': '#b45248',  // Semi dark red
-    'Kati':        '#d48c84',  // Light rosy brown
-    'Kusini':      '#a89a49',  // Semi dark khaki
-    'Magharibi A': '#d6cfa2',  // Light pale goldenrod
-    'Magharibi B': '#3cb464',  // Semi dark green
-    'Micheweni':   '#9bddb1',  // Light medium aquamarine
-    'Mjini':       '#643c6a',  // Semi dark purple
-    'Mkoani':      '#836394',  // Light medium purple
-    'Wete':        '#90a4ae',  // Blue-grey lighten-2
-  },
+  // Both islands, Pemba to the north of Unguja.
   gridMapViewState: {
-    longitude: 39.19,
-    latitude: -6.16,
-    zoom: 8,
+    longitude: 39.5,
+    latitude: -5.65,
+    zoom: 7.4,
     pitch: 0,
     bearing: 0,
   },
   survey: {},
   features: {
     regionBreakdown: {
-      regions: ['Unguja', 'Pemba'],
-      colors: { Unguja: '#F28F3B', Pemba: '#75ABBC' },
+      regions: ["Unguja", "Pemba"],
     },
   },
 };
@@ -141,15 +121,15 @@ const zanzibarConfig: CountryConfig = {
 // ---------------------------------------------------------------------------
 
 const kenyaConfig: CountryConfig = {
-  countryCode: 'KE',
-  iso3Code: 'KEN',
-  countryName: 'Kenya',
-  siteTitle: 'PESKAS | Kenya Fisheries',
-  siteDescription: 'Peskas | Kenya Fisheries Dashboard',
-  flagIconSrc: '/kenya-flag.svg',
-  currencyCode: 'KES',
-  locale: 'sw-KE',
-  languages: ['sw', 'en'],
+  countryCode: "KE",
+  iso3Code: "KEN",
+  countryName: "Kenya",
+  siteTitle: "PESKAS | Kenya Fisheries",
+  siteDescription: "Peskas | Kenya Fisheries Dashboard",
+  flagIconSrc: "/kenya-flag.svg",
+  currencyCode: "KES",
+  locale: "sw-KE",
+  languages: ["sw", "en"],
   districts: [
     "Changamwe",
     "Jomvu",
@@ -168,49 +148,27 @@ const kenyaConfig: CountryConfig = {
     "Msambweni",
     "Mvita",
     "Nyali",
-    "Garsen"
+    "Garsen",
   ],
   districtToRegion: {
-    'Changamwe': 'Central',
-    'Jomvu': 'Central',
-    'Kisauni': 'Central',
-    'Likoni': 'Central',
-    'Mvita': 'Central',
-    'Nyali': 'Central',
-    'Kilifi North': 'North',
-    'Kilifi South': 'North',
-    'Magarini': 'North',
-    'Malindi': 'North',
-    'Garsen': 'North',
-    'Lamu': 'North',
-    'Lamu East': 'North',
-    'Lamu West': 'North',
-    'Kinango': 'South',
-    'Lunga Lunga': 'South',
-    'Matuga': 'South',
-    'Msambweni': 'South',
-  },
-  // Based on the ColorsWall palette (https://colorswall.com/palette/178887) + Blue-grey lighten-2
-
-  districtColors: {
-    'Changamwe':    '#167288',  // Semi dark teal
-    'Jomvu':        '#8cdaec',  // Light sky blue
-    'Kilifi North': '#b45248',  // Semi dark red
-    'Kilifi South': '#d48c84',  // Light rosy brown
-    'Kinango':      '#a89a49',  // Semi dark khaki
-    'Kisauni':      '#d6cfa2',  // Light pale goldenrod
-    'Lamu':         '#3cb464',  // Semi dark green
-    'Lamu East':    '#9bddb1',  // Light medium aquamarine
-    'Lamu West':    '#643c6a',  // Semi dark purple
-    'Likoni':       '#836394',  // Light medium purple
-    'Lunga Lunga':  '#90a4ae',  // Blue-grey lighten-2
-    'Magarini':     '#F28F3B',  // Palette supplement/Orange
-    'Malindi':      '#75ABBC',  // Palette supplement/Blue-green
-    'Matuga':       '#F8C16C',  // Palette supplement/Light gold
-    'Msambweni':    '#FF7E6B',  // Palette supplement/Coral
-    'Mvita':        '#9F82B2',  // Palette supplement/Lavender
-    'Nyali':        '#A1C181',  // Palette supplement/Moss green
-    'Garsen':       '#FDBCB4',  // Palette supplement/Pink peach
+    Changamwe: "Central",
+    Jomvu: "Central",
+    Kisauni: "Central",
+    Likoni: "Central",
+    Mvita: "Central",
+    Nyali: "Central",
+    "Kilifi North": "North",
+    "Kilifi South": "North",
+    Magarini: "North",
+    Malindi: "North",
+    Garsen: "North",
+    Lamu: "North",
+    "Lamu East": "North",
+    "Lamu West": "North",
+    Kinango: "South",
+    "Lunga Lunga": "South",
+    Matuga: "South",
+    Msambweni: "South",
   },
   // Kenya Map viewport tuned for coast region (centered on Mombasa/Malindi axis)
   // Grid map view focused on southern coast (centered for Nyali/Diani zone)
@@ -221,15 +179,12 @@ const kenyaConfig: CountryConfig = {
     pitch: 0,
     bearing: 0,
   },
-  // No default selection, so every district: several have gone months without
-  // a survey, and a selection of those opens the dashboard on empty charts.
   // KEFS weighs the whole catch, prices and identifies a sample of it, and
   // records the mean length of the fish it measures.
   survey: { speciesFromSample: true, pricedBySpecies: true, meanLengths: true },
   features: {
     regionBreakdown: {
-      regions: ['Central', 'North', 'South'],
-      colors: { Central: '#F28F3B', North: '#75ABBC', South: '#9bddb1' },
+      regions: ["Central", "North", "South"],
     },
   },
 };
@@ -239,15 +194,15 @@ const kenyaConfig: CountryConfig = {
 // ---------------------------------------------------------------------------
 
 const mozambiqueConfig: CountryConfig = {
-  countryCode: 'MZ',
-  iso3Code: 'MOZ',
-  countryName: 'Mozambique',
-  siteTitle: 'PESKAS | Mozambique Fisheries',
-  siteDescription: 'Peskas | Mozambique Fisheries Dashboard',
-  flagIconSrc: '/mozambique-flag.svg',
-  currencyCode: 'MZN',
-  locale: 'pt-MZ',
-  languages: ['pt', 'en', 'sw'],
+  countryCode: "MZ",
+  iso3Code: "MOZ",
+  countryName: "Mozambique",
+  siteTitle: "PESKAS | Mozambique Fisheries",
+  siteDescription: "Peskas | Mozambique Fisheries Dashboard",
+  flagIconSrc: "/mozambique-flag.svg",
+  currencyCode: "MZN",
+  locale: "pt-MZ",
+  languages: ["pt", "en", "sw"],
   districts: [
     "Angoche",
     "Beira",
@@ -267,7 +222,7 @@ const mozambiqueConfig: CountryConfig = {
     "Pemba",
     "Quelimane",
     "Xai-Xai",
-    "Zavala"
+    "Zavala",
   ],
   districtToRegion: {
     Angoche: "North",
@@ -290,42 +245,18 @@ const mozambiqueConfig: CountryConfig = {
     "Xai-Xai": "South",
     Zavala: "South",
   },
-  // Based on the ColorsWall palette (https://colorswall.com/palette/178887) + Blue-grey lighten-2
-
-  districtColors: {
-    'Angoche':      '#75ABBC',  // Blue-green
-    'Beira':        '#F28F3B',  // Orange
-    'Bilene':       '#9bddb1',  // Medium aquamarine
-    'Buzi':         '#90a4ae',  // Blue-grey lighten-2
-    'Cidade De Maputo': '#F8C16C', // Light gold
-    'Ibo':          '#FDBCB4',  // Pink peach
-    'Ilha De Moçambique': '#9F82B2', // Lavender
-    'Inhassoro':    '#FF7E6B',  // Coral
-    'Larde':        '#A1C181',  // Moss green
-    'Maxixe':       '#167288',  // Semi dark teal
-    'Mecúfi':       '#d48c84',  // Light rosy brown
-    'Moma':         '#b45248',  // Semi dark red
-    'Nacala':       '#836394',  // Light medium purple
-    'Namacurra':    '#a89a49',  // Semi dark khaki
-    'Pebane':       '#d6cfa2',  // Light pale goldenrod
-    'Pemba':        '#3cb464',  // Semi dark green
-    'Quelimane':    '#643c6a',  // Semi dark purple
-    'Xai-Xai':      '#8cdaec',  // Light sky blue
-    'Zavala':       '#8c6d46',  // Palette supplement/Warm brown
-  },
+  // The coast in the middle: the district boundaries reach inland, the fishing doesn't.
   gridMapViewState: {
-    longitude: 32.61,
-    latitude: -19.09,
+    longitude: 36.8,
+    latitude: -18.6,
     zoom: 5,
     pitch: 0,
     bearing: 0,
   },
-  defaultSelectedDistricts: ['Pemba', 'Angoche', 'Beira'],
   survey: {},
   features: {
     regionBreakdown: {
-      regions: ['Central', 'North', 'South'],
-      colors: { Central: '#F28F3B', North: '#75ABBC', South: '#9bddb1' },
+      regions: ["Central", "North", "South"],
     },
   },
 };
@@ -342,7 +273,10 @@ export const COUNTRY_REGISTRY: Record<string, CountryConfig> = {
 
 /** The country for a VITE_COUNTRY_CODE value; Zanzibar (TZ) when it is unset. */
 export function resolveCountry(code: string | undefined): CountryConfig {
-  const country = COUNTRY_REGISTRY[code || 'TZ'];
-  if (!country) throw new Error(`Unknown VITE_COUNTRY_CODE "${code}" (expected ${Object.keys(COUNTRY_REGISTRY).join(', ')})`);
+  const country = COUNTRY_REGISTRY[code || "TZ"];
+  if (!country)
+    throw new Error(
+      `Unknown VITE_COUNTRY_CODE "${code}" (expected ${Object.keys(COUNTRY_REGISTRY).join(", ")})`,
+    );
   return country;
 }

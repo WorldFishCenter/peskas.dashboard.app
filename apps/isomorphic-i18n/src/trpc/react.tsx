@@ -9,11 +9,9 @@ export const api = createTRPCReact<AppRouter>();
 
 // https://tanstack.com/query/latest/docs/framework/react/devtools
 const ReactQueryDevtoolsProduction = React.lazy(() =>
-  import("@tanstack/react-query-devtools/build/modern/production.js").then(
-    (d) => ({
-      default: d.ReactQueryDevtools,
-    })
-  )
+  import("@tanstack/react-query-devtools/build/modern/production.js").then((d) => ({
+    default: d.ReactQueryDevtools,
+  })),
 );
 
 export function TRPCReactProvider(props: { children: React.ReactNode }) {
@@ -28,7 +26,7 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
             refetchOnWindowFocus: false,
           },
         },
-      })
+      }),
   );
 
   const [showDevtools, setShowDevtools] = useState(false);
@@ -37,8 +35,7 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
       links: [
         loggerLink({
           enabled: (op) =>
-            import.meta.env.DEV ||
-            (op.direction === "down" && op.result instanceof Error),
+            import.meta.env.DEV || (op.direction === "down" && op.result instanceof Error),
         }),
         // One request per query, not batched: a batch answers only when its
         // slowest query does, so the map's megabytes would hold every other
@@ -48,7 +45,7 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
           url: "/api/trpc",
         }),
       ],
-    })
+    }),
   );
 
   useEffect(() => {

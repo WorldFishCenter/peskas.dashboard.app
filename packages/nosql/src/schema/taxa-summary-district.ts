@@ -39,4 +39,4 @@ taxaSummaryDistrictSchema.index({ timestamp: -1 });
  */
 export const TaxaSummaryDistrictModel =
   (mongoose.models.TaxaSummaryDistrict as mongoose.Model<TTaxaSummaryDistrict>) ??
-  mongoose.model<TTaxaSummaryDistrict>("TaxaSummaryDistrict", taxaSummaryDistrictSchema); 
+  mongoose.model<TTaxaSummaryDistrict>("TaxaSummaryDistrict", taxaSummaryDistrictSchema);

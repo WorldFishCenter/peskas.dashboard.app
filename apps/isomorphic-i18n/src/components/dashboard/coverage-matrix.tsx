@@ -6,7 +6,7 @@ import { ChartGate } from "@/components/charts/chart-state";
 import { HeatCell, valueRange } from "@/components/charts/heat-cell";
 import { DataTable } from "@/components/data-table/data-table";
 import { activeCountry } from "@/config/countryConfig";
-import { monthLabel } from "@/lib/dashboard/format";
+import { calendarMonthLabel } from "@/lib/dashboard/format";
 import { api } from "@/trpc/react";
 
 /** The window the matrix covers; the About page reads the same query for its update date. */
@@ -25,10 +25,12 @@ export function CoverageMatrix() {
     const cells = query.data?.cells ?? [];
     const months = [...new Set(cells.map((c) => c.month))].sort();
     const landings = new Map(cells.map((c) => [`${c.district}|${c.month}`, c.landings]));
-    const rows = [...activeCountry.districts].sort().map((district): DistrictRow => ({
-      district,
-      ...Object.fromEntries(months.map((m) => [m, landings.get(`${district}|${m}`) ?? null])),
-    }));
+    const rows = [...activeCountry.districts].sort().map(
+      (district): DistrictRow => ({
+        district,
+        ...Object.fromEntries(months.map((m) => [m, landings.get(`${district}|${m}`) ?? null])),
+      }),
+    );
     return { months, rows };
   }, [query.data]);
 
@@ -42,13 +44,24 @@ export function CoverageMatrix() {
       ...months.map((m) =>
         columnHelper.accessor((row) => (row[m] as number | null) ?? null, {
           id: m,
-          header: () => <span className="block text-center">{monthLabel(m, lang)}</span>,
-          cell: ({ getValue }) => (
-            <span className="block text-center">
-              <HeatCell value={getValue()} {...range} label={getValue()?.toLocaleString(lang) ?? "-"} />
+          // Month over year, two short lines: 24 columns fit a laptop screen.
+          header: () => (
+            <span className="block text-center text-xs leading-tight">
+              {calendarMonthLabel(Number(m.slice(5)), lang)}
+              <span className="block text-muted-foreground">{m.slice(2, 4)}</span>
             </span>
           ),
-        })
+          cell: ({ getValue }) => (
+            <span className="block text-center">
+              <HeatCell
+                dense
+                value={getValue()}
+                {...range}
+                label={getValue()?.toLocaleString(lang) ?? "-"}
+              />
+            </span>
+          ),
+        }),
       ),
     ]);
   }, [months, query.data, lang, t]);

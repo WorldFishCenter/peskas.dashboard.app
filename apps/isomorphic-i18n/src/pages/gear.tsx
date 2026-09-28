@@ -1,5 +1,10 @@
-import { GearCharts } from "@/components/charts/gear-charts";
+import { GearProfile, SpeciesGearMatrix } from "@/components/charts/gear-profile";
 
 export default function GearPage() {
-  return <GearCharts />;
+  return (
+    <>
+      <GearProfile />
+      <SpeciesGearMatrix />
+    </>
+  );
 }
