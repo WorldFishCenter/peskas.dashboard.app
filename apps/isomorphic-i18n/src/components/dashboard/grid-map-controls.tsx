@@ -7,6 +7,7 @@ import { Separator } from "@workspace/ui/components/separator";
 import { ToggleGroup, ToggleGroupItem } from "@workspace/ui/components/toggle-group";
 import { cn } from "@workspace/ui/lib/utils";
 import { useT } from "@/i18n/use-lang";
+import { LEGEND_FILTER, SWATCH_ON } from "@/components/filters/toggle-states";
 import { TIME_BREAKS } from "@/lib/grid-map/config";
 import { calculateStats } from "@/lib/grid-map/stats";
 import type { ChoroplethLegend, DataPoint, EffortLayer } from "@/lib/grid-map/types";
@@ -83,9 +84,14 @@ export function EffortToolbar({
           className="flex-wrap"
         >
           {TIME_BREAKS.map((range, i) => (
-            <ToggleGroupItem key={range.label} value={range.label} aria-label={range.label}>
+            <ToggleGroupItem
+              key={range.label}
+              value={range.label}
+              aria-label={range.label}
+              className={LEGEND_FILTER}
+            >
               <span
-                className="size-2.5 shrink-0 rounded-[2px]"
+                className={cn("size-2.5 shrink-0 rounded-[2px]", SWATCH_ON)}
                 style={{ backgroundColor: rgb(colors[i]) }}
               />
               {range.label}
@@ -105,15 +111,23 @@ export function EffortToolbar({
           onValueChange={(next) => onVisibleLayersChange(next as EffortLayer[])}
           aria-label={t("info-map-layers")}
         >
-          <ToggleGroupItem value="bars" aria-label={t("info-effort-bars")}>
+          <ToggleGroupItem
+            value="bars"
+            aria-label={t("info-effort-bars")}
+            className={LEGEND_FILTER}
+          >
             <span
-              className="size-2.5 shrink-0 rounded-[2px]"
+              className={cn("size-2.5 shrink-0 rounded-[2px]", SWATCH_ON)}
               style={{ backgroundColor: "var(--chart-1)" }}
             />
             {t("info-effort-bars")}
           </ToggleGroupItem>
-          <ToggleGroupItem value="grounds" aria-label={t("info-fishing-grounds")}>
-            <span className="h-0.5 w-3.5 shrink-0 rounded-full bg-foreground" />
+          <ToggleGroupItem
+            value="grounds"
+            aria-label={t("info-fishing-grounds")}
+            className={LEGEND_FILTER}
+          >
+            <span className={cn("h-0.5 w-3.5 shrink-0 rounded-full bg-foreground", SWATCH_ON)} />
             {t("info-fishing-grounds")}
           </ToggleGroupItem>
         </ToggleGroup>

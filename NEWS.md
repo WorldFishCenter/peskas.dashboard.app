@@ -25,6 +25,7 @@
 - Colours mean the same thing on every page and stay distinct for colour-blind readers; districts no longer have colours of their own.
 - Mozambique opens on all its districts, like Zanzibar and Kenya.
 - Buttons, links and the chosen figure look clickable, and popups and chart tooltips let the chart show through.
+- The chosen time range and measure stand out in the accent colour, and the map legend shows which bands and layers are switched off.
 - Bars drawn in two shades (catch below maturity size, the vulnerability of a group of species) and the district panels have a legend, and the trend charts say how the districts are combined.
 
 ## Fixed

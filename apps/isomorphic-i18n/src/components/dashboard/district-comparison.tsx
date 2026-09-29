@@ -20,6 +20,7 @@ import { WarningIcon } from "@/components/charts/warning-icon";
 import { DistrictMetricsTable } from "@/components/dashboard/district-metrics-table";
 import { GridMap } from "@/components/dashboard/grid-map";
 import { Change } from "@/components/dashboard/stat-tile";
+import { CHOSEN } from "@/components/filters/toggle-states";
 import { activeCountry } from "@/config/countryConfig";
 import { pages } from "@/config/routes";
 import { useScopedHref, useT } from "@/i18n/use-lang";
@@ -86,7 +87,7 @@ export function DistrictComparison() {
               }}
             >
               {pages.home.metric.options.map((key) => (
-                <ToggleGroupItem key={key} value={key}>
+                <ToggleGroupItem key={key} value={key} className={CHOSEN}>
                   {metricTitle(t, key)}
                 </ToggleGroupItem>
               ))}

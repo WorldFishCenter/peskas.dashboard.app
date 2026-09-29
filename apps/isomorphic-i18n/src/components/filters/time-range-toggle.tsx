@@ -1,5 +1,6 @@
 import { ToggleGroup, ToggleGroupItem } from "@workspace/ui/components/toggle-group";
 import { useT } from "@/i18n/use-lang";
+import { CHOSEN } from "@/components/filters/toggle-states";
 import { trackEvent } from "@/lib/analytics";
 import { TIME_RANGES, useScope } from "@/store/filters";
 
@@ -24,7 +25,7 @@ export function TimeRangeToggle() {
       }}
     >
       {TIME_RANGES.map((r) => (
-        <ToggleGroupItem key={r} value={String(r)}>
+        <ToggleGroupItem key={r} value={String(r)} className={CHOSEN}>
           {r === "all" ? t("text-all-time") : t("text-range-months", { count: r })}
         </ToggleGroupItem>
       ))}
