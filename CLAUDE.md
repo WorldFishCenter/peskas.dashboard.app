@@ -1,7 +1,7 @@
 # peskas.dashboard
 
 Multi-country Peskas fisheries portal: a Turborepo (pnpm) monorepo whose only app, `apps/isomorphic-i18n` (Vite SPA with React Router, a Nitro server for tRPC, Mongoose), reads the `portal-*` Mongo summaries that `peskas.coasts::export_portal` writes. One codebase, one Vercel project per country.
-Ecosystem context (other repos, data flow, cross-repo contracts): see PESKAS.md, loaded via CLAUDE.local.md.
+Ecosystem context (other repos, data flow, cross-repo contracts): loaded by the `peskas` Claude Code plugin (repo `peskas-context`).
 
 ## Commands
 
@@ -55,5 +55,5 @@ Ecosystem context (other repos, data flow, cross-repo contracts): see PESKAS.md,
 ## Gotchas
 
 - Collection or column names come from `peskas.coasts` (`export_portal`). Renaming one there breaks the dashboard, and the reverse is also true.
-- Every schema in `packages/nosql/src/schema/` maps a collection in the portal contract (PESKAS.md). Check that contract before adding a schema for any other collection.
+- Every schema in `packages/nosql/src/schema/` maps a collection in the portal contract (the Peskas context). Check that contract before adding a schema for any other collection.
 - coasts' push (`mdb_collection_push`) adds a metadata document to every collection (`type: ["metadata"]`, `timestamp` of the push), with each field a one-element array. Queries filtered on `gaul_2_name` or `catch_taxon` skip it; `coverage` reads it for the last-update date.
