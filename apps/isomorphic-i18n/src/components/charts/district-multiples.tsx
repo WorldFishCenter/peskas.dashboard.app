@@ -1,15 +1,14 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Line, LineChart, YAxis } from "recharts";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@workspace/ui/components/chart";
+import { ChartContainer, ChartTooltip } from "@workspace/ui/components/chart";
 import { cn } from "@workspace/ui/lib/utils";
 import { combine, FEW_LANDINGS, METRICS, type MetricKey } from "@repo/domain/metrics";
 import { useT } from "@/i18n/use-lang";
 import { ChartCard } from "@/components/charts/chart-card";
 import { ChartGate } from "@/components/charts/chart-state";
 import { Legend } from "@/components/charts/legend";
-import { TooltipRow } from "@/components/charts/tooltip-row";
 import { WarningIcon } from "@/components/charts/warning-icon";
-import { formatNumber, landingsCount, monthTooltipLabel } from "@/lib/dashboard/format";
+import { formatNumber, landingsCount, monthLabel, monthSpan } from "@/lib/dashboard/format";
 import { metricTitle, metricUnit } from "@/lib/dashboard/metrics";
 import { useDistrictScope } from "@/store/filters";
 import { api } from "@/trpc/react";
@@ -23,6 +22,11 @@ type DotProps = { cx?: number; cy?: number; value?: unknown; payload?: Point; in
  * district is read against the others without eleven crossing lines. For an
  * average metric that is the selection's figure (weighted by landings); for a
  * total, the mean of the districts, since their sum would dwarf every panel.
+ *
+ * Pointing at a month marks it in every panel (Recharts' `syncId`) with no
+ * tooltip over the lines: the figure beside each name turns into that month's
+ * value, and one line above the panels names the month and the average. A
+ * tooltip in each of up to 19 panels covered the lines it described.
  */
 export function DistrictMultiples({ metric }: { metric: MetricKey }) {
   const { t, lang } = useT();
@@ -65,10 +69,16 @@ export function DistrictMultiples({ metric }: { metric: MetricKey }) {
     return { panels, max, anyThin };
   }, [monthly.data, districts.data, metric, total]);
 
+  // The month pointed at, as an index into every panel's points (they share the months).
+  const [active, setActive] = useState<number | null>(null);
+
   // One district is already the whole trend above.
   if (scope.input.districts.length === 1) return null;
   const unit = metricUnit(t, metric);
   const format = (v: unknown) => formatNumber(v, lang);
+  const months = panels[0]?.points ?? [];
+  const hovered = active == null ? undefined : months[active];
+  const averageLabel = t(total ? "text-selection-average" : "text-selection-average-weighted");
 
   return (
     <ChartCard
@@ -101,16 +111,45 @@ export function DistrictMultiples({ metric }: { metric: MetricKey }) {
       }
     >
       <ChartGate query={monthly} isEmpty={!panels.length}>
-        <div className="grid grid-cols-2 gap-x-6 gap-y-5 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
+        {/* What the figures beside the names are: the selected months, or the month pointed at. */}
+        <p aria-live="polite" className="min-h-5 text-sm text-muted-foreground">
+          {hovered ? (
+            <>
+              <span className="font-medium text-foreground">
+                {monthLabel(hovered.month, lang, "long")}
+              </span>
+              {` · ${averageLabel}: `}
+              <span className="font-medium text-foreground tabular-nums">
+                {format(hovered.overall)}
+              </span>
+            </>
+          ) : (
+            months.length > 0 &&
+            `${monthSpan(months[0].month, months.at(-1)!.month, lang)} · ${t("text-multiples-point")}`
+          )}
+        </p>
+        <div
+          className="grid grid-cols-2 gap-x-6 gap-y-5 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6"
+          onMouseLeave={() => setActive(null)}
+        >
           {panels.map((p) => {
             const thin = p.landings < FEW_LANDINGS;
+            const point = active == null ? undefined : p.points[active];
             return (
               <div key={p.district} className="flex min-w-0 flex-col gap-1">
                 <div className="flex items-baseline justify-between gap-2 text-[13px]">
                   <span className="truncate font-medium" title={p.district}>
                     {p.district}
                   </span>
-                  <span className="tabular-nums">{format(p.value)}</span>
+                  <span
+                    className={cn(
+                      "tabular-nums",
+                      point && "font-semibold",
+                      point?.thin && "font-normal text-muted-foreground",
+                    )}
+                  >
+                    {format(point ? point.value : p.value)}
+                  </span>
                 </div>
                 <ChartContainer
                   config={{
@@ -123,22 +162,16 @@ export function DistrictMultiples({ metric }: { metric: MetricKey }) {
                     data={p.points}
                     margin={{ top: 4, right: 4, bottom: 4, left: 4 }}
                     syncId="district-multiples"
+                    onMouseMove={(state) => {
+                      const index = state?.activeTooltipIndex;
+                      setActive(index == null ? null : Number(index));
+                    }}
                   >
                     <YAxis hide domain={[0, max || 1]} />
+                    {/* The cursor and the active dots, never a box: the values are in the headers. */}
                     <ChartTooltip
-                      cursor={{ stroke: "var(--border)" }}
-                      content={
-                        <ChartTooltipContent
-                          labelFormatter={monthTooltipLabel(lang)}
-                          formatter={(value, name, item) => (
-                            <TooltipRow
-                              color={item.color}
-                              label={name === "overall" ? t("text-selection-average") : p.district}
-                              value={format(value)}
-                            />
-                          )}
-                        />
-                      }
+                      cursor={{ stroke: "var(--muted-foreground)" }}
+                      content={() => null}
                     />
                     <Line
                       dataKey="overall"

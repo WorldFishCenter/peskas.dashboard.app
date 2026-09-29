@@ -465,5 +465,6 @@
   "text-map-loading": "A carregar os dados do mapa…",
   "text-map-no-effort": "Ainda não há pesca seguida para mostrar.",
   "text-map-no-districts": "Nenhum distrito tem valor para estes meses.",
-  "text-map-unsupported": "Este navegador não consegue desenhar o mapa: precisa de WebGL."
+  "text-map-unsupported": "Este navegador não consegue desenhar o mapa: precisa de WebGL.",
+  "text-multiples-point": "aponte para um mês para o ler em todos os distritos"
 }

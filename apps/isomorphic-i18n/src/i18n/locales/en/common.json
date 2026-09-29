@@ -465,5 +465,6 @@
   "text-map-loading": "Loading the map data…",
   "text-map-no-effort": "No tracked fishing to show yet.",
   "text-map-no-districts": "No district has a value for these months.",
-  "text-map-unsupported": "This browser can't draw the map: it needs WebGL."
+  "text-map-unsupported": "This browser can't draw the map: it needs WebGL.",
+  "text-multiples-point": "point at a month to read it in every district"
 }

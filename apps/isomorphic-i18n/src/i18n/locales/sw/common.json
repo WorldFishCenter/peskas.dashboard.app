@@ -465,5 +465,6 @@
   "text-map-loading": "Inapakia takwimu za ramani…",
   "text-map-no-effort": "Bado hakuna uvuvi uliofuatiliwa wa kuonyesha.",
   "text-map-no-districts": "Hakuna wilaya yenye thamani kwa miezi hii.",
-  "text-map-unsupported": "Kivinjari hiki hakiwezi kuchora ramani: kinahitaji WebGL."
+  "text-map-unsupported": "Kivinjari hiki hakiwezi kuchora ramani: kinahitaji WebGL.",
+  "text-multiples-point": "elekeza kwenye mwezi uusome katika kila wilaya"
 }
