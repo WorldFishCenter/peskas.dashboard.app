@@ -4,10 +4,12 @@ import { GeoJsonLayer } from "@deck.gl/layers";
 import { DeckGL } from "@deck.gl/react";
 import { AttributionControl, Map as MapGL } from "react-map-gl";
 import { MapIcon, SatelliteIcon } from "lucide-react";
+import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@workspace/ui/components/tooltip";
 import { cn } from "@workspace/ui/lib/utils";
 import { useT } from "@/i18n/use-lang";
+import { ChartState, RenderGuard } from "@/components/charts/chart-state";
 import { EffortToolbar, MetricLegend } from "@/components/dashboard/grid-map-controls";
 import { useTheme } from "@/components/theme-provider";
 import { activeCountry } from "@/config/countryConfig";
@@ -78,17 +80,19 @@ export function GridMap({ mode, className }: { mode: "districts" | "effort"; cla
   const { months } = useScope();
   const [hovered, setHovered] = useState<string | null>(null);
 
-  const { data: cells = [] } = api.fishingEffort.cells.useQuery(undefined, {
-    enabled: mode === "effort",
-  });
+  const cellsQuery = api.fishingEffort.cells.useQuery(undefined, { enabled: mode === "effort" });
+  const cells = useMemo(() => cellsQuery.data ?? [], [cellsQuery.data]);
   const { data: grounds } = api.fishingEffort.grounds.useQuery(undefined, {
     enabled: mode === "effort",
   });
   const { data: boundaries } = api.gaul2Boundaries.getByCountry.useQuery();
-  const { data: districtMetrics = [] } = api.summaries.byDistrict.useQuery(
+  const districtsQuery = api.summaries.byDistrict.useQuery(
     { months },
     { enabled: mode === "districts" },
   );
+  const districtMetrics = useMemo(() => districtsQuery.data ?? [], [districtsQuery.data]);
+  // deck.gl reports a failure outside any layer when the browser can't give it WebGL.
+  const [unsupported, setUnsupported] = useState(false);
 
   const points: DataPoint[] = useMemo(
     () =>
@@ -343,6 +347,19 @@ export function GridMap({ mode, className }: { mode: "districts" | "effort"; cla
     hovered,
   ]);
 
+  // Said over the map, so an empty or failed map never reads as "no fishing here".
+  const main = mode === "effort" ? cellsQuery : districtsQuery;
+  const status = unsupported
+    ? t("text-map-unsupported")
+    : main.isPending && main.isFetching
+      ? t("text-map-loading")
+      : main.error
+        ? t("text-load-error-title")
+        : main.data &&
+            (mode === "effort" ? !cells.length : !districtMetrics.some((d) => d[metric] != null))
+          ? t(mode === "effort" ? "text-map-no-effort" : "text-map-no-districts")
+          : null;
+
   return (
     <div className={cn("flex flex-col gap-4", className)}>
       {mode === "effort" && (
@@ -357,43 +374,59 @@ export function GridMap({ mode, className }: { mode: "districts" | "effort"; cla
         />
       )}
       <div className="relative min-h-0 flex-1 overflow-hidden rounded-lg">
-        <DeckGL
-          // The effort map opens tilted so its columns show their height; the choropleth stays flat.
-          initialViewState={
-            mode === "effort"
-              ? { ...activeCountry.gridMapViewState, ...EFFORT_VIEW_ANGLE }
-              : activeCountry.gridMapViewState
-          }
-          controller
-          layers={layers}
-          getTooltip={getTooltip as any}
-          // Half-zoom steps are enough to resize the grid cells; finer would re-aggregate on every frame.
-          onViewStateChange={({ viewState }) => {
-            const next = Math.round((viewState as { zoom: number }).zoom * 2) / 2;
-            if (next !== zoom) setZoom(next);
-          }}
-        >
-          <MapGL
-            mapStyle={
-              basemap === "satellite"
-                ? MAP_STYLES.satellite
-                : isDark
-                  ? MAP_STYLES.dark
-                  : MAP_STYLES.light
+        <RenderGuard fallback={<ChartState status="error" className="h-full" />}>
+          <DeckGL
+            // The effort map opens tilted so its columns show their height; the choropleth stays flat.
+            initialViewState={
+              mode === "effort"
+                ? { ...activeCountry.gridMapViewState, ...EFFORT_VIEW_ANGLE }
+                : activeCountry.gridMapViewState
             }
-            mapboxAccessToken={import.meta.env.VITE_MAPBOX_TOKEN ?? ""}
-            // Mapbox GL v3 defaults to the globe projection, which curves the basemap
-            // at low zoom while deck.gl keeps rendering Web Mercator: the boundary and
-            // grid layers visibly detach from the basemap. Pin mercator so both agree.
-            projection={{ name: "mercator" }}
-            reuseMaps
-            attributionControl={false}
-            renderWorldCopies={false}
-            antialias
+            controller
+            layers={layers}
+            getTooltip={getTooltip as any}
+            onError={(error, layer) => {
+              console.error(error);
+              if (!layer) setUnsupported(true);
+            }}
+            // Half-zoom steps are enough to resize the grid cells; finer would re-aggregate on every frame.
+            onViewStateChange={({ viewState }) => {
+              const next = Math.round((viewState as { zoom: number }).zoom * 2) / 2;
+              if (next !== zoom) setZoom(next);
+            }}
           >
-            <AttributionControl compact />
-          </MapGL>
-        </DeckGL>
+            <MapGL
+              mapStyle={
+                basemap === "satellite"
+                  ? MAP_STYLES.satellite
+                  : isDark
+                    ? MAP_STYLES.dark
+                    : MAP_STYLES.light
+              }
+              mapboxAccessToken={import.meta.env.VITE_MAPBOX_TOKEN ?? ""}
+              // Mapbox GL v3 defaults to the globe projection, which curves the basemap
+              // at low zoom while deck.gl keeps rendering Web Mercator: the boundary and
+              // grid layers visibly detach from the basemap. Pin mercator so both agree.
+              projection={{ name: "mercator" }}
+              reuseMaps
+              attributionControl={false}
+              renderWorldCopies={false}
+              antialias
+            >
+              <AttributionControl compact />
+            </MapGL>
+          </DeckGL>
+        </RenderGuard>
+        {status && (
+          <div
+            role="status"
+            className="pointer-events-none absolute inset-0 flex items-center justify-center"
+          >
+            <Badge variant="secondary" className="h-auto px-3 py-1.5 text-sm">
+              {status}
+            </Badge>
+          </div>
+        )}
         <Tooltip>
           <TooltipTrigger
             render={

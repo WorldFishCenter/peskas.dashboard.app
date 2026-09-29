@@ -457,5 +457,13 @@
   "methods-reading-combined": "Kila takwimu inahusu miezi kamili: mwezi wa sasa huachwa nje hadi takwimu zake zikamilike, na mabadiliko hulinganisha miezi hiyo hiyo mwaka mmoja kabla. Wastani wa wilaya, miezi au zana hupimwa kwa idadi ya safari nyuma ya kila thamani, kwa hivyo wilaya yenye safari 500 ina uzito zaidi kuliko yenye safari 5.",
   "methods-reading-limits": "Samaki kwa aina ni samaki waliorekodiwa katika safari zilizotafitiwa: wanaonyesha samaki wanajumuisha nini, si kiasi kilichovuliwa kwa jumla. Ramani ya juhudi za uvuvi inaonyesha boti zenye kifaa cha GPS pekee, katika muda wote zilizofuatiliwa. Hakuna takwimu hizi ambayo ni tathmini ya hifadhi ya samaki: viwango vya uvuvi, ukubwa na hatari huonyesha wapi pa kuangalia kwa karibu zaidi.",
   "methods-reading-sample": "Utafiti hurekodi uzito wa samaki wote na kutambua na kupima sampuli yao, kwa hivyo samaki kwa aina wanaeleza sampuli hiyo.",
-  "section-recorded-all-time": "zimepimwa kwenye safari {{landings}} za miezi yote ya takwimu; chagua miezi 3, 6 au 12 kulinganisha na mwaka uliopita"
+  "section-recorded-all-time": "zimepimwa kwenye safari {{landings}} za miezi yote ya takwimu; chagua miezi 3, 6 au 12 kulinganisha na mwaka uliopita",
+  "text-unlisted-districts_one": "Safari pia zilirekodiwa katika {{districts}}, wilaya ambayo dashibodi hii bado haijaiorodhesha; zimeachwa nje ya takwimu zote.",
+  "text-unlisted-districts_other": "Safari pia zilirekodiwa katika {{districts}}, wilaya ambazo dashibodi hii bado haijaziorodhesha; zimeachwa nje ya takwimu zote.",
+  "text-load-error-title": "Takwimu hazikupakia",
+  "text-load-error": "Pakia ukurasa upya ujaribu tena. Ikiendelea kushindikana, huduma ya takwimu huenda haifanyi kazi.",
+  "text-map-loading": "Inapakia takwimu za ramani…",
+  "text-map-no-effort": "Bado hakuna uvuvi uliofuatiliwa wa kuonyesha.",
+  "text-map-no-districts": "Hakuna wilaya yenye thamani kwa miezi hii.",
+  "text-map-unsupported": "Kivinjari hiki hakiwezi kuchora ramani: kinahitaji WebGL."
 }

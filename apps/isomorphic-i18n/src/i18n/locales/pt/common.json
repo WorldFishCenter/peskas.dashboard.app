@@ -457,5 +457,13 @@
   "methods-reading-combined": "Cada número cobre meses completos: o mês atual fica de fora até os seus dados estarem completos, e uma variação compara os mesmos meses um ano antes. As médias entre distritos, meses ou artes são ponderadas pelos desembarques por trás de cada valor, por isso um distrito com 500 desembarques conta mais do que um com 5.",
   "methods-reading-limits": "A captura por espécie é a captura registada nos desembarques amostrados: mostra de que é feita a captura, não quanto foi desembarcado no total. O mapa de esforço de pesca mostra apenas os barcos com localizador GPS, durante todo o tempo em que foram seguidos. Nenhum destes números é uma avaliação de stock: as taxas de captura, os tamanhos e a vulnerabilidade mostram onde olhar com mais atenção.",
   "methods-reading-sample": "O inquérito regista o peso de toda a captura e identifica e mede uma amostra dela, por isso a captura por espécie descreve essa amostra.",
-  "section-recorded-all-time": "medidos em {{landings}} desembarques de todos os meses de dados; escolha 3, 6 ou 12 meses para comparar com um ano antes"
+  "section-recorded-all-time": "medidos em {{landings}} desembarques de todos os meses de dados; escolha 3, 6 ou 12 meses para comparar com um ano antes",
+  "text-unlisted-districts_one": "Também foram registados desembarques em {{districts}}, um distrito que este painel ainda não lista; ficam de fora de todos os números.",
+  "text-unlisted-districts_other": "Também foram registados desembarques em {{districts}}, distritos que este painel ainda não lista; ficam de fora de todos os números.",
+  "text-load-error-title": "Não foi possível carregar os dados",
+  "text-load-error": "Recarregue a página para tentar de novo. Se continuar a falhar, o serviço de dados pode estar em baixo.",
+  "text-map-loading": "A carregar os dados do mapa…",
+  "text-map-no-effort": "Ainda não há pesca seguida para mostrar.",
+  "text-map-no-districts": "Nenhum distrito tem valor para estes meses.",
+  "text-map-unsupported": "Este navegador não consegue desenhar o mapa: precisa de WebGL."
 }

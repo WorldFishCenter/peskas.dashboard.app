@@ -3,6 +3,7 @@ import { createColumnHelper, tableFeatures, useTable } from "@tanstack/react-tab
 import { useT } from "@/i18n/use-lang";
 import { ChartCard } from "@/components/charts/chart-card";
 import { ChartGate } from "@/components/charts/chart-state";
+import { WarningIcon } from "@/components/charts/warning-icon";
 import { HeatCell, valueRange } from "@/components/charts/heat-cell";
 import { DataTable } from "@/components/data-table/data-table";
 import { activeCountry } from "@/config/countryConfig";
@@ -75,6 +76,17 @@ export function CoverageMatrix() {
       description={t("text-coverage-description", { count: COVERAGE_MONTHS })}
       info="info-coverage"
       download={query.data?.cells}
+      footer={
+        !!query.data?.unlisted.length && (
+          <span className="flex items-center gap-1">
+            <WarningIcon />
+            {t("text-unlisted-districts", {
+              districts: query.data.unlisted.join(", "),
+              count: query.data.unlisted.length,
+            })}
+          </span>
+        )
+      }
     >
       <ChartGate query={query} isEmpty={!months.length} className="h-40">
         <DataTable table={table} />

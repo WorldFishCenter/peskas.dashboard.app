@@ -3,7 +3,7 @@
   "text-clear": "Clear",
   "text-clear-all": "Clear All",
   "text-total": "Total",
-  "text-no-data": "No Data",
+  "text-no-data": "No data",
   "text-no-data-available": "No data available",
   "text-error": "Error",
   "text-all-time": "All time",
@@ -457,5 +457,13 @@
   "methods-reading-combined": "Every figure covers complete months: the current month is left out until its data is in, and a change compares the same months a year earlier. Averages over districts, months or gears are weighted by the landings behind each value, so a district with 500 landings counts for more than one with 5.",
   "methods-reading-limits": "Catch by species is the catch recorded at the surveyed landings: it shows what the catch is made of, not how much was landed in total. The fishing-effort map shows only boats that carry a GPS tracker, over all the time they have been tracked. None of these figures is a stock assessment: catch rates, sizes and vulnerability show where to look more closely.",
   "methods-reading-sample": "The survey records the weight of the whole catch and identifies and measures a sample of it, so catch by species describes that sample.",
-  "section-recorded-all-time": "measured on {{landings}} landings over every month of data; pick 3, 6 or 12 months to compare with a year earlier"
+  "section-recorded-all-time": "measured on {{landings}} landings over every month of data; pick 3, 6 or 12 months to compare with a year earlier",
+  "text-unlisted-districts_one": "Landings were also recorded in {{districts}}, a district this dashboard doesn't list yet; they are left out of every figure.",
+  "text-unlisted-districts_other": "Landings were also recorded in {{districts}}, districts this dashboard doesn't list yet; they are left out of every figure.",
+  "text-load-error-title": "Couldn't load the data",
+  "text-load-error": "Reload the page to try again. If it keeps failing, the data service may be down.",
+  "text-map-loading": "Loading the map data…",
+  "text-map-no-effort": "No tracked fishing to show yet.",
+  "text-map-no-districts": "No district has a value for these months.",
+  "text-map-unsupported": "This browser can't draw the map: it needs WebGL."
 }

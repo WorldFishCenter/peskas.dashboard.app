@@ -34,6 +34,9 @@
 - The length chart draws each size class as wide as it is, so a wide class no longer looks like a large catch.
 - In Kenya and Mozambique, the number of landings in a page's summary line now matches its figures.
 - The species bar charts no longer repeat the species name in their tooltip.
+- Mozambique's figures now include Mogincual, whose landings were left out.
+- When the selected months have no landings, the figures at the top say so instead of leaving an empty space.
+- A chart that fails to load now says so instead of reporting no data, and the fishing map says when its data is loading, missing or can't be drawn in the browser.
 - For estimated totals, the grey line behind each district panel is the average district rather than the sum of all districts, which flattened every district's line.
 - Data and methods now says that species information covers the Western and Eastern Indian Ocean, that length classes widen above 30 cm, and that in Zanzibar and Mozambique the catch weight is worked out from fish lengths or buckets.
 

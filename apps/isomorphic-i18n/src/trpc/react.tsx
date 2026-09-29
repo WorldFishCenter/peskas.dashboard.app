@@ -1,6 +1,6 @@
 import React, { Suspense, useEffect, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { httpLink, loggerLink } from "@trpc/client";
+import { httpLink, loggerLink, TRPCClientError } from "@trpc/client";
 import { createTRPCReact } from "@trpc/react-query";
 import SuperJSON from "superjson";
 import type { AppRouter } from "@isomorphic/api";
@@ -21,6 +21,12 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
         defaultOptions: {
           queries: {
             staleTime: 1000 * 60 * 5, // 5 minutes
+            // One retry for a failed server or network, none for a request the server refused: the
+            // default three, each waiting out the database's 15 s timeout, would keep a chart
+            // loading for a minute before it says it failed.
+            retry: (failures, error) =>
+              failures < 1 &&
+              !(error instanceof TRPCClientError && (error.data?.httpStatus ?? 500) < 500),
             refetchOnMount: false,
             refetchOnReconnect: false,
             refetchOnWindowFocus: false,

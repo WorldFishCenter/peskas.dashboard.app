@@ -57,6 +57,8 @@ beforeAll(async () => {
     district("Wete", "estimated_catch_tn", 5, 13), // the same month a year earlier
     district("Wete", "n_submissions", 100, 5), // outside a 3-month window
     district("Kati", "n_submissions", 3, 0), // too few landings to rely on
+    district("Micheweni", "n_submissions", 12, 12), // a year ago, nothing since
+    district("Dar es Salaam", "n_submissions", 4, 0), // not a Zanzibar district
     district("Wete", "n_submissions", 999, -1), // this month, still coming in
     district("Wete", "estimated_catch_tn", 999, -1),
   ]);
@@ -209,6 +211,9 @@ test("the headline covers complete months against the same months a year earlier
   expect(allTime.previous).toBeNull();
   expect(allTime.window.start).toBe(key(13));
 
+  // Surveyed a year earlier and not since: no data, however full the year before is.
+  expect(await summaries.headline({ districts: ["Micheweni"], months: 3 })).toBeNull();
+
   // Scoped to Pemba's districts, Mjini's catch is left out.
   const pemba = (await summaries.headline({ districts: ["Wete", "Mkoani"], months: 3 }))!;
   expect(pemba.metrics.estimated_catch_tn).toMatchObject({ value: 4, previous: 5 });
@@ -272,6 +277,9 @@ test("coverage counts landings, the latest month and the last push", async () =>
     updatedAt: pushedAt,
   });
   expect(coverage.cells).toContainEqual({ district: "Wete", month: key(1), landings: 20 });
+  // Landings the registry has no district for are named, never counted.
+  expect(coverage.unlisted).toEqual(["Dar es Salaam"]);
+  expect((await summaries.coverage({ months: 3 })).landings).toBe(73); // without Dar es Salaam's 4
 });
 
 test("taxa sum catch and average length across months; composition adds districts up", async () => {

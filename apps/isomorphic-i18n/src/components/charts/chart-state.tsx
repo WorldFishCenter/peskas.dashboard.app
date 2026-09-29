@@ -41,10 +41,10 @@ export function ChartState({
         <EmptyMedia variant="icon">
           {isError ? <TriangleAlertIcon /> : <ChartNoAxesColumnIcon />}
         </EmptyMedia>
-        <EmptyTitle>{isError ? t("text-error") : t("text-no-data")}</EmptyTitle>
+        {/* A failed request says so: "no data" would tell the reader the fishery had none. */}
+        <EmptyTitle>{isError ? t("text-load-error-title") : t("text-no-data")}</EmptyTitle>
         <EmptyDescription>
-          {description ??
-            (isError ? t("text-no-data-available") : t("text-no-data-available-for-filters"))}
+          {isError ? t("text-load-error") : description ?? t("text-no-data-available-for-filters")}
         </EmptyDescription>
       </EmptyHeader>
     </Empty>
@@ -101,7 +101,8 @@ export function ChartGate({
   );
 }
 
-class RenderGuard extends Component<
+/** Shows `fallback` instead of children that throw while rendering, so one failure blanks only itself. */
+export class RenderGuard extends Component<
   { fallback: ReactNode; children: ReactNode },
   { failed: boolean }
 > {

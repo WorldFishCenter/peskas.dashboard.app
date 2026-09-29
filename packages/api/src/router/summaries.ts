@@ -222,6 +222,17 @@ function overWindow(cells: Cells, months: string[], metric: MetricKey) {
 
 const monthlyMetric = scope.extend({ metric: z.enum(MONTHLY_METRIC_KEYS) });
 
+const warned = new Set<string>();
+/** Log each unlisted district once per server process, where whoever maintains the registry will see it. */
+function warnUnlisted(districts: string[]) {
+  const fresh = districts.filter((d) => !warned.has(d));
+  if (!fresh.length) return;
+  fresh.forEach((d) => warned.add(d));
+  console.warn(
+    `Landings in districts missing from ${activeCountry().countryCode}'s registry (packages/domain/src/country.ts): ${fresh.join(", ")}`,
+  );
+}
+
 export const summariesRouter = createTRPCRouter({
   /**
    * Every metric per district over the window, each combined across months by
@@ -273,6 +284,8 @@ export const summariesRouter = createTRPCRouter({
     if (!first) return null;
 
     const window = monthRange(start ?? first, end);
+    // A year earlier with data and nothing since is still no data: a long gap in the surveys.
+    if (!window.some((month) => cells.has(month))) return null;
     const previous = start ? monthRange(from!, monthKey(addMonths(monthDate(end), -12))) : null;
 
     return {
@@ -426,16 +439,27 @@ export const summariesRouter = createTRPCRouter({
   }),
 
   /**
-   * Landings per district and month in scope, the latest month with any, and
-   * when coasts last pushed the summaries (the push's metadata document).
+   * Landings per district and month in scope, the latest month with any, when
+   * coasts last pushed the summaries (the push's metadata document), and the
+   * districts with landings that the country registry doesn't list, whose
+   * figures no page shows until they are added to it.
    */
   coverage: publicProcedure.input(scope).query(async ({ input }) => {
-    const [byMonth, meta] = await Promise.all([
+    const filter = match(input);
+    const [byMonth, meta, surveyed] = await Promise.all([
       // One value per district and month, as every other procedure reads them: coasts can write a
       // district twice when two GAUL units share its name.
-      districtCells(match(input), ["n_submissions"]),
+      districtCells(filter, ["n_submissions"]),
       DistrictSummaryModel.collection.findOne<{ timestamp?: Date | Date[] }>({ type: "metadata" }),
+      DistrictSummaryModel.distinct("gaul_2_name", {
+        date: filter.date,
+        indicator: "n_submissions",
+        value: { $gt: 0 },
+      }),
     ]);
+    const known = activeCountry().districts;
+    const unlisted = surveyed.filter((d): d is string => !!d && !known.includes(d)).sort();
+    warnUnlisted(unlisted);
     const cells = [...byMonth]
       .flatMap(([month, districts]) =>
         [...districts].map(([district, c]) => ({ district, month, landings: c.n_submissions })),
@@ -449,6 +473,7 @@ export const summariesRouter = createTRPCRouter({
       // mongolite writes R's length-1 vectors as one-element arrays.
       updatedAt: [meta?.timestamp].flat()[0] ?? null,
       cells,
+      unlisted,
     };
   }),
 
