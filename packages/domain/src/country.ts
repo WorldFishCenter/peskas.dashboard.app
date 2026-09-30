@@ -34,8 +34,8 @@ export interface CountryConfig {
   partner: {
     /** Its acronym, e.g. 'KEFS' */
     name: string;
-    /** Logo in public/, shown on white in both themes */
-    logoSrc: string;
+    /** Logo in public/, shown on white in both themes; without one, the name takes its place */
+    logoSrc?: string;
     url?: string;
   };
   /** ISO 4217 currency code, e.g. 'TZS' */
@@ -210,7 +210,8 @@ const mozambiqueConfig: CountryConfig = {
   siteTitle: "PESKAS | Mozambique Fisheries",
   siteDescription: "Peskas | Mozambique Fisheries Dashboard",
   flagIconSrc: "/mozambique-flag.svg",
-  partner: { name: "ADNAP", logoSrc: "/adnap-logo.png", url: "https://adnap.gov.mz/" },
+  // DINAPA replaced ADNAP and has no website or logo yet.
+  partner: { name: "DINAPA" },
   currencyCode: "MZN",
   locale: "pt-MZ",
   languages: ["pt", "en", "sw"],

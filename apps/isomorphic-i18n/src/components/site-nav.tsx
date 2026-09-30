@@ -70,7 +70,14 @@ export function Partner() {
         className="flex shrink-0 items-center gap-2"
       >
         {/* The logos are drawn for a light page, so they sit on white in dark mode too. */}
-        <img src={partner.logoSrc} alt="" className="h-8 w-auto rounded-md bg-white p-0.5" />
+        {partner.logoSrc ? (
+          <img src={partner.logoSrc} alt="" className="h-8 w-auto rounded-md bg-white p-0.5" />
+        ) : (
+          // No logo yet (DINAPA): the name stands in for it wherever the words below are hidden.
+          <span aria-hidden className="text-sm font-semibold sm:max-xl:hidden min-[1320px]:hidden">
+            {partner.name}
+          </span>
+        )}
         {/* No room for the words in a phone's top bar, nor beside the full nav until 1320px (its
             Portuguese labels, the longest, need 1296px); screen readers still get them. */}
         <span className="sr-only grid leading-tight sm:max-xl:not-sr-only min-[1320px]:not-sr-only">
