@@ -1,26 +1,11 @@
 import type { Types } from "mongoose";
 import mongoose, { Schema } from "mongoose";
 
-// Define the indicators as a const array for type safety
-export const DISTRICT_INDICATORS = [
-  "n_submissions",
-  "n_fishers",
-  "trip_duration",
-  "trip_duration_hrs",
-  "mean_cpue",
-  "mean_rpue",
-  "mean_price_kg",
-  "estimated_revenue",
-  "estimated_catch_tn",
-] as const;
-
-export type TDistrictIndicator = (typeof DISTRICT_INDICATORS)[number];
-
 /* eslint-disable @typescript-eslint/consistent-type-definitions */
 export type TDistrictSummary = {
   _id: Types.ObjectId;
   gaul_2_name: string;
-  indicator: TDistrictIndicator | string; // Allow string for flexibility with new indicators
+  indicator: string;
   value: number;
   date: Date;
   timestamp?: Date;
@@ -61,4 +46,4 @@ districtSummarySchema.index({ timestamp: -1 });
  */
 export const DistrictSummaryModel =
   (mongoose.models.DistrictSummary as mongoose.Model<TDistrictSummary>) ??
-  mongoose.model<TDistrictSummary>("DistrictSummary", districtSummarySchema); 
+  mongoose.model<TDistrictSummary>("DistrictSummary", districtSummarySchema);

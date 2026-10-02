@@ -1,3 +1,123 @@
+# peskas.dashboard 2.2.0
+
+## Clearer pages: the answer first, one district at a time
+
+- Every page opens with its name, the question it answers, its filters, and one line saying how many landings, districts and months its figures rest on and when the data was last updated.
+- The home page leads with what the surveyed landings show (catch rate, catch and revenue per trip, landings surveyed), each against the same months a year earlier. Estimated totals for all boats sit together with how confident they are; while few boats carry a tracker they are rounded and their change is not shown.
+- Districts are compared in one ranked table with their change on a year earlier. Select a district to see it on its own. Districts with no surveyed landings are listed once instead of filling the table with dashes.
+- On the Catch and Revenue pages, the figures at the top choose what the charts show: the selected districts as one line against the same months a year earlier, then each district in its own small chart on the same scale.
+- Species show their common names. Species and sizes has three tabs: what is caught, at what size (with every measured species ranked by how much of its catch is below the size at which it first reproduces), and the food web.
+- The Fishing gear page compares every gear in one table: how much it is used, what it catches and earns per hour, how much of its catch is below maturity size, and its main species.
+- Vulnerable species opens with four figures. Data and methods draws how the figures are made and estimated, and sets out each survey, every measure and the chart symbols in one place each.
+- A page's address keeps its time range, districts and measure, so a shared link opens the same view.
+- The fishing-effort map shows the whole Mozambique coast legibly, in its own section.
+- The fishing-effort map shows the same fishing activity as the Peskas Coasts regional map, for this country only: the hours boats spent fishing, told apart from travel, with the fishing grounds they keep returning to outlined. It opens tilted so the columns show their height, and hovering over a fishing ground highlights it and shows its figures.
+- Pages print on landscape A4 with their time range and districts written on them.
+- The top bar shows the partner the dashboard is developed with, by logo and name, beside the Peskas brand: ZAFIRI in Zanzibar, KEFS in Kenya and DINAPA (National Directorate of Fisheries and Aquaculture) in Mozambique, linked to their websites where they have one. DINAPA has no logo yet, so its name shows on its own. Data and methods names the partner first.
+- Data and methods and the chart explanations link the sources and organisations they name (FishBase, SeaLifeBase, the IUCN Red List, Pelagic Data Systems, the partner, the Peskas Management Platform). The Data and methods contact section sets out where to ask questions, the Peskas Management Platform for survey teams, the Peskas Fishery Data API and Peskas itself.
+
+## Changes
+
+- Every figure covers complete months: the current month is left out until its data is in, as the home page already did.
+- Pages open on all the data (all time) rather than the last 6 months. Pick 3, 6 or 12 months to compare with the same months a year earlier.
+- The month-by-month pattern (seasonality) appears once the selected districts have two years of data.
+- Large numbers read "62 billion TZS" instead of "61,884.1M", in the page's language.
+- Colours mean the same thing on every page and stay distinct for colour-blind readers; districts no longer have colours of their own.
+- Mozambique opens on all its districts, like Zanzibar and Kenya.
+- Buttons, links and the chosen figure look clickable, and popups and chart tooltips let the chart show through.
+- The chosen time range and measure stand out in the accent colour, and the map legend shows which bands and layers are switched off.
+- In the district-by-district panels, pointing at a month marks it in every panel and shows each district's value for that month beside its name, instead of a tooltip over every panel.
+- Bars drawn in two shades (catch below maturity size, the vulnerability of a group of species) and the district panels have a legend, and the trend charts say how the districts are combined.
+
+## Fixed
+
+- Explanations checked against the pipelines that make the figures. Catch and revenue per unit effort are per hour of the trip as reported at landing, travel included, not per hour spent fishing. Length classes are described as they are (under 10 cm, then 5 cm wide to 30 cm, 10 cm to 1 m, wider above). Flagged records are said to be left out, without implying that a review brings them back. The size-at-maturity and gear explanations describe the charts they sit on.
+- Months without data no longer show as dots along the top edge of the trend charts.
+- The length chart draws each size class as wide as it is, so a wide class no longer looks like a large catch.
+- In Kenya and Mozambique, the number of landings in a page's summary line now matches its figures.
+- The species bar charts no longer repeat the species name in their tooltip.
+- Mozambique's figures now include Mogincual, whose landings were left out.
+- When the selected months have no landings, the figures at the top say so instead of leaving an empty space.
+- A chart that fails to load now says so instead of reporting no data, and the fishing map says when its data is loading, missing or can't be drawn in the browser.
+- For estimated totals, the grey line behind each district panel is the average district rather than the sum of all districts, which flattened every district's line.
+- Data and methods now says that species information covers the Western and Eastern Indian Ocean, that length classes widen above 30 cm, and that in Zanzibar and Mozambique the catch weight is worked out from fish lengths or buckets.
+
+## Removed
+
+- The stacked bars of species by district and by gear, and the four separate gear charts.
+
+---
+
+# peskas.dashboard 2.1.0
+
+## Dashboards that explain themselves
+
+- New Fishing gear page: which gears are used, how much they catch and earn per hour, and how much of their catch is smaller than the size at which the fish first reproduce.
+- New Vulnerable species page: catch by vulnerability to fishing, sharks and rays, and each species' IUCN Red List and CITES status.
+- The About page is now Data and methods: where the data comes from, how every figure is calculated and its limits, a glossary, and a table of landings surveyed per district and month.
+- Every chart asks the question it answers, has an ⓘ button explaining what it shows, how it is calculated and what it cannot tell you, a button to download its data (CSV), and a line saying how many landings it rests on, the latest month of data and whether that sample is small, medium or large.
+- The home page shows headline figures for complete months, compared with the same months a year earlier, and says how confident each estimate is.
+- New figures: catch and revenue per trip, estimated fishing trips, price per kg by species, what each gear catches, the mean trophic level of the catch, and the size of the catch: how much is below the size at which each species first reproduces, at its optimum size, or large spawners.
+- Figures resting on fewer than 10 landings carry a warning sign; in the time series they are drawn as hollow points and in the district table they are greyed out.
+- Pages print cleanly.
+
+## Changes
+
+- Averages across districts, months and gears count each value by the landings behind it, so a district with 5 landings no longer weighs as much as one with 500.
+- Seasonality is a month-by-district table over every year of data. With less than two years of it, the table says it shows a single year rather than a seasonal pattern.
+- Gear performance is a ranked bar chart with the number of landings per gear, instead of a treemap.
+- Catch by species is labelled as recorded catch: it comes from the surveyed landings, not the total catch.
+- "No. of fishers" is now "Fishers per trip", which is what it always measured.
+- The fishing-effort map opens flat and says that it covers all time and only boats with GPS trackers.
+- The Kenya dashboard opens on every district: the three it opened on have had almost no surveys this year.
+- On the Kenya dashboard the sizes of the catch are drawn from the average length of the fish measured on each landing, which is what its survey records; the charts and the Data and methods page say so.
+
+## Removed
+
+- The "length distribution" chart, which showed how district averages differed rather than the sizes of fish.
+- The "Beta" labels.
+
+---
+
+# peskas.dashboard 2.0.0
+
+## Redesign
+
+- A new look: one top bar holds the page links, language and theme switch (a side menu on phones), leaving the full width to the charts.
+- Light theme by default, with a switch to dark.
+- Filters fold into a "Filters" button on small screens.
+- Pages open faster, and switching between them is almost instant.
+- The home page summary cards sit in one scrollable row and say they cover the last 3 months.
+- The home page map is larger, with the district ranking beside it; its legends and explanation no longer cover the map.
+- Chart legends are clickable: tap a district or species to hide or show it.
+
+## Bug Fixes
+
+- Catch composition now follows the selected time range.
+- Catch composition showed a single month per district and species; it now covers the whole selected period.
+- "Top N species" now means the N species with the most catch, not the first N alphabetically.
+- The home page region cards add up their districts' catch, revenue, landings and fishers instead of averaging them.
+- Seasonality charts under "All time" average every year of data and show month names in the page language.
+- The map showed "NaN" for visit and cell counts above 1,000.
+- The length chart tooltip printed "cm kg" for total catch.
+- The species picker could not be reopened after "Clear all".
+- The district table labelled revenue in Tanzanian shillings for every country.
+- Time series left out districts with no value in the first month.
+- Charts showed an error instead of a prompt when no district was selected.
+- The district table said "no data" when loading failed; it now shows an error.
+- The Mapbox attribution is shown on the map again.
+- The metric picked on the home map no longer resets after visiting the catch page.
+- A chart that fails to draw shows an error in its own card instead of blanking the page; other page errors offer a reload button.
+- The "page not found" page is shown in the page language.
+
+## Removed
+
+- Sign-in, password reset and user administration: the dashboards are open and need no account.
+- The Map page, which had no data to show.
+- The unfinished "Ask Data" page, which was never in the menu.
+
+---
+
 # peskas.dashboard 1.4.0
 
 ## Security

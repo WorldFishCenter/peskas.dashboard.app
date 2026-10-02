@@ -1,0 +1,237 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/inter";
+
+@custom-variant dark (&:is(.dark *));
+@source "../../../apps/**/*.{ts,tsx}";
+@source "../../../components/**/*.{ts,tsx}";
+@source "../**/*.{ts,tsx}";
+
+@theme inline {
+  --font-heading: var(--font-sans);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-6: var(--chart-6);
+  --color-chart-5: var(--chart-5);
+  --color-context: var(--context);
+  --color-context-muted: var(--context-muted);
+  --color-tint-1: var(--tint-1);
+  --color-tint-2: var(--tint-2);
+  --color-tint-3: var(--tint-3);
+  --color-tint-4: var(--tint-4);
+  --color-tint-5: var(--tint-5);
+  --color-concern-1: var(--concern-1);
+  --color-concern-2: var(--concern-2);
+  --color-concern-3: var(--concern-3);
+  --color-concern-4: var(--concern-4);
+  --color-warning: var(--warning);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+  --font-sans: "Inter Variable", sans-serif;
+}
+
+:root {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.147 0.004 49.25);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.147 0.004 49.25);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.147 0.004 49.25);
+  --primary: oklch(0.52 0.105 223.128);
+  --primary-foreground: oklch(0.984 0.019 200.873);
+  --secondary: oklch(0.967 0.001 286.375);
+  --secondary-foreground: oklch(0.21 0.006 285.885);
+  --muted: oklch(0.97 0.001 106.424);
+  --muted-foreground: oklch(0.553 0.013 58.071);
+  --accent: oklch(0.97 0.001 106.424);
+  --accent-foreground: oklch(0.216 0.006 56.043);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.923 0.003 48.717);
+  --input: oklch(0.923 0.003 48.717);
+  --ring: oklch(0.709 0.01 56.259);
+  /* Data colours, checked with the dataviz palette validator (docs/ux-review.md §5.4).
+       chart-1 is the accent for single-series marks; 2-6 only where identity matters. */
+  --chart-1: #0086ad;
+  --chart-2: #eb6834;
+  --chart-3: #1baf7a;
+  --chart-4: #eda100;
+  --chart-5: #e87ba4;
+  --chart-6: #4a3aa7;
+  /* Comparison marks (last year, the whole selection behind a district) and "others". */
+  --context: #a8a29e;
+  --context-muted: #d6d3d1;
+  /* One-hue ramp for magnitude in table cells; text stays --foreground on every step. */
+  --tint-1: #e6f7fe;
+  --tint-2: #c8e9f7;
+  --tint-3: #a2d9f0;
+  --tint-4: #77c7e6;
+  --tint-5: #50b2d6;
+  /* Ordinal ramp for biological concern: vulnerability bands, catch below maturity. */
+  --concern-1: #e99169;
+  --concern-2: #d46a34;
+  --concern-3: #b24b0a;
+  --concern-4: #833404;
+  /* Thin data and caveats; always with an icon and words. */
+  --warning: #b45309;
+  --radius: 0.625rem;
+  --sidebar: oklch(0.985 0.001 106.423);
+  --sidebar-foreground: oklch(0.147 0.004 49.25);
+  --sidebar-primary: oklch(0.609 0.126 221.723);
+  --sidebar-primary-foreground: oklch(0.984 0.019 200.873);
+  --sidebar-accent: oklch(0.97 0.001 106.424);
+  --sidebar-accent-foreground: oklch(0.216 0.006 56.043);
+  --sidebar-border: oklch(0.923 0.003 48.717);
+  --sidebar-ring: oklch(0.709 0.01 56.259);
+}
+
+.dark {
+  --background: oklch(0.147 0.004 49.25);
+  --foreground: oklch(0.985 0.001 106.423);
+  --card: oklch(0.216 0.006 56.043);
+  --card-foreground: oklch(0.985 0.001 106.423);
+  --popover: oklch(0.216 0.006 56.043);
+  --popover-foreground: oklch(0.985 0.001 106.423);
+  --primary: oklch(0.45 0.085 224.283);
+  --primary-foreground: oklch(0.984 0.019 200.873);
+  --secondary: oklch(0.274 0.006 286.033);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.268 0.007 34.298);
+  --muted-foreground: oklch(0.709 0.01 56.259);
+  --accent: oklch(0.268 0.007 34.298);
+  --accent-foreground: oklch(0.985 0.001 106.423);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.553 0.013 58.071);
+  --chart-1: #0092b8;
+  --chart-2: #d95926;
+  --chart-3: #199e70;
+  --chart-4: #c98500;
+  --chart-5: #d55181;
+  --chart-6: #9085e9;
+  --context: #78716c;
+  --context-muted: #44403c;
+  --tint-1: #152a32;
+  --tint-2: #103846;
+  --tint-3: #0b4759;
+  --tint-4: #00566e;
+  --tint-5: #006581;
+  --warning: #fbbf24;
+  --sidebar: oklch(0.216 0.006 56.043);
+  --sidebar-foreground: oklch(0.985 0.001 106.423);
+  --sidebar-primary: oklch(0.715 0.143 215.221);
+  --sidebar-primary-foreground: oklch(0.302 0.056 229.695);
+  --sidebar-accent: oklch(0.268 0.007 34.298);
+  --sidebar-accent-foreground: oklch(0.985 0.001 106.423);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.553 0.013 58.071);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+  /* Tailwind 4 gives buttons the default cursor; shadcn's Tailwind 4 guide puts the pointer back
+     this way. Base UI's list and menu items are divs with a role, so they are named too. */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  [role="option"]:not([aria-disabled="true"]),
+  [role^="menuitem"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
+}
+
+/* A link in running text or a table: underlined before it is hovered, so it doesn't rest on colour. */
+@utility link {
+  @apply underline decoration-foreground/30 underline-offset-4 transition-colors hover:decoration-foreground;
+}
+
+/* Popups let what is under them show through. Popovers take the surface shadcn gives menus with
+   `menuColor: "default-translucent"` (components.json), a setting that doesn't reach them. */
+[data-slot="popover-content"] {
+  background-color: color-mix(in oklab, var(--popover) 70%, transparent);
+  backdrop-filter: blur(40px) saturate(1.5);
+}
+/* Tooltips sit on the data, so they blur it only lightly: the marks under them stay readable.
+   !important beats the inline background deck.gl sets on its map tooltip. */
+[data-slot="chart-tooltip"],
+.recharts-tooltip-wrapper > div,
+.deck-tooltip {
+  background-color: color-mix(in oklab, var(--popover) 75%, transparent) !important;
+  backdrop-filter: blur(2px);
+}
+
+/* Landscape: charts are laid out for a screen and scale down to the page, so a wider page keeps their text readable. */
+@page {
+  size: A4 landscape;
+  margin: 12mm;
+}
+
+@media print {
+  /* Chart swatches, bars and tints are backgrounds, which browsers drop when printing. */
+  * {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  /* Charts keep their screen width when the page is printed; their SVG has a viewBox, so it scales to the
+     page. Recharts nests it in a zero-size box, which has to take the width first. */
+  .recharts-responsive-container > div {
+    width: 100% !important;
+    height: auto !important;
+  }
+  /* Shrink to the page, never grow: a half-width chart printed full width would overflow its card. */
+  .recharts-wrapper,
+  .recharts-surface {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+  /* Tables fit the page: cells may wrap, and nothing scrolls out of sight. */
+  [data-slot="table-container"] {
+    overflow: visible !important;
+  }
+  [data-slot="table"] th,
+  [data-slot="table"] td {
+    white-space: normal !important;
+    padding-inline: 0.25rem;
+  }
+}

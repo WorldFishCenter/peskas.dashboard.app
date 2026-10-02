@@ -1,24 +1,22 @@
-import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "../trpc";
 import { getGaul2BoundariesModel } from "@repo/nosql/schema/gaul2-boundaries";
-import getPortalDb from "@repo/nosql/portal-db";
-import { TRPCError } from "@trpc/server";
-
-/** Map alpha-3 → alpha-2 so we can try both in the query. */
-const ISO3_TO_ISO2: Record<string, string> = {
-  TZA: "TZ",
-  KEN: "KE",
-  MOZ: "MZ",
-};
+import { getPortalDb } from "@repo/nosql";
+import { activeCountry } from "../lib/country";
 
 const GEO_TYPES = new Set([
-  "Point", "LineString", "Polygon",
-  "MultiPoint", "MultiLineString", "MultiPolygon", "GeometryCollection",
+  "Point",
+  "LineString",
+  "Polygon",
+  "MultiPoint",
+  "MultiLineString",
+  "MultiPolygon",
+  "GeometryCollection",
 ]);
 
 function isGeoJsonGeometry(v: unknown): v is { type: string; coordinates: unknown } {
   return (
-    typeof v === "object" && v !== null &&
+    typeof v === "object" &&
+    v !== null &&
     typeof (v as Record<string, unknown>).type === "string" &&
     GEO_TYPES.has((v as Record<string, unknown>).type as string) &&
     "coordinates" in (v as Record<string, unknown>)
@@ -30,7 +28,9 @@ function isGeoJsonGeometry(v: unknown): v is { type: string; coordinates: unknow
  * it lives in.  Most documents use `geometry` (GeoJSON spec), but some
  * MongoDB collections use `the_geom`, `geom`, or other names.
  */
-function extractGeometry(doc: Record<string, unknown>): { type: string; coordinates: unknown } | null {
+function extractGeometry(
+  doc: Record<string, unknown>,
+): { type: string; coordinates: unknown } | null {
   // Standard GeoJSON field name
   if (isGeoJsonGeometry(doc.geometry)) return doc.geometry;
   // Search all top-level fields
@@ -68,7 +68,7 @@ function normalizeDoc(doc: Record<string, unknown>) {
 
 export const gaul2BoundariesRouter = createTRPCRouter({
   /**
-   * Returns the GAUL2 boundaries for a country as a GeoJSON FeatureCollection.
+   * Returns the active country's GAUL2 boundaries as a GeoJSON FeatureCollection.
    *
    * Tries every combination of field name + value that the wio_gaul2 collection
    * might use, mirroring the coasts fetchMongoData.js normalisation logic:
@@ -78,65 +78,52 @@ export const gaul2BoundariesRouter = createTRPCRouter({
    * Falls back to fetching ALL documents and filtering in JS if the targeted
    * query returns nothing (matches the coasts approach of find({})).
    */
-  getByCountry: publicProcedure
-    .input(z.object({ iso3Code: z.string() }))
-    .query(async ({ input }) => {
-      try {
-        const conn = await getPortalDb();
-        const Model = getGaul2BoundariesModel(conn);
+  getByCountry: publicProcedure.query(async () => {
+    const conn = await getPortalDb();
+    const Model = getGaul2BoundariesModel(conn);
 
-        const iso2Code = ISO3_TO_ISO2[input.iso3Code];
-        const codesToTry = Array.from(
-          new Set([input.iso3Code, ...(iso2Code ? [iso2Code] : [])])
-        );
+    const { iso3Code, countryCode } = activeCountry();
+    const codesToTry = [iso3Code, countryCode];
 
-        // All field + value combinations to search
-        const orClauses = codesToTry.flatMap((code) => [
-          { iso3_code: code },
-          { country: code },
-          { "properties.iso3_code": code },
-          { "properties.country": code },
-        ]);
+    // All field + value combinations to search
+    const orClauses = codesToTry.flatMap((code) => [
+      { iso3_code: code },
+      { country: code },
+      { "properties.iso3_code": code },
+      { "properties.country": code },
+    ]);
 
-        let docs = await Model.find({ $or: orClauses }).lean() as Record<string, unknown>[];
+    let docs = (await Model.find({ $or: orClauses }).lean()) as Record<string, unknown>[];
 
-        // Fallback: if nothing matched, fetch all and filter in JS
-        // (mirrors what the coasts fetchMongoData.js script does)
-        if (docs.length === 0) {
-          const all = await Model.find({}).lean() as Record<string, unknown>[];
-          docs = all.filter((doc) => {
-            const norm = normalizeDoc(doc);
-            return norm.iso3_code !== null && codesToTry.includes(norm.iso3_code);
-          });
-        }
+    // Fallback: if nothing matched, fetch all and filter in JS
+    // (mirrors what the coasts fetchMongoData.js script does)
+    if (docs.length === 0) {
+      const all = (await Model.find({}).lean()) as Record<string, unknown>[];
+      docs = all.filter((doc) => {
+        const norm = normalizeDoc(doc);
+        return norm.iso3_code !== null && codesToTry.includes(norm.iso3_code);
+      });
+    }
 
-        const features = docs
-          .map((doc) => {
-            const norm = normalizeDoc(doc);
-            if (!norm.geometry) return null;
-            return {
-              type: "Feature" as const,
-              geometry: norm.geometry,
-              properties: {
-                gaul2_name: norm.gaul2_name,
-                gaul1_name: norm.gaul1_name,
-                iso3_code: norm.iso3_code,
-              },
-            };
-          })
-          .filter((f): f is NonNullable<typeof f> => f !== null);
-
+    const features = docs
+      .map((doc) => {
+        const norm = normalizeDoc(doc);
+        if (!norm.geometry) return null;
         return {
-          type: "FeatureCollection" as const,
-          features,
+          type: "Feature" as const,
+          geometry: norm.geometry,
+          properties: {
+            district: norm.gaul2_name,
+            gaul1_name: norm.gaul1_name,
+            iso3_code: norm.iso3_code,
+          },
         };
-      } catch (error) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to fetch GAUL2 boundaries",
-          cause: error,
-        });
-      }
-    }),
+      })
+      .filter((f): f is NonNullable<typeof f> => f !== null);
 
+    return {
+      type: "FeatureCollection" as const,
+      features,
+    };
+  }),
 });

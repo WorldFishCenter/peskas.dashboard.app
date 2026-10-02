@@ -1,68 +1,57 @@
-"use client";
-
 import React, { Suspense, useEffect, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { httpBatchLink, loggerLink, httpLink } from "@trpc/client";
+import { httpLink, loggerLink, TRPCClientError } from "@trpc/client";
 import { createTRPCReact } from "@trpc/react-query";
 import SuperJSON from "superjson";
-import Cookies from "js-cookie";
-import { useGlobalFilter } from "@/app/components/global-filter-provider";
-import { AppRouter } from "@isomorphic/api";
+import type { AppRouter } from "@isomorphic/api";
 
 export const api = createTRPCReact<AppRouter>();
 
 // https://tanstack.com/query/latest/docs/framework/react/devtools
 const ReactQueryDevtoolsProduction = React.lazy(() =>
-  import("@tanstack/react-query-devtools/build/modern/production.js").then(
-    (d) => ({
-      default: d.ReactQueryDevtools,
-    })
-  )
+  import("@tanstack/react-query-devtools/build/modern/production.js").then((d) => ({
+    default: d.ReactQueryDevtools,
+  })),
 );
 
 export function TRPCReactProvider(props: { children: React.ReactNode }) {
-  const { bmuFilter } = useGlobalFilter();
   const [queryClient] = useState(
     () =>
       new QueryClient({
         defaultOptions: {
           queries: {
             staleTime: 1000 * 60 * 5, // 5 minutes
+            // One retry for a failed server or network, none for a request the server refused: the
+            // default three, each waiting out the database's 15 s timeout, would keep a chart
+            // loading for a minute before it says it failed.
+            retry: (failures, error) =>
+              failures < 1 &&
+              !(error instanceof TRPCClientError && (error.data?.httpStatus ?? 500) < 500),
             refetchOnMount: false,
             refetchOnReconnect: false,
             refetchOnWindowFocus: false,
           },
         },
-      })
+      }),
   );
 
-  const [showDevtools, setShowDevtools] = useState(
-    process.env.NODE_ENV === "development" && false
-  );
+  const [showDevtools, setShowDevtools] = useState(false);
   const [trpcClient] = useState(() =>
     api.createClient({
       links: [
         loggerLink({
           enabled: (op) =>
-            process.env.NODE_ENV === "development" ||
-            (op.direction === "down" && op.result instanceof Error),
+            import.meta.env.DEV || (op.direction === "down" && op.result instanceof Error),
         }),
-        httpBatchLink({
-          // Above this, tRPC splits a batch; a single query over it is not
-          // sent at all ("Input is too big for a single dispatch"). 2083 is
-          // the conservative browser-safe limit; Vercel accepts far more.
-          maxURLLength: 2083,
+        // One request per query, not batched: a batch answers only when its
+        // slowest query does, so the map's megabytes would hold every other
+        // chart back. It also gives each query a stable, CDN-cacheable URL.
+        httpLink({
           transformer: SuperJSON,
-          url: getBaseUrl() + "/api/trpc",
-          async headers() {
-            const headers = new Headers();
-            headers.set("x-trpc-source", "nextjs-react");
-            headers.set("x-global-filters", Cookies.get("bmuFilter") ?? "[]");
-            return headers;
-          },
+          url: "/api/trpc",
         }),
       ],
-    })
+    }),
   );
 
   useEffect(() => {
@@ -82,10 +71,4 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
       </api.Provider>
     </QueryClientProvider>
   );
-}
-
-function getBaseUrl() {
-  if (typeof window !== "undefined") return window.location.origin;
-  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
-  return `http://localhost:${process.env.PORT ?? 3000}`;
 }

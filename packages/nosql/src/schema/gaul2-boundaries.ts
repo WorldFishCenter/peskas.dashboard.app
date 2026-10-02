@@ -17,11 +17,11 @@ export type TGaul2BoundaryGeometry = {
 export type TGaul2Boundary = {
   // Flat format – primary field names
   iso3_code?: string;
-  country?: string;       // alternate country field used in some docs
+  country?: string; // alternate country field used in some docs
   gaul1_name?: string;
-  gaul_1_name?: string;   // underscore variant
+  gaul_1_name?: string; // underscore variant
   gaul2_name?: string;
-  gaul_2_name?: string;   // underscore variant (coasts script normalises this)
+  gaul_2_name?: string; // underscore variant (coasts script normalises this)
   // GeoJSON Feature format fields
   type?: string;
   properties?: {
@@ -50,7 +50,7 @@ const gaul2BoundarySchema = new Schema<TGaul2Boundary>(
   {
     collection: "wio_gaul2",
     strict: false,
-  }
+  },
 );
 
 gaul2BoundarySchema.index({ iso3_code: 1 });
@@ -62,6 +62,8 @@ gaul2BoundarySchema.index({ "properties.iso3_code": 1 });
  * connecting to a secondary database (portal).
  */
 export function getGaul2BoundariesModel(connection: Connection) {
-  return (connection.models["Gaul2Boundary"] as Model<TGaul2Boundary>) ??
-    connection.model<TGaul2Boundary>("Gaul2Boundary", gaul2BoundarySchema);
+  return (
+    (connection.models["Gaul2Boundary"] as Model<TGaul2Boundary>) ??
+    connection.model<TGaul2Boundary>("Gaul2Boundary", gaul2BoundarySchema)
+  );
 }

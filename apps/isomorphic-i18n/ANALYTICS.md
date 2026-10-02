@@ -8,23 +8,24 @@ driven entirely by per-deployment environment variables.
 
 ## How it works
 
-`src/app/_components/google-analytics.tsx` is a Server Component mounted once in
-`src/app/[lang]/layout.tsx`. It renders the `gtag.js` snippet and nothing else.
+The `country-head` plugin in `vite.config.ts` writes the `gtag.js` snippet into the
+`<head>` of `index.html` at build time (Vite's `transformIndexHtml` hook). No React code
+loads or configures the tag.
 
 | Concern | Behaviour |
 |---|---|
-| Which property receives data | `NEXT_PUBLIC_GA_MEASUREMENT_ID`, set per Vercel project |
-| Platform-wide roll-up | `NEXT_PUBLIC_GA_ROLLUP_ID`, optional, same value on every project |
-| Country label on every event | `peskas_country` / `peskas_country_code`, read from `countryConfig.ts` |
+| Which property receives data | `VITE_GA_MEASUREMENT_ID`, set per Vercel project |
+| Platform-wide roll-up | `VITE_GA_ROLLUP_ID`, optional, same value on every project |
+| Country label on every event | `peskas_country` / `peskas_country_code`, read from `packages/domain/src/country.ts` |
 | Page views on client-side navigation | Handled by GA4 enhanced measurement, not by app code |
-| Local dev and preview deploys | Silent — the component returns `null` when no measurement ID is set |
+| Local dev and preview deploys | Silent — no tag is written when no measurement ID is set |
 
 ### Why there is no `useEffect` page-view tracking
 
 GA4 enhanced measurement already fires `page_view` on History API changes, which is how
-the App Router navigates. Sending our own `page_view` (or re-calling `gtag('config')`) on
+React Router navigates. Sending our own `page_view` (or re-calling `gtag('config')`) on
 route change **double-counts every navigation**. This is the single most common GA4 bug in
-Next.js App Router apps, and it is why this component has no hooks and no client bundle.
+single-page apps, and it is why the app has no page-view code.
 
 The trade-off: `page_title` is captured by GA4 at navigation time, which can occasionally
 lag React's title update by a few hundred milliseconds. Use `page_location` / page path as
@@ -44,7 +45,7 @@ Three GA4 properties, e.g. `Peskas Zanzibar`, `Peskas Kenya`, `Peskas Mozambique
 - Fully siloed reports; no cross-contamination of totals, audiences, or conversions.
 - Access control per country: a national fisheries partner can be granted their property
   without seeing the others.
-- No built-in combined view — add the shared `NEXT_PUBLIC_GA_ROLLUP_ID` roll-up property
+- No built-in combined view — add the shared `VITE_GA_ROLLUP_ID` roll-up property
   (below) if you also want platform-wide numbers.
 
 ### Option B — one property, one web data stream per country
@@ -60,7 +61,7 @@ A single `Peskas` property with three streams, one per domain.
 
 ### The roll-up property
 
-Setting `NEXT_PUBLIC_GA_ROLLUP_ID` to the same value on all three Vercel projects makes
+Setting `VITE_GA_ROLLUP_ID` to the same value on all three Vercel projects makes
 `gtag` mirror every event into a second property, giving Option A a combined view as well.
 Break it down by `peskas_country`. Leave the variable empty to disable.
 
@@ -77,10 +78,10 @@ deployments do not pollute the reports.
 
 | Variable | Zanzibar | Kenya | Mozambique |
 |---|---|---|---|
-| `NEXT_PUBLIC_GA_MEASUREMENT_ID` | that country's stream | that country's stream | that country's stream |
-| `NEXT_PUBLIC_GA_ROLLUP_ID` | same on all three, or unset | same | same |
+| `VITE_GA_MEASUREMENT_ID` | that country's stream | that country's stream | that country's stream |
+| `VITE_GA_ROLLUP_ID` | same on all three, or unset | same | same |
 
-`NEXT_PUBLIC_*` variables are inlined at build time, so **changing either value requires a
+Both are read at build time, so **changing either value requires a
 redeploy**, not just an env update. Both are declared in the root `turbo.json` `env` list;
 omitting them there would let Turborepo reuse one country's cached build for another.
 
@@ -127,14 +128,17 @@ loaded. Add new event names to the `AnalyticsEvent` union there so typos fail th
 
 | Event | Parameters | Fired when |
 |---|---|---|
-| `filter_time_range_change` | `time_range` (`"3"`, `"6"`, `"12"`, `"72"`, `"all"`) | Header time range option picked |
-| `filter_metric_change` | `metric`, `control_source` (`header` \| `district_widget`) | Metric picked in either control |
+| `filter_time_range_change` | `time_range` (`"3"`, `"6"`, `"12"`, `"all"`) | Time range picked in the page header |
+| `filter_metric_change` | `metric`, `control_source` (`page` \| `district_widget`) | Metric picked: a tile on the catch or revenue page (`page`), or a measure in the overview's district card (`district_widget`) |
 | `filter_district_change` | `action`, `district`, `peskas_region`, `district_count` | District selection changed |
 | `map_basemap_change` | `basemap` (`satellite` \| `map`) | Basemap toggled on the grid map |
 | `map_effort_range_toggle` | `effort_range`, `enabled` | Effort band toggled in the map info panel |
+| `map_effort_layer_toggle` | `layer` (`bars` \| `grounds`), `enabled` | Effort bars or fishing-grounds layer toggled on the map |
+| `chart_info_open` | `chart` | A chart's explanation (the ⓘ button) opened |
+| `chart_download` | `chart` | A chart's data downloaded as CSV |
 
-`filter_district_change.action` is one of `add`, `remove`, `clear`, `region_add`,
-`region_remove`, or `replace_in_region` (the admin region-view single-select path).
+`filter_district_change.action` is one of `add`, `remove`, `clear`, `select_all`, `region_add` or
+`region_remove`.
 `district` is absent on region and clear actions; `peskas_region` is only present on region
 actions.
 
@@ -150,20 +154,20 @@ Two deliberate choices in how these fire:
   and deselecting the last remaining effort band (which the map rejects), are all
   suppressed. Without this the funnel is full of no-op "changes".
 - **Nothing fires on mount, hydration, or navigation.** Only user gestures are tracked. In
-  particular the district list is restored from `localStorage` and the metric is reset by
-  route-driven effects in `MetricSelectorDropdown`; neither is a user action.
+  particular the time range, districts and metric read from the page address
+  (`?months=12&d=Kati&metric=mean_rpue`, `store/filters.ts`) are not user actions.
 
 Continuous interactions are intentionally not tracked: map pan/zoom
-(`onViewStateChange`), hover tooltips, and the hex-radius slider drag would each produce
-hundreds of events per session and blow through GA4 event quotas.
+(`onViewStateChange`) and hover tooltips would each produce hundreds of events per session
+and blow through GA4 event quotas.
 
-### Not instrumented: exports
+### Chart ids
 
-There is no export or download feature in the fisheries dashboard today. The only CSV
-exports in the repo are on template account-settings pages (billing history, logged-in
-devices) that are not part of the Peskas product. When a real export is added, wrap it and
-fire a `data_export` event with the dataset and format; `packages/isomorphic-core/src/utils/export-to-csv.ts`
-is the shared helper it will likely use.
+`chart_info_open` and `chart_download` carry the card's `id` (also the CSV file name), e.g.
+`district-comparison`, `trend-mean_cpue`, `districts-mean_cpue`, `species-ranking`,
+`length-frequency`, `caught-small`, `gear-profile`, `gear-species`, `vulnerability-bands`,
+`species-status`, `coverage`. Tiles' explanations fire `chart_info_open` with `headline-<metric>`
+or `vulnerable-<name>`.
 
 ---
 
@@ -188,7 +192,7 @@ ID and read the queue in the browser console — `trackEvent` pushes through gta
 - **Cookie consent / Consent Mode v2.** The tag currently loads unconditionally. Users are
   primarily in TZ/KE/MZ, but EU-based funders and researchers do visit these dashboards. If
   consent is required, add `gtag('consent', 'default', ...)` as the first line of the init
-  script in `google-analytics.tsx` — it must run before `gtag('config')` to take effect.
+  script in `vite.config.ts` (`countryHead`) — it must run before `gtag('config')` to take effect.
 - **Cross-domain tracking.** Deliberately absent: the country dashboards are separate sites
   and a user is never expected to travel between them in one session. Enabling the domain
   linker would merge their sessions.

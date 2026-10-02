@@ -1,33 +1,9 @@
-import {
-  pingRouter,
-  aggregatedCatchRouter,
-  mapDistributionRouter,
-  gearRouter,
-  monthlyStatsRouter,
-  userRouter,
-  fishDistributionRouter,
-  individualDataRouter,
-  districtSummaryRouter,
-  gridSummaryRouter,
-  monthlySummaryRouter,
-  taxaSummariesRouter,
-  gaul2BoundariesRouter,
-} from "./router";
+import { fishingEffortRouter, gaul2BoundariesRouter, summariesRouter } from "./router";
 import { createTRPCRouter } from "./trpc";
 
 export const appRouter = createTRPCRouter({
-  ping: pingRouter,
-  aggregatedCatch: aggregatedCatchRouter,
-  gear: gearRouter,
-  mapDistribution: mapDistributionRouter,
-  monthlyStats: monthlyStatsRouter,
-  user: userRouter,
-  fishDistribution: fishDistributionRouter,
-  individualData: individualDataRouter,
-  districtSummary: districtSummaryRouter,
-  gridSummary: gridSummaryRouter,
-  monthlySummary: monthlySummaryRouter,
-  taxaSummaries: taxaSummariesRouter,
+  summaries: summariesRouter,
+  fishingEffort: fishingEffortRouter,
   gaul2Boundaries: gaul2BoundariesRouter,
 });
 
