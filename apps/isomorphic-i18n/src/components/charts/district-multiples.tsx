@@ -2,18 +2,38 @@ import { useMemo, useState } from "react";
 import { Line, LineChart, YAxis } from "recharts";
 import { ChartContainer, ChartTooltip } from "@workspace/ui/components/chart";
 import { cn } from "@workspace/ui/lib/utils";
-import { combine, FEW_LANDINGS, METRICS, type MetricKey } from "@repo/domain/metrics";
+import {
+  combine,
+  FEW_LANDINGS,
+  methodKeys,
+  METHODS,
+  METRICS,
+  type Method,
+  type MetricKey,
+} from "@repo/domain/metrics";
 import { useT } from "@/i18n/use-lang";
 import { ChartCard } from "@/components/charts/chart-card";
 import { ChartGate } from "@/components/charts/chart-state";
 import { Legend } from "@/components/charts/legend";
 import { WarningIcon } from "@/components/charts/warning-icon";
-import { formatNumber, landingsCount, monthLabel, monthSpan } from "@/lib/dashboard/format";
-import { metricTitle, metricUnit } from "@/lib/dashboard/metrics";
+import { landingsCount, monthLabel, monthSpan } from "@/lib/dashboard/format";
+import {
+  byFigures,
+  formatValue,
+  METHOD_COLOR,
+  metricTitle,
+  metricUnit,
+} from "@/lib/dashboard/metrics";
 import { useDistrictScope } from "@/store/filters";
 import { api } from "@/trpc/react";
 
-type Point = { month: string; value: number | null; overall: number | null; thin: boolean };
+/** A district's line: `value` and `overall`, or one per method for an estimate both methods make. */
+type LineKey = "value" | Method;
+type Point = { month: string; thin: boolean } & Partial<Record<LineKey | "overall", number | null>>;
+/** The metric behind a line: the metric's own, or a method's key. */
+const keyOf = (metric: MetricKey, line: LineKey) =>
+  line === "value" ? metric : methodKeys(metric)?.[line] ?? metric;
+
 type DotProps = { cx?: number; cy?: number; value?: unknown; payload?: Point; index?: number };
 
 /**
@@ -27,16 +47,24 @@ type DotProps = { cx?: number; cy?: number; value?: unknown; payload?: Point; in
  * tooltip over the lines: the figure beside each name turns into that month's
  * value, and one line above the panels names the month and the average. A
  * tooltip in each of up to 19 panels covered the lines it described.
+ *
+ * An estimate both methods make draws each method's line instead of the
+ * average, so a district without tracked boats still shows its ARTFISH line,
+ * and shows even for one district when the trend leaves months out.
  */
 export function DistrictMultiples({ metric }: { metric: MetricKey }) {
   const { t, lang } = useT();
   const scope = useDistrictScope();
+  const keys = methodKeys(metric);
   const monthly = api.summaries.monthly.useQuery({ ...scope.input, metric }, scope.options);
   const districts = api.summaries.byDistrict.useQuery(scope.input, scope.options);
 
   const total = METRICS[metric].overDistricts === "sum";
-  const { panels, max, anyThin } = useMemo(() => {
+  const { panels, max, anyThin, drawn } = useMemo(() => {
     const rows = monthly.data?.rows ?? [];
+    const methods = monthly.data?.methods;
+    // The lines a panel can draw: the district, or each method.
+    const order: LineKey[] = methods ? [...METHODS] : ["value"];
     const selection = new Map((monthly.data?.overall ?? []).map((p) => [p.month, p.value]));
     const reference = new Map(
       rows.map((r) => {
@@ -45,37 +73,57 @@ export function DistrictMultiples({ metric }: { metric: MetricKey }) {
       }),
     );
     const thin = new Set(monthly.data?.thin);
+    const at = (row: Record<string, unknown> | undefined, district: string) =>
+      (row?.[district] as number | undefined) ?? null;
     const panels = (districts.data ?? [])
-      .filter((d) => rows.some((r) => r[d.district] != null))
       .map((d) => ({
         district: d.district,
-        value: d[metric],
+        // The window's figure of each line: each district's own months, or its shared ones.
+        figures: Object.fromEntries(order.map((k) => [k, d[keyOf(metric, k)]])) as Partial<
+          Record<LineKey, number | null>
+        >,
         landings: d.n_submissions ?? 0,
+        // Every method's rows run over the same months as the metric's own.
         points: rows.map(
-          (r): Point => ({
+          (r, i): Point => ({
             month: r.month,
-            value: (r[d.district] as number | undefined) ?? null,
-            overall: reference.get(r.month) ?? null,
             thin: thin.has(`${r.month}|${d.district}`),
+            ...(methods
+              ? Object.fromEntries(METHODS.map((m) => [m, at(methods[m].rows[i], d.district)]))
+              : { value: at(r, d.district), overall: reference.get(r.month) ?? null }),
           }),
         ),
       }))
-      .sort((a, b) => (b.value ?? 0) - (a.value ?? 0));
+      .filter((p) => p.points.some((q) => order.some((k) => q[k] != null)))
+      .sort((a, b) =>
+        byFigures(
+          order.map((k) => a.figures[k]),
+          order.map((k) => b.figures[k]),
+        ),
+      );
     const max = Math.max(
       0,
-      ...panels.flatMap((p) => p.points.flatMap((q) => [q.value ?? 0, q.overall ?? 0])),
+      ...panels.flatMap((p) =>
+        p.points.flatMap((q) => [...order, "overall" as const].map((k) => q[k] ?? 0)),
+      ),
     );
-    const anyThin = panels.some((p) => p.points.some((q) => q.thin && q.value != null));
-    return { panels, max, anyThin };
+    const anyThin = panels.some((p) =>
+      p.points.some((q) => q.thin && order.some((k) => q[k] != null)),
+    );
+    // The lines with something to draw, in the legend and in each panel.
+    const drawn = order.filter((k) => panels.some((p) => p.points.some((q) => q[k] != null)));
+    return { panels, max, anyThin, drawn };
   }, [monthly.data, districts.data, metric, total]);
 
   // The month pointed at, as an index into every panel's points (they share the months).
   const [active, setActive] = useState<number | null>(null);
 
-  // One district is already the whole trend above.
-  if (scope.input.districts.length === 1) return null;
+  // One district is already the whole trend above, unless the trend leaves out months only one method estimates.
+  if (scope.input.districts.length === 1 && !monthly.data?.unshared) return null;
   const unit = metricUnit(t, metric);
-  const format = (v: unknown) => formatNumber(v, lang);
+  const format = (key: LineKey, v: number | null | undefined) =>
+    formatValue(keyOf(metric, key), v, lang);
+  const colorOf = (key: LineKey) => (key === "value" ? "var(--chart-1)" : METHOD_COLOR[key]);
   const months = panels[0]?.points ?? [];
   const hovered = active == null ? undefined : months[active];
   const averageLabel = t(total ? "text-selection-average" : "text-selection-average-weighted");
@@ -89,12 +137,24 @@ export function DistrictMultiples({ metric }: { metric: MetricKey }) {
         <>
           <Legend
             items={[
-              { label: t("text-multiples-district"), color: "var(--chart-1)", shape: "line" },
-              {
-                label: t(total ? "text-selection-average" : "text-selection-average-weighted"),
-                color: "var(--context-muted)",
-                shape: "line",
-              },
+              ...(keys
+                ? (drawn as Method[]).map((m) => ({
+                    label: t(`text-method-${m}`),
+                    color: METHOD_COLOR[m],
+                    shape: "line" as const,
+                  }))
+                : [
+                    {
+                      label: t("text-multiples-district"),
+                      color: "var(--chart-1)",
+                      shape: "line" as const,
+                    },
+                    {
+                      label: averageLabel,
+                      color: "var(--context-muted)",
+                      shape: "line" as const,
+                    },
+                  ]),
               ...(anyThin
                 ? [
                     {
@@ -106,7 +166,11 @@ export function DistrictMultiples({ metric }: { metric: MetricKey }) {
                 : []),
             ]}
           />
-          <p>{t("text-multiples-axis", { max: `${format(max)}${unit ? ` ${unit}` : ""}` })}</p>
+          <p>
+            {t("text-multiples-axis", {
+              max: `${formatValue(metric, max, lang)}${unit ? ` ${unit}` : ""}`,
+            })}
+          </p>
         </>
       }
     >
@@ -118,10 +182,14 @@ export function DistrictMultiples({ metric }: { metric: MetricKey }) {
               <span className="font-medium text-foreground">
                 {monthLabel(hovered.month, lang, "long")}
               </span>
-              {` · ${averageLabel}: `}
-              <span className="font-medium text-foreground tabular-nums">
-                {format(hovered.overall)}
-              </span>
+              {!keys && (
+                <>
+                  {` · ${averageLabel}: `}
+                  <span className="font-medium text-foreground tabular-nums">
+                    {format("value", hovered.overall)}
+                  </span>
+                </>
+              )}
             </>
           ) : (
             months.length > 0 &&
@@ -135,25 +203,39 @@ export function DistrictMultiples({ metric }: { metric: MetricKey }) {
           {panels.map((p) => {
             const thin = p.landings < FEW_LANDINGS;
             const point = active == null ? undefined : p.points[active];
+            const figure = cn(
+              "tabular-nums",
+              point && "font-semibold",
+              point?.thin && "font-normal text-muted-foreground",
+            );
             return (
               <div key={p.district} className="flex min-w-0 flex-col gap-1">
                 <div className="flex items-baseline justify-between gap-2 text-[13px]">
                   <span className="truncate font-medium" title={p.district}>
                     {p.district}
                   </span>
-                  <span
-                    className={cn(
-                      "tabular-nums",
-                      point && "font-semibold",
-                      point?.thin && "font-normal text-muted-foreground",
-                    )}
-                  >
-                    {format(point ? point.value : p.value)}
-                  </span>
+                  {!keys && (
+                    <span className={figure}>
+                      {format("value", point ? point.value : p.figures.value)}
+                    </span>
+                  )}
                 </div>
+                {keys && (
+                  // Each method's figure, keyed by its line: the window's, or the month's pointed at.
+                  <Legend
+                    className={cn("text-[13px] text-foreground", figure)}
+                    items={drawn.map((k) => ({
+                      label: format(k, point ? point[k] : p.figures[k]),
+                      color: colorOf(k),
+                      shape: "line",
+                    }))}
+                  />
+                )}
                 <ChartContainer
                   config={{
                     value: { label: p.district },
+                    tracker: { label: t("text-method-tracker") },
+                    artfish: { label: t("text-method-artfish") },
                     overall: { label: t("text-selection-average") },
                   }}
                   className="aspect-auto h-20 w-full"
@@ -173,35 +255,43 @@ export function DistrictMultiples({ metric }: { metric: MetricKey }) {
                       cursor={{ stroke: "var(--muted-foreground)" }}
                       content={() => null}
                     />
-                    <Line
-                      dataKey="overall"
-                      stroke="var(--context-muted)"
-                      strokeWidth={1.5}
-                      dot={false}
-                      isAnimationActive={false}
-                    />
-                    <Line
-                      dataKey="value"
-                      stroke="var(--chart-1)"
-                      strokeWidth={1.75}
-                      isAnimationActive={false}
-                      // A month without a value draws no dot; one on few landings is hollow.
-                      dot={({ cx, cy, value, payload, index }: DotProps) =>
-                        value == null || cy == null ? (
-                          <g key={index} />
-                        ) : (
-                          <circle
-                            key={index}
-                            cx={cx}
-                            cy={cy}
-                            r={2.5}
-                            stroke="var(--chart-1)"
-                            strokeWidth={1.5}
-                            fill={payload?.thin ? "var(--background)" : "var(--chart-1)"}
-                          />
-                        )
-                      }
-                    />
+                    {!keys && (
+                      <Line
+                        dataKey="overall"
+                        stroke="var(--context-muted)"
+                        strokeWidth={1.5}
+                        dot={false}
+                        isAnimationActive={false}
+                      />
+                    )}
+                    {drawn.map((key) => {
+                      const color = colorOf(key);
+                      return (
+                        <Line
+                          key={key}
+                          dataKey={key}
+                          stroke={color}
+                          strokeWidth={1.75}
+                          isAnimationActive={false}
+                          // A month without a value draws no dot; one on few landings is hollow.
+                          dot={({ cx, cy, value, payload, index }: DotProps) =>
+                            value == null || cy == null ? (
+                              <g key={index} />
+                            ) : (
+                              <circle
+                                key={index}
+                                cx={cx}
+                                cy={cy}
+                                r={2.5}
+                                stroke={color}
+                                strokeWidth={1.5}
+                                fill={payload?.thin ? "var(--background)" : color}
+                              />
+                            )
+                          }
+                        />
+                      );
+                    })}
                   </LineChart>
                 </ChartContainer>
                 <span className={cn("flex items-center gap-1 text-xs text-muted-foreground")}>

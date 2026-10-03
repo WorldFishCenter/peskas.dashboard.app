@@ -219,6 +219,79 @@ test("the headline covers complete months against the same months a year earlier
   expect(pemba.metrics.estimated_catch_tn).toMatchObject({ value: 4, previous: 5 });
 });
 
+test("both methods' totals add up only the districts and months both estimate", async () => {
+  // Chake Chake: both methods. Kaskazini A: ARTFISH only (no tracked boats). Magharibi A: tracker only.
+  const cell = (gaul_2_name: string, metric: string, value: number, ago: number) => ({
+    gaul_2_name,
+    date: month(ago),
+    value,
+    metric,
+    indicator: metric,
+  });
+  const cells = [
+    cell("Chake Chake", "estimated_catch_tn", 4, 6),
+    cell("Chake Chake", "estimated_catch_tn_fao", 6, 6),
+    cell("Kaskazini A", "estimated_catch_tn_fao", 9, 6),
+    cell("Magharibi A", "estimated_catch_tn", 2, 6),
+    cell("Kaskazini A", "estimated_catch_tn_fao", 5, 7), // no tracker estimate anywhere that month
+  ];
+  await DistrictSummaryModel.insertMany(cells);
+  await MonthlySummaryDistrictModel.insertMany(cells);
+  const districts = ["Chake Chake", "Kaskazini A", "Magharibi A"];
+
+  const { metrics } = (await summaries.headline({ districts }))!;
+  const series = (m: keyof typeof metrics, ago: number) =>
+    metrics[m].series.find((p) => p.month === key(ago))?.value;
+  expect([series("estimated_catch_tn", 6), series("estimated_catch_tn_fao", 6)]).toEqual([4, 6]);
+  expect([series("estimated_catch_tn", 7), series("estimated_catch_tn_fao", 7)]).toEqual([
+    null,
+    null,
+  ]);
+  expect([metrics.estimated_catch_tn.value, metrics.estimated_catch_tn_fao.value]).toEqual([4, 6]);
+
+  const fao = await summaries.monthly({ districts, metric: "estimated_catch_tn_fao" });
+  expect(fao.overall.map((p) => p.value)).toEqual([null, 6]);
+  // One call carries both methods, and the district-months the lines leave out.
+  const both = await summaries.monthly({ districts, metric: "estimated_catch_tn" });
+  expect(both.overall.map((p) => p.value)).toEqual([null, 4]);
+  expect(both.methods?.artfish.overall.map((p) => p.value)).toEqual([null, 6]);
+  // The metric's own line is the tracker method's.
+  expect(both.methods?.tracker.overall).toEqual(both.overall);
+  expect(both).toMatchObject({ shared: 1, unshared: 3 });
+
+  // With no tracker estimate in the selection at all, ARTFISH shows on its own.
+  const alone = (await summaries.headline({ districts: ["Kaskazini A"] }))!.metrics;
+  expect(alone.estimated_catch_tn_fao.value).toBe(14);
+  expect(alone.estimated_catch_tn.value).toBeNull();
+
+  // Sharing no district-month, each method shows its own, and nothing is left out.
+  const apart = ["Kaskazini A", "Magharibi A"];
+  const each = (await summaries.headline({ districts: apart }))!.metrics;
+  expect([each.estimated_catch_tn.value, each.estimated_catch_tn_fao.value]).toEqual([2, 14]);
+  expect(await summaries.monthly({ districts: apart, metric: "estimated_catch_tn" })).toMatchObject(
+    { shared: 0, unshared: 0 },
+  );
+
+  // A year earlier added up another way (no ARTFISH then, so the tracker alone) gives no change.
+  await DistrictSummaryModel.insertMany([cell("Chake Chake", "estimated_catch_tn", 3, 13)]);
+  const year = (await summaries.headline({ districts, months: 12 }))!.metrics;
+  expect(year.estimated_catch_tn).toMatchObject({ value: 4, previous: null });
+
+  // Seasonality answers both methods in one call.
+  const season = await summaries.seasonality({ districts, metric: "estimated_catch_tn" });
+  expect([season.methods?.tracker.months, season.methods?.artfish.months]).toEqual([1, 2]);
+  // Each district's own values stay, for the district panels.
+  expect(fao.rows).toContainEqual({ month: key(6), "Chake Chake": 6, "Kaskazini A": 9 });
+
+  const rows = await summaries.byDistrict({ districts });
+  const totals = rows.map((r) => [r.estimated_catch_tn, r.estimated_catch_tn_fao]);
+  expect(totals).toEqual([
+    [4, 6],
+    [null, 14], // never tracked: ARTFISH on its own
+    [2, null],
+  ]);
+});
+
 test("districts outside the country are refused; an empty selection gives no rows", async () => {
   await expect(summaries.byDistrict({ districts: ["Nyali"] })).rejects.toMatchObject({
     code: "BAD_REQUEST",
@@ -227,6 +300,9 @@ test("districts outside the country are refused; an empty selection gives no row
     rows: [],
     thin: [],
     overall: [],
+    methods: null,
+    shared: 0,
+    unshared: 0,
   });
   await expect(summaries.monthly({ metric: "n_fishers" })).rejects.toMatchObject({
     code: "BAD_REQUEST",
@@ -245,6 +321,9 @@ test("monthly rows are keyed YYYY-MM; seasonality averages a calendar month acro
       { month: key(1), value: 2, previous: null },
       { month: key(0), value: 1, previous: 3 },
     ],
+    methods: null,
+    shared: 0,
+    unshared: 0,
   });
   const kati = await summaries.monthly({
     districts: ["Kati", "Mjini"],

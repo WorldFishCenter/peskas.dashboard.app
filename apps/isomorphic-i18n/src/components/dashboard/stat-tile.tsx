@@ -1,8 +1,10 @@
+import { Fragment } from "react";
 import { ArrowDownRightIcon, ArrowUpRightIcon, MinusIcon } from "lucide-react";
 import { Line, LineChart, YAxis } from "recharts";
 import { ChartContainer, type ChartConfig } from "@workspace/ui/components/chart";
 import { useT } from "@/i18n/use-lang";
 import { InfoPopover, type ChartInfo } from "@/components/charts/chart-card";
+import { Legend } from "@/components/charts/legend";
 import { numberLocale } from "@/lib/dashboard/format";
 
 /**
@@ -25,6 +27,9 @@ export function Change({ pct, previous }: { pct: number; previous?: string }) {
     </span>
   );
 }
+
+/** A figure's change on a year earlier (none where it isn't shown) and the earlier figure. */
+type YearChange = { pct: number | null; previous: string };
 
 const sparkConfig = { value: { label: "value" } } satisfies ChartConfig;
 
@@ -51,13 +56,16 @@ export function Sparkline({ values }: { values: (number | null)[] }) {
 /**
  * One headline figure: its name, value and unit, the change on the same
  * months a year earlier, and optionally its explanation and a sparkline.
- * The caller supplies the frame (a card, or a toggle when tiles pick a metric).
+ * An estimate both methods make shows each method's figure (`methods`),
+ * keyed by its line in the charts. The caller supplies the frame (a card,
+ * or a toggle when tiles pick a metric).
  */
 export function StatTile({
   id,
   label,
   value,
   unit,
+  methods,
   change,
   note,
   info,
@@ -67,7 +75,9 @@ export function StatTile({
   label: string;
   value: string;
   unit?: string;
-  change?: { pct: number | null; previous: string } | null;
+  /** Each method with a figure, and its change where it has one. */
+  methods?: { label: string; color: string; value: string; change: YearChange }[];
+  change?: YearChange | null;
   note?: React.ReactNode;
   info?: ChartInfo;
   spark?: (number | null)[];
@@ -78,10 +88,31 @@ export function StatTile({
         <span className="text-[13px] text-muted-foreground">{label}</span>
         {info && <InfoPopover id={id} title={label} info={info} />}
       </div>
-      <div className="flex flex-wrap items-baseline gap-x-1.5">
-        <span className="text-[2rem] leading-10 font-semibold tracking-tight">{value}</span>
-        {unit && <span className="text-[15px] text-muted-foreground">{unit}</span>}
-      </div>
+      {methods ? (
+        <dl className="grid grid-cols-[auto_minmax(0,1fr)] items-baseline gap-x-3">
+          {methods.map((m) => (
+            <Fragment key={m.label}>
+              <dt>
+                <Legend items={[{ label: m.label, color: m.color, shape: "line" }]} />
+              </dt>
+              <dd className="flex flex-wrap items-baseline gap-x-1.5">
+                <span className="text-2xl leading-8 font-semibold tracking-tight">{m.value}</span>
+                {unit && <span className="text-[13px] text-muted-foreground">{unit}</span>}
+                {m.change.pct != null && (
+                  <span className="text-[13px]">
+                    <Change pct={m.change.pct} previous={m.change.previous} />
+                  </span>
+                )}
+              </dd>
+            </Fragment>
+          ))}
+        </dl>
+      ) : (
+        <div className="flex flex-wrap items-baseline gap-x-1.5">
+          <span className="text-[2rem] leading-10 font-semibold tracking-tight">{value}</span>
+          {unit && <span className="text-[15px] text-muted-foreground">{unit}</span>}
+        </div>
+      )}
       <div className="min-h-5 text-[13px]">
         {change?.pct != null ? <Change pct={change.pct} previous={change.previous} /> : note}
       </div>

@@ -100,6 +100,12 @@
   --tint-3: #a2d9f0;
   --tint-4: #77c7e6;
   --tint-5: #50b2d6;
+  /* The same ramp in the FAO ARTFISH method's hue (--chart-2), step for step as light. */
+  --tint-artfish-1: #fff0eb;
+  --tint-artfish-2: #ffdacc;
+  --tint-artfish-3: #fbc0aa;
+  --tint-artfish-4: #f4a487;
+  --tint-artfish-5: #e48968;
   /* Ordinal ramp for biological concern: vulnerability bands, catch below maturity. */
   --concern-1: #e99169;
   --concern-2: #d46a34;
@@ -150,6 +156,11 @@
   --tint-3: #0b4759;
   --tint-4: #00566e;
   --tint-5: #006581;
+  --tint-artfish-1: #362119;
+  --tint-artfish-2: #4b281b;
+  --tint-artfish-3: #603120;
+  --tint-artfish-4: #763a23;
+  --tint-artfish-5: #8a452a;
   --warning: #fbbf24;
   --sidebar: oklch(0.216 0.006 56.043);
   --sidebar-foreground: oklch(0.985 0.001 106.423);

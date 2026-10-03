@@ -27,11 +27,14 @@ export function BarCell({
   max,
   label,
   faded,
+  color = "var(--chart-1)",
 }: {
   value: number | null;
   max: number;
   label: string;
   faded?: boolean;
+  /** A data token; a method's colour where both methods' bars sit side by side. */
+  color?: string;
 }) {
   if (value == null) return <span className="text-muted-foreground">–</span>;
   return (
@@ -39,8 +42,8 @@ export function BarCell({
       <span className="w-16 shrink-0 text-right tabular-nums">{label}</span>
       <span className="h-2.5 min-w-px flex-1">
         <span
-          className={cn("block h-full rounded-r-sm bg-chart-1", faded && "opacity-40")}
-          style={{ width: `${max > 0 ? (100 * value) / max : 0}%` }}
+          className={cn("block h-full rounded-r-sm", faded && "opacity-40")}
+          style={{ width: `${max > 0 ? (100 * value) / max : 0}%`, backgroundColor: color }}
         />
       </span>
     </span>

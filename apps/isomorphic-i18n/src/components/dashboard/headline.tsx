@@ -1,21 +1,37 @@
 import { Link } from "react-router";
 import { Badge } from "@workspace/ui/components/badge";
-import { Card, CardContent } from "@workspace/ui/components/card";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@workspace/ui/components/card";
 import { Skeleton } from "@workspace/ui/components/skeleton";
 import { ToggleGroup, ToggleGroupItem } from "@workspace/ui/components/toggle-group";
-import { confidenceBand, type MetricKey } from "@repo/domain/metrics";
+import {
+  changeHidden,
+  confidenceBand,
+  methodKeys,
+  METHODS,
+  type MetricKey,
+} from "@repo/domain/metrics";
 import { ChartState } from "@/components/charts/chart-state";
 import { WarningIcon } from "@/components/charts/warning-icon";
 import { StatTile } from "@/components/dashboard/stat-tile";
 import { pages, type PageMetric } from "@/config/routes";
 import { useScopedHref, useT } from "@/i18n/use-lang";
 import { trackEvent } from "@/lib/analytics";
-import { formatApprox, formatNumber, formatPercent } from "@/lib/dashboard/format";
+import { formatPercent } from "@/lib/dashboard/format";
 import { useDistrictScope, usePageMetric } from "@/store/filters";
 import { api } from "@/trpc/react";
 import {
   ESTIMATED,
-  isLowConfidenceEstimate,
+  estimateInfo,
+  formatValue,
+  METHOD_COLOR,
   metricInfo,
   metricTitle,
   metricUnit,
@@ -26,20 +42,57 @@ import {
 
 type Translate = ReturnType<typeof useT>["t"];
 
-/** A tile's figure, change and sparkline for one metric; a low-confidence estimate is rounded and shows no change. */
+/**
+ * A tile's figure, change and sparkline for one metric; an estimate is
+ * rounded, and its change `hidden` where `changeHidden` says why. An estimate
+ * both methods make lists the methods with a figure, each with its own change.
+ */
 function tileProps(t: Translate, lang: string, data: Headline, metric: MetricKey) {
   const m = data.metrics[metric];
-  const rounded = isLowConfidenceEstimate(metric, data.samplingRate);
+  const change = (key: MetricKey) => {
+    const { value, previous } = data.metrics[key];
+    const hidden = changeHidden(key, data.samplingRate);
+    return {
+      pct: hidden ? null : yearChange(value, previous),
+      previous: formatValue(key, previous, lang),
+      hidden,
+    };
+  };
+  const keys = methodKeys(metric);
+  const methods = keys
+    ? METHODS.filter((method) => data.metrics[keys[method]].value != null).map((method) => ({
+        method,
+        label: t(`text-method-${method}-short`),
+        color: METHOD_COLOR[method],
+        value: formatValue(keys[method], data.metrics[keys[method]].value, lang),
+        change: change(keys[method]),
+      }))
+    : [];
   return {
     id: `headline-${metric}`,
     label: metricTitle(t, metric),
-    value: rounded ? `≈${formatApprox(m.value, lang)}` : formatNumber(m.value, lang),
+    value: formatValue(metric, m.value, lang),
     unit: metricUnit(t, metric),
-    change: rounded
-      ? null
-      : { pct: yearChange(m.value, m.previous), previous: formatNumber(m.previous, lang) },
+    methods: methods.length ? methods : undefined,
+    change: methods.length ? null : change(metric),
     spark: m.series.map((p) => p.value),
   };
+}
+
+/**
+ * The line under a tile that hides a change, naming whose: none when nothing
+ * is hidden (a missing year earlier needs no note). Where only some methods
+ * hide theirs, it is ARTFISH's: the tracker hides its own only when ARTFISH does too.
+ */
+function changeNote(tile: ReturnType<typeof tileProps>) {
+  const changes = tile.methods?.map((r) => r.change) ?? (tile.change ? [tile.change] : []);
+  const hidden = changes.filter((c) => c.hidden);
+  if (!hidden.length) return null;
+  if (hidden.length < changes.length) return "text-estimates-artfish-no-change";
+  if (changes.length > 1) return "text-estimates-no-change";
+  return hidden[0].hidden === "artfish"
+    ? "text-estimates-artfish-no-change"
+    : "text-confidence-low-no-change";
 }
 
 /** Four tiles of recorded figures, each against the same months a year earlier. */
@@ -67,52 +120,64 @@ export function RecordedTiles({ data }: { data: Headline }) {
  * The estimated totals in one card with their confidence. They rest on the
  * share of boats tracked; while that is low their change on a year earlier
  * says more about which boats carried trackers than about the fishery, so it
- * isn't shown, and the figures are rounded to what they can bear.
+ * isn't shown, and the figures are rounded to what they can bear. Where the
+ * FAO ARTFISH method estimates too, each tile shows both methods' figures.
  */
 export function EstimatesCard({ data }: { data: Headline }) {
   const { t, lang } = useT();
   const scoped = useScopedHref();
   const confidence = confidenceBand(data.samplingRate);
   const low = confidence === "low";
-  const shown = ESTIMATED.filter((m) => data.metrics[m].value != null);
+  // The estimates with a figure by either method.
+  const shown = ESTIMATED.map((metric) => ({
+    metric,
+    tile: tileProps(t, lang, data, metric),
+  })).filter(({ tile }) => tile.methods);
+  const artfish = shown.some(({ tile }) => tile.methods?.some((r) => r.method === "artfish"));
   if (!shown.length) return null;
+  const note = artfish
+    ? t(low ? "text-estimates-rounded-both" : "text-estimates-artfish")
+    : low && t("text-estimates-low");
 
   return (
     <Card>
-      <CardContent className="grid gap-6 lg:grid-cols-[minmax(0,17rem)_1fr]">
-        <div className="flex flex-col gap-2">
-          <h3 className="text-sm font-semibold">{t("title-estimates")}</h3>
+      <CardHeader>
+        <CardTitle>{t("title-estimates")}</CardTitle>
+        {/* The link beside the title only, so the description keeps the card's width on a phone. */}
+        {artfish && (
+          <CardDescription className="col-span-2">{t("text-estimates-two")}</CardDescription>
+        )}
+        <CardAction className="row-span-1">
+          <Link to={`${scoped(pages.about.path)}#estimates`} className="link text-sm">
+            {t("text-estimates-how")}
+          </Link>
+        </CardAction>
+      </CardHeader>
+      <CardContent className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+        {shown.map(({ metric, tile }) => (
+          <StatTile key={metric} {...tile} spark={undefined} info={estimateInfo(t, metric)} />
+        ))}
+      </CardContent>
+      {(confidence || note) && (
+        <CardFooter className="flex-wrap gap-x-3 gap-y-1 text-[13px] text-muted-foreground">
           {confidence && (
-            <div className="flex flex-wrap items-center gap-2">
+            <>
               <Badge variant="outline">
                 {low && <WarningIcon />}
-                {t("text-confidence-level", { level: t(`text-confidence-${confidence}`) })}
+                {t(artfish ? "text-confidence-level-tracker" : "text-confidence-level", {
+                  level: t(`text-confidence-${confidence}`),
+                })}
               </Badge>
-              <span className="text-[13px] text-muted-foreground">
+              <span>
                 {t("text-boats-tracked", {
                   pct: formatPercent(100 * (data.samplingRate ?? 0), lang),
                 })}
               </span>
-            </div>
+            </>
           )}
-          <p className="text-[13px] text-muted-foreground">
-            {low && `${t("text-estimates-low")} `}
-            <Link to={`${scoped(pages.about.path)}#estimates`} className="link text-foreground">
-              {t("text-estimates-how")}
-            </Link>
-          </p>
-        </div>
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
-          {shown.map((metric) => (
-            <StatTile
-              key={metric}
-              {...tileProps(t, lang, data, metric)}
-              spark={undefined}
-              info={metricInfo(t, metric)}
-            />
-          ))}
-        </div>
-      </CardContent>
+          {note && <span>{note}</span>}
+        </CardFooter>
+      )}
     </Card>
   );
 }
@@ -155,26 +220,26 @@ export function MetricPicker({ page }: { page: PageMetric }) {
         trackEvent("filter_metric_change", { metric: next, control_source: "page" });
         setMetric(next);
       }}
-      className="grid w-full grid-cols-1 sm:grid-cols-2 xl:grid-cols-4"
+      className="grid w-full grid-cols-1 items-stretch sm:grid-cols-2 xl:grid-cols-4"
     >
-      {page.options.map((key) => (
-        <ToggleGroupItem
-          key={key}
-          value={key}
-          // The charted measure is marked in the accent colour, so the tiles read as a choice.
-          className="h-auto items-stretch p-4 font-normal whitespace-normal aria-pressed:border-primary aria-pressed:bg-primary/5 aria-pressed:ring-1 aria-pressed:ring-primary"
-        >
-          <StatTile
-            {...tileProps(t, lang, data, key)}
-            note={
-              isLowConfidenceEstimate(key, data.samplingRate) && (
-                <span className="text-muted-foreground">{t("text-confidence-low-no-change")}</span>
-              )
-            }
-            spark={undefined}
-          />
-        </ToggleGroupItem>
-      ))}
+      {page.options.map((key) => {
+        const tile = tileProps(t, lang, data, key);
+        const note = changeNote(tile);
+        return (
+          <ToggleGroupItem
+            key={key}
+            value={key}
+            // The charted measure is marked in the accent colour, so the tiles read as a choice.
+            className="h-auto items-stretch p-4 font-normal whitespace-normal aria-pressed:border-primary aria-pressed:bg-primary/5 aria-pressed:ring-1 aria-pressed:ring-primary"
+          >
+            <StatTile
+              {...tile}
+              note={note && <span className="text-muted-foreground">{t(note)}</span>}
+              spark={undefined}
+            />
+          </ToggleGroupItem>
+        );
+      })}
     </ToggleGroup>
   );
 }

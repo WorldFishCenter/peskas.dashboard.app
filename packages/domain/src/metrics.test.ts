@@ -1,10 +1,14 @@
 import { expect, test } from "vitest";
 import {
+  changeHidden,
   combine,
+  comparable,
   confidenceBand,
   isMetricKey,
+  methodKeys,
   METRICS,
   MONTHLY_METRIC_KEYS,
+  methodCoverage,
   vulnerabilityBand,
 } from "./metrics";
 
@@ -32,6 +36,9 @@ test("totals add up across months and districts; crew size and rates average", (
     "estimated_catch_tn",
     "estimated_revenue",
     "estimated_fishing_trips",
+    "estimated_catch_tn_fao",
+    "estimated_revenue_fao",
+    "estimated_fishing_trips_fao",
   ] as const) {
     expect(METRICS[key]).toMatchObject({ overMonths: "sum", overDistricts: "sum" });
   }
@@ -50,7 +57,54 @@ test("monthly summaries carry no fisher, submission or trip-duration counts", ()
     "estimated_fishing_trips",
     "estimated_revenue",
     "estimated_catch_tn",
+    "estimated_fishing_trips_fao",
+    "estimated_revenue_fao",
+    "estimated_catch_tn_fao",
   ]);
+});
+
+test("each estimate both methods make names the other as its twin", () => {
+  for (const [key, spec] of Object.entries(METRICS)) {
+    if (!spec.twin) continue;
+    expect(METRICS[spec.twin]).toMatchObject({ twin: key, estimated: true });
+    expect(!!METRICS[spec.twin].artfish).toBe(!spec.artfish);
+  }
+});
+
+test("both methods' totals add up only what both estimate, unless one estimates none of it", () => {
+  const cells = [
+    { estimated_catch_tn: 4, estimated_catch_tn_fao: 6 },
+    { estimated_catch_tn_fao: 9 }, // no tracked boats there
+    { estimated_catch_tn: 2 },
+  ];
+  const shared = { cells: [cells[0]], shared: true };
+  expect(comparable(cells, "estimated_catch_tn")).toEqual(shared);
+  expect(comparable(cells, "estimated_catch_tn_fao")).toEqual(shared);
+  // With nothing to compare with, a method keeps all it estimates.
+  const alone = [{ estimated_catch_tn_fao: 9 }, { estimated_catch_tn_fao: 1 }];
+  expect(comparable(alone, "estimated_catch_tn_fao")).toEqual({ cells: alone, shared: false });
+  // Metrics only one method makes are left as they are.
+  expect(comparable(cells, "mean_cpue")).toEqual({ cells, shared: false });
+  // The two district-months only one method estimates are the ones left out.
+  expect(methodCoverage(cells, "estimated_catch_tn")).toEqual({ shared: 1, unshared: 2 });
+  expect(methodCoverage(alone, "estimated_catch_tn")).toEqual({ shared: 0, unshared: 0 });
+  // Sharing nothing, each method keeps its own and nothing is left out.
+  const apart = [{ estimated_catch_tn: 4 }, { estimated_catch_tn_fao: 9 }];
+  expect(comparable(apart, "estimated_catch_tn").cells).toBe(apart);
+  expect(methodCoverage(apart, "estimated_catch_tn")).toEqual({ shared: 0, unshared: 0 });
+});
+
+test("each method's key, and why a change is hidden", () => {
+  expect(methodKeys("estimated_revenue_fao")).toEqual({
+    tracker: "estimated_revenue",
+    artfish: "estimated_revenue_fao",
+  });
+  expect(methodKeys("estimated_revenue")).toBe(methodKeys("estimated_revenue"));
+  expect(methodKeys("mean_cpue")).toBeNull();
+  expect(changeHidden("estimated_catch_tn_fao", 0.5)).toBe("artfish");
+  expect(changeHidden("estimated_catch_tn", 0.05)).toBe("low");
+  expect(changeHidden("estimated_catch_tn", 0.3)).toBeNull();
+  expect(changeHidden("mean_cpue", 0.05)).toBeNull();
 });
 
 test("isMetricKey rejects prototype names", () => {

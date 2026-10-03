@@ -15,10 +15,9 @@ import { sortNullsAsZero } from "@/components/charts/heat-cell";
 import { WarningIcon } from "@/components/charts/warning-icon";
 import { DataTable } from "@/components/data-table/data-table";
 import { SortableHeader } from "@/components/data-table/sortable-header";
-import { formatNumber } from "@/lib/dashboard/format";
 import type { RouterOutputs } from "@isomorphic/api";
 import { confidenceBand, FEW_LANDINGS, type MetricKey } from "@repo/domain/metrics";
-import { metricTitle, metricUnit } from "@/lib/dashboard/metrics";
+import { formatValue, methodTitle, metricUnit } from "@/lib/dashboard/metrics";
 
 const features = tableFeatures({
   columnVisibilityFeature,
@@ -45,8 +44,11 @@ const TABLE_METRICS: MetricKey[] = [
   "mean_rpue",
   "mean_price_kg",
   "estimated_fishing_trips",
+  "estimated_fishing_trips_fao",
   "estimated_catch_tn",
+  "estimated_catch_tn_fao",
   "estimated_revenue",
+  "estimated_revenue_fao",
 ];
 
 // Counts have no unit in the metric strings, so the table spells them out.
@@ -97,21 +99,21 @@ export function DistrictMetricsTable({ rows }: { rows: DistrictRow[] }) {
             const unit = UNIT_KEY_OVERRIDES[key] ? t(UNIT_KEY_OVERRIDES[key]) : metricUnit(t, key);
             return (
               <SortableHeader column={column}>
-                {metricTitle(t, key)}
+                {methodTitle(t, key)}
                 {unit && <span className="font-normal text-muted-foreground">({unit})</span>}
               </SortableHeader>
             );
           },
           sortFn: sortNullsAsZero,
           sortDescFirst: true,
-          cell: ({ getValue }) => right(formatNumber(numeric(getValue()), lang)),
+          cell: ({ getValue }) => right(formatValue(key, numeric(getValue()), lang)),
         }),
       ),
       ...(hasConfidence
         ? [
             columnHelper.accessor("sampling_rate", {
               header: ({ column }) => (
-                <SortableHeader column={column}>{t("text-confidence")}</SortableHeader>
+                <SortableHeader column={column}>{t("text-confidence-tracker")}</SortableHeader>
               ),
               sortFn: sortNullsAsZero,
               sortDescFirst: true,

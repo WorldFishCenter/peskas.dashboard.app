@@ -53,8 +53,20 @@ A value measured on the surveyed landings themselves: catch per trip, rates, pri
 _Avoid_: actual, observed
 
 **Estimated figure**:
-A total scaled up from the surveyed landings and the GPS-tracked boats to all the boats of a district (estimated trips, catch, revenue). Its **estimate confidence** comes from the share of the district's boats tracked (`sampling_rate`): high from 30%, medium from 10%, low below.
+A total scaled up from the surveyed landings to all the boats of a district (estimated trips, catch, revenue), by the **GPS tracker method** or the **FAO ARTFISH method**; the dashboard shows both side by side, every figure rounded to two significant figures. Its **estimate confidence** (GPS tracker method) comes from the share of the district's boats tracked (`sampling_rate`): high from 30%, medium from 10%, low below. A district and month with fewer than ten surveyed landings has no estimated catch or revenue (coasts >= 4.19.0).
 _Avoid_: total, modelled
+
+**GPS tracker method**:
+Registered boats × trips per GPS-tracked boat × catch per surveyed landing, per district and month: how often boats fish comes from the boats that carry a tracker. Short form: Tracker.
+_Avoid_: current method, Peskas method
+
+**FAO ARTFISH method**:
+FAO's standard way of raising a landing survey to the fleet, published beside the GPS tracker method: boats in the census × days fished, as fishers report them × catch per surveyed landing, by gear or boat type. It needs no trackers, so it also estimates districts and months without tracked boats. Its metrics end in `_fao`; the summaries don't carry its precision, so its figures never show a change on a year earlier. Short form: ARTFISH.
+_Avoid_: FAO way, sample-survey method
+
+**Shared district-months**:
+The district-months both methods estimate. The totals and trend lines of an estimate add up only these, so the two methods compare like with like; where the two share none of the selection, each shows its own. A district's own figures follow the same rule over its months, and its panel draws every month each method estimates.
+_Avoid_: overlap, matched cells
 
 **Landing**:
 A boat's return to shore with its catch, as an enumerator records it. The count of landings behind a value (`n_submissions`) weights averages and flags thin data (fewer than 10).

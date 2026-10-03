@@ -1,7 +1,16 @@
 import type { RouterOutputs } from "@isomorphic/api";
-import { confidenceBand, METRICS, type MetricKey } from "@repo/domain/metrics";
+import {
+  methodKeys,
+  methodOf,
+  METHODS,
+  METRICS,
+  twinOf,
+  type Method,
+  type MetricKey,
+} from "@repo/domain/metrics";
 import { activeCountry } from "@/config/countryConfig";
 import type { ChartText } from "@/components/charts/chart-card";
+import { formatApprox, formatNumber } from "@/lib/dashboard/format";
 
 type Translate = (key: string, options?: Record<string, unknown>) => string;
 
@@ -71,12 +80,54 @@ export function yearChange(value: number | null | undefined, previous: number | 
   return ((value - previous) / Math.abs(previous)) * 100;
 }
 
-/**
- * An estimate resting on under 10% of boats tracked: its change on a year
- * earlier says more about which boats carried trackers than about the
- * fishery, so it is rounded to two figures and shows no change.
- */
-export const isLowConfidenceEstimate = (
+/** A metric's value as the dashboard shows it: every estimate, by either method, rounded with ≈. */
+export const formatValue = (metric: MetricKey, value: number | null | undefined, lang: string) =>
+  value != null && METRICS[metric].estimated
+    ? `≈${formatApprox(value, lang)}`
+    : formatNumber(value, lang);
+
+/** The methods with any value in `rows` (district rows, months of one district): none for other metrics. */
+export function methodsWithData(
   metric: MetricKey,
-  samplingRate: number | null | undefined,
-) => !!METRICS[metric].estimated && confidenceBand(samplingRate) === "low";
+  rows: Partial<Record<MetricKey, number | null>>[],
+): Method[] {
+  const keys = methodKeys(metric);
+  return keys ? METHODS.filter((m) => rows.some((r) => r[keys[m]] != null)) : [];
+}
+
+/**
+ * Order by the first figure, largest first, then by the second: rows only the
+ * second method estimates come after the others, as in the district ranking.
+ */
+export const byFigures = (
+  a: readonly (number | null | undefined)[],
+  b: readonly (number | null | undefined)[],
+) => (b[0] ?? -1) - (a[0] ?? -1) || (b[1] ?? 0) - (a[1] ?? 0);
+
+/** "Estimated catch · ARTFISH" for an estimate both methods make, where the two sit side by side. */
+export const methodTitle = (t: Translate, metric: MetricKey) =>
+  twinOf(metric)
+    ? `${metricTitle(t, metric)} · ${t(`text-method-${methodOf(metric)}-short`)}`
+    : metricTitle(t, metric);
+
+/** Each method's line colour, the same in every chart and tile. */
+export const METHOD_COLOR: Record<Method, string> = {
+  tracker: "var(--chart-1)",
+  artfish: "var(--chart-2)",
+};
+
+/** Each method's heat-table ramp, the `--<tint>-1…5` tokens: the portal's own for the GPS tracker method. */
+export const METHOD_TINT: Record<Method, string> = { tracker: "tint", artfish: "tint-artfish" };
+
+/** An estimate both methods make, explained for both and for why they differ. */
+export const estimateInfo = (t: Translate, metric: MetricKey): ChartText => {
+  const keys = methodKeys(metric);
+  if (!keys) return metricInfo(t, metric);
+  return {
+    what: metricDescription(t, keys.tracker),
+    how: METHODS.map(
+      (m) => `${t(`text-method-${m}`)}: ${t(`metric-${keys[m]}-how`, currency)}`,
+    ).join(" "),
+    limits: t("info-methods-limits"),
+  };
+};

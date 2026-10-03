@@ -5,7 +5,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 /** Sticky top bar: brand and partner, page navigation and app controls. Each page's title and filters open the page itself. */
 export function SiteHeader() {
   return (
-    <header className="sticky top-0 z-10 border-b bg-background print:static">
+    <header className="sticky top-0 z-20 border-b bg-background print:static">
       <div className="flex h-12 items-center gap-2 px-4 md:gap-4 lg:px-6">
         <MobileNav />
         <Brand />

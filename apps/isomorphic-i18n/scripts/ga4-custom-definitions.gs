@@ -80,9 +80,15 @@ const DIMENSIONS = [
     description: "Metric key selected by the user",
   },
   {
+    parameterName: "method",
+    displayName: "Estimation method",
+    description: "Estimation method picked for a map or table: tracker or artfish",
+  },
+  {
     parameterName: "control_source",
     displayName: "Metric control",
-    description: "Which control changed the metric: header or district_widget",
+    description:
+      "Which control changed the metric or method: page, district_widget, district_map or seasonality",
   },
   {
     parameterName: "action",

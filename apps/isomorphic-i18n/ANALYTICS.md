@@ -130,6 +130,7 @@ loaded. Add new event names to the `AnalyticsEvent` union there so typos fail th
 |---|---|---|
 | `filter_time_range_change` | `time_range` (`"3"`, `"6"`, `"12"`, `"all"`) | Time range picked in the page header |
 | `filter_metric_change` | `metric`, `control_source` (`page` \| `district_widget`) | Metric picked: a tile on the catch or revenue page (`page`), or a measure in the overview's district card (`district_widget`) |
+| `filter_method_change` | `method` (`tracker` \| `artfish`), `control_source` (`district_map` \| `seasonality`) | Estimation method picked for the overview's district map or the seasonality table |
 | `filter_district_change` | `action`, `district`, `peskas_region`, `district_count` | District selection changed |
 | `map_basemap_change` | `basemap` (`satellite` \| `map`) | Basemap toggled on the grid map |
 | `map_effort_range_toggle` | `effort_range`, `enabled` | Effort band toggled in the map info panel |

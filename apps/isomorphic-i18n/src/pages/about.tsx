@@ -1,6 +1,21 @@
 import { useEffect } from "react";
 import { useLocation } from "react-router";
 import {
+  BookOpenTextIcon,
+  CalculatorIcon,
+  CalendarRangeIcon,
+  ChartLineIcon,
+  DatabaseIcon,
+  FishIcon,
+  InfoIcon,
+  MailIcon,
+  RulerIcon,
+  ScaleIcon,
+  type LucideIcon,
+} from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@workspace/ui/components/alert";
+import { Button } from "@workspace/ui/components/button";
+import {
   Card,
   CardContent,
   CardDescription,
@@ -16,8 +31,14 @@ import {
   TableHeader,
   TableRow,
 } from "@workspace/ui/components/table";
-import { cn } from "@workspace/ui/lib/utils";
-import { METRIC_KEYS, METRICS } from "@repo/domain/metrics";
+import {
+  methodOf,
+  METHODS,
+  METRIC_KEYS,
+  METRICS,
+  type Method,
+  type MetricKey,
+} from "@repo/domain/metrics";
 import { COVERAGE_MONTHS, CoverageMatrix } from "@/components/dashboard/coverage-matrix";
 import {
   ChartKey,
@@ -26,10 +47,10 @@ import {
   EstimateFormula,
   SizeDiagram,
 } from "@/components/methods/diagrams";
-import { ExternalLink, Linked } from "@/components/linked-text";
+import { ARTFISH_TOOLKIT, ExternalLink, Linked } from "@/components/linked-text";
 import { activeCountry } from "@/config/countryConfig";
 import { useT } from "@/i18n/use-lang";
-import { metricInfo, metricTitle, metricUnit } from "@/lib/dashboard/metrics";
+import { METHOD_COLOR, metricInfo, metricTitle, metricUnit } from "@/lib/dashboard/metrics";
 import { api } from "@/trpc/react";
 
 // Every string lives in the locales as methods-<section>-…; country facts end in the country code.
@@ -41,6 +62,8 @@ const GLOSSARY = [
   "rpue",
   "recorded",
   "estimated",
+  "tracker-method",
+  "artfish-method",
   "taxon",
   "length-class",
   "maturity",
@@ -55,38 +78,49 @@ const CONTACTS = [
   ["api", "https://github.com/WorldFishCenter/peskas-api", "github.com/WorldFishCenter/peskas-api"],
   ["peskas", "https://peskas.org", "peskas.org"],
 ] as const;
-/** The page's sections, in order, with their anchors. `#estimates` is linked from the home page. */
-const CONTENTS = [
-  ["sources", "methods-sources-title"],
-  ["coverage", "title-coverage"],
-  ["estimates", "methods-estimates-title"],
-  ["measures", "methods-measures-title"],
-  ["species", "methods-species-title"],
-  ["reading", "methods-reading-title"],
-  ["glossary", "methods-glossary-title"],
-  ["contact", "methods-contact-title"],
-] as const;
+/**
+ * The page's sections, in order: anchor, title key and the icon that marks it
+ * in the contents and on its card. `#estimates` is linked from the home page.
+ */
+const CONTENTS = {
+  sources: ["methods-sources-title", DatabaseIcon],
+  coverage: ["title-coverage", CalendarRangeIcon],
+  estimates: ["methods-estimates-title", CalculatorIcon],
+  measures: ["methods-measures-title", RulerIcon],
+  species: ["methods-species-title", FishIcon],
+  reading: ["methods-reading-title", ChartLineIcon],
+  glossary: ["methods-glossary-title", BookOpenTextIcon],
+  contact: ["methods-contact-title", MailIcon],
+} satisfies Record<string, [string, LucideIcon]>;
 
-function Section({
-  id,
-  title,
-  description,
-  children,
-  className,
-}: {
-  id: string;
-  title: string;
-  description?: string;
-  children: React.ReactNode;
-  className?: string;
-}) {
+/** A section of the page as a card: its icon and title, what it covers (`methods-<id>-intro`), its content. */
+function Section({ id, children }: { id: keyof typeof CONTENTS; children: React.ReactNode }) {
+  const { t } = useT();
+  const [title, Icon] = CONTENTS[id];
   return (
-    <Card size="sm" id={id} className={cn("scroll-mt-16", className)}>
-      <CardHeader className="print:break-after-avoid">
-        <CardTitle>{title}</CardTitle>
-        {description && <CardDescription>{description}</CardDescription>}
+    <Card size="sm" id={id} className="scroll-mt-16">
+      <CardHeader className="border-b print:break-after-avoid">
+        <CardTitle className="flex items-center gap-2">
+          <Icon aria-hidden className="size-4 text-primary" />
+          {t(title)}
+        </CardTitle>
+        <CardDescription>{t(`methods-${id}-intro`)}</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-6">{children}</CardContent>
+    </Card>
+  );
+}
+
+/** One estimation method as its own card, marked by its line colour in the charts. */
+function MethodCard({ method, children }: { method: Method; children: React.ReactNode }) {
+  const { t } = useT();
+  return (
+    <Card size="sm" className="border-t-4" style={{ borderTopColor: METHOD_COLOR[method] }}>
+      <CardHeader>
+        <CardTitle>{t(`text-method-${method}`)}</CardTitle>
+        <CardDescription>{t(`methods-${method}-summary`)}</CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-5">{children}</CardContent>
     </Card>
   );
 }
@@ -136,25 +170,42 @@ export default function AboutPage() {
         .join(" "),
     ],
   ];
-  const measures = (estimated: boolean) =>
-    METRIC_KEYS.filter((key) => !!METRICS[key].estimated === estimated);
+  // The measures table's groups: recorded, then each method's estimates.
+  const groups = [
+    ["recorded", t("section-recorded")],
+    ...METHODS.map((m) => [m, `${t("title-estimates")}: ${t(`text-method-${m}`)}`] as const),
+  ];
+  const groupOf = (key: MetricKey) => (METRICS[key].estimated ? methodOf(key) : "recorded");
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* A row of links rather than a side column: the coverage table needs the full width for 24 months. */}
-      <nav
-        aria-label={t("text-contents")}
-        className="flex flex-wrap items-baseline gap-x-4 gap-y-1 text-sm print:hidden"
-      >
-        <span className="font-semibold">{t("text-contents")}</span>
-        {CONTENTS.map(([id, key]) => (
-          <a key={id} href={`#${id}`} className="link text-muted-foreground hover:text-foreground">
-            {t(key)}
-          </a>
-        ))}
-      </nav>
+    <div className="flex flex-col gap-6">
+      {/* The contents above the page rather than beside it: the coverage table needs the full width for 24 months. */}
+      <Card size="sm" className="print:hidden">
+        <CardHeader>
+          <CardTitle>{t("text-contents")}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <nav aria-label={t("text-contents")}>
+            <ul className="flex flex-wrap gap-2">
+              {Object.entries(CONTENTS).map(([id, [key, Icon]]) => (
+                <li key={id}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    nativeButton={false}
+                    render={<a href={`#${id}`} />}
+                  >
+                    <Icon data-icon="inline-start" />
+                    {t(key)}
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        </CardContent>
+      </Card>
 
-      <Section id="sources" title={t("methods-sources-title")}>
+      <Section id="sources">
         <DataFlow />
         <Separator />
         <dl className="grid gap-x-10 gap-y-4 md:grid-cols-2">
@@ -173,20 +224,50 @@ export default function AboutPage() {
         <CoverageMatrix />
       </div>
 
-      <Section id="estimates" title={t("methods-estimates-title")}>
-        <Beside>
-          <Prose>
-            <p>{t("methods-estimates-body")}</p>
-            <p>{t("methods-confidence-body")}</p>
-          </Prose>
-          <div className="flex flex-col gap-6">
-            <EstimateFormula />
+      <Section id="estimates">
+        <p className="max-w-prose leading-relaxed">{t("methods-estimates-body")}</p>
+        <div className="grid items-start gap-4 lg:grid-cols-2 print:grid-cols-2">
+          <MethodCard method="tracker">
+            <EstimateFormula method="tracker" />
+            <Prose>
+              <p>{t("methods-tracker-body")}</p>
+              <p>{t("methods-confidence-body")}</p>
+            </Prose>
             <ConfidenceScale />
-          </div>
-        </Beside>
+          </MethodCard>
+          <MethodCard method="artfish">
+            <EstimateFormula method="artfish" />
+            <Prose>
+              {/* The reference below links the toolkit: the body names it without a second link. */}
+              <p>{t("methods-artfish-body")}</p>
+              <p>{t(`methods-artfish-days-${code}`)}</p>
+              <p>{t("methods-artfish-precision")}</p>
+              <p className="text-sm text-muted-foreground">
+                {t("methods-artfish-reference")}{" "}
+                <ExternalLink href={ARTFISH_TOOLKIT}>
+                  {t("methods-artfish-reference-link")}
+                </ExternalLink>
+              </p>
+            </Prose>
+          </MethodCard>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 print:grid-cols-2">
+          {(
+            [
+              ["differ", InfoIcon],
+              ["totals", ScaleIcon],
+            ] as const
+          ).map(([key, Icon]) => (
+            <Alert key={key}>
+              <Icon />
+              <AlertTitle>{t(`methods-compare-${key}-title`)}</AlertTitle>
+              <AlertDescription>{t(`methods-compare-${key}`)}</AlertDescription>
+            </Alert>
+          ))}
+        </div>
       </Section>
 
-      <Section id="measures" title={t("methods-measures-title")}>
+      <Section id="measures">
         <Table className="text-sm">
           <TableHeader>
             <TableRow>
@@ -196,14 +277,14 @@ export default function AboutPage() {
               <TableHead className="w-[30%]">{t("text-info-limits")}</TableHead>
             </TableRow>
           </TableHeader>
-          {[false, true].map((estimated) => (
-            <TableBody key={String(estimated)}>
+          {groups.map(([group, title]) => (
+            <TableBody key={group}>
               <TableRow className="hover:bg-transparent">
                 <TableCell colSpan={4} className="bg-muted/50 font-medium">
-                  {t(estimated ? "title-estimates" : "section-recorded")}
+                  {title}
                 </TableCell>
               </TableRow>
-              {measures(estimated).map((key) => {
+              {METRIC_KEYS.filter((key) => groupOf(key) === group).map((key) => {
                 const info = metricInfo(t, key);
                 const unit = metricUnit(t, key);
                 return (
@@ -229,7 +310,7 @@ export default function AboutPage() {
         </Table>
       </Section>
 
-      <Section id="species" title={t("methods-species-title")}>
+      <Section id="species">
         <Beside>
           <Prose>
             <p>
@@ -242,7 +323,7 @@ export default function AboutPage() {
         </Beside>
       </Section>
 
-      <Section id="reading" title={t("methods-reading-title")}>
+      <Section id="reading">
         <ChartKey />
         <Separator />
         <div className="grid gap-x-10 gap-y-3 leading-relaxed md:grid-cols-2">
@@ -254,7 +335,7 @@ export default function AboutPage() {
         </div>
       </Section>
 
-      <Section id="glossary" title={t("methods-glossary-title")}>
+      <Section id="glossary">
         <dl className="grid gap-x-10 gap-y-4 md:grid-cols-2 xl:grid-cols-3">
           {GLOSSARY.map((term) => (
             <div key={term}>
@@ -267,7 +348,7 @@ export default function AboutPage() {
         </dl>
       </Section>
 
-      <Section id="contact" title={t("methods-contact-title")}>
+      <Section id="contact">
         <dl className="grid gap-x-10 gap-y-5 sm:grid-cols-2 xl:grid-cols-4">
           {CONTACTS.map(([key, href, label]) => (
             <div key={key} className="flex flex-col gap-1 text-sm">

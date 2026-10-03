@@ -15,15 +15,15 @@ import { useTheme } from "@/components/theme-provider";
 import { activeCountry } from "@/config/countryConfig";
 import { pages } from "@/config/routes";
 import { trackEvent } from "@/lib/analytics";
-import { formatNumber } from "@/lib/dashboard/format";
-import { metricTitle } from "@/lib/dashboard/metrics";
+import { methodKeys, type Method } from "@repo/domain/metrics";
+import { formatValue, methodTitle } from "@/lib/dashboard/metrics";
 import {
-  CHOROPLETH_COLORS,
   forTheme,
   getColorForValue,
   interpolateChoroplethColor,
   isInBreak,
   MAP_STYLES,
+  METHOD_CHOROPLETH,
 } from "@/lib/grid-map/colors";
 import {
   COLOR_RANGE,
@@ -69,14 +69,24 @@ function cellSizeFor(zoom: number, latitude: number) {
 
 /**
  * The country's map, `className` setting its height. "districts" colours each
- * district by the home page's measure over the time range; "effort" draws the
- * coasts portal's fishing effort (all time), its cells as a grid over the
- * fishing grounds they form, and the district outlines. One question per map.
+ * district by the home page's measure over the time range, an estimate by the
+ * `method` picked, in that method's colours; "effort" draws the coasts
+ * portal's fishing effort (all time), its cells as a grid over the fishing
+ * grounds they form, and the district outlines. One question per map.
  */
-export function GridMap({ mode, className }: { mode: "districts" | "effort"; className?: string }) {
+export function GridMap({
+  mode,
+  method = "tracker",
+  className,
+}: {
+  mode: "districts" | "effort";
+  method?: Method;
+  className?: string;
+}) {
   const { t, lang } = useT();
   const isDark = useTheme().theme === "dark";
-  const [metric] = usePageMetric(pages.home.metric);
+  const [picked] = usePageMetric(pages.home.metric);
+  const metric = methodKeys(picked)?.[method] ?? picked;
   const { months } = useScope();
   const [hovered, setHovered] = useState<string | null>(null);
 
@@ -105,7 +115,7 @@ export function GridMap({ mode, className }: { mode: "districts" | "effort"; cla
   );
 
   const cellColors = useMemo(() => forTheme(COLOR_RANGE, isDark), [isDark]);
-  const choropleth = useMemo(() => forTheme(CHOROPLETH_COLORS, isDark), [isDark]);
+  const choropleth = useMemo(() => forTheme(METHOD_CHOROPLETH[method], isDark), [isDark, method]);
   const { latitude, zoom: initialZoom } = activeCountry.gridMapViewState;
   const [zoom, setZoom] = useState(initialZoom);
   const cellSize = cellSizeFor(zoom, latitude);
@@ -128,9 +138,9 @@ export function GridMap({ mode, className }: { mode: "districts" | "effort"; cla
     if (mode !== "districts" || !boundaries || metricByDistrict.size === 0) return undefined;
     return {
       colors: choropleth,
-      metricLabel: metricTitle(t, metric),
-      minLabel: formatNumber(minVal, lang),
-      maxLabel: formatNumber(maxVal, lang),
+      metricLabel: methodTitle(t, metric),
+      minLabel: formatValue(metric, minVal, lang),
+      maxLabel: formatValue(metric, maxVal, lang),
     };
   }, [mode, boundaries, metricByDistrict, metric, minVal, maxVal, lang, t, choropleth]);
 
@@ -185,7 +195,9 @@ export function GridMap({ mode, className }: { mode: "districts" | "effort"; cla
           return { html: `<strong>${esc(name)}</strong>`, style: TOOLTIP_STYLE };
         const val = metricByDistrict.get(name);
         const detail =
-          val != null ? `${metricTitle(t, metric)}: ${formatNumber(val, lang)}` : t("text-no-data");
+          val != null
+            ? `${methodTitle(t, metric)}: ${formatValue(metric, val, lang)}`
+            : t("text-no-data");
         return {
           html: `<strong>${esc(name)}</strong><div>${esc(detail)}</div>`,
           style: TOOLTIP_STYLE,
@@ -267,7 +279,7 @@ export function GridMap({ mode, className }: { mode: "districts" | "effort"; cla
         // Draw on top of the extruded grid.
         parameters: { depthTest: false },
         updateTriggers: {
-          getFillColor: [metricByDistrict, minVal, maxVal, hovered, isDark],
+          getFillColor: [metricByDistrict, minVal, maxVal, hovered, isDark, choropleth],
           getLineColor: [hovered, mode, lightStroke],
           getLineWidth: [hovered],
         },

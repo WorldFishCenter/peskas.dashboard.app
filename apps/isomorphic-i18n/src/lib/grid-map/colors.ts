@@ -1,5 +1,6 @@
 import { TIME_BREAKS } from "@/lib/grid-map/config";
 import type { TimeBreak } from "@/lib/grid-map/types";
+import type { Method } from "@repo/domain/metrics";
 
 // The portal's one-hue magnitude ramp (hue 225°, light → dark), as in the tint tokens of globals.css.
 export const CHOROPLETH_COLORS: [number, number, number][] = [
@@ -11,6 +12,21 @@ export const CHOROPLETH_COLORS: [number, number, number][] = [
   [0, 117, 150],
   [0, 89, 117],
 ];
+
+/** Each estimation method's ramp, for a map that shows one at a time. */
+export const METHOD_CHOROPLETH: Record<Method, [number, number, number][]> = {
+  tracker: CHOROPLETH_COLORS,
+  // The same ramp in the FAO ARTFISH method's hue (`--chart-2`), step for step as light.
+  artfish: [
+    [254, 238, 232],
+    [250, 213, 199],
+    [242, 179, 156],
+    [226, 139, 108],
+    [199, 103, 68],
+    [160, 80, 50],
+    [124, 59, 35],
+  ],
+};
 
 /** A ramp for the basemap: light to dark on a light map, dark to light on a dark one, so more always stands out. */
 export const forTheme = <T>(ramp: T[], dark: boolean) => (dark ? [...ramp].reverse() : ramp);
