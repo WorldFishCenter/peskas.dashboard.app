@@ -1,9 +1,12 @@
 import { cn } from "@workspace/ui/lib/utils";
+import type { Method } from "@repo/domain/metrics";
+import { METHOD_TINT } from "@/lib/dashboard/metrics";
 
 /**
- * A value on the portal's one-hue ramp (the `--tint-*` tokens), for heat tables:
- * five steps from `min` to `max`, text in the foreground colour on every one.
- * Missing values (`null`) show "-".
+ * A value on the portal's one-hue ramp (the `--tint-*` tokens, or for an
+ * estimate the ramp of its `method`), for heat tables: five steps from `min`
+ * to `max`, text in the foreground colour on every one. Missing values
+ * (`null`) show "-".
  */
 export function HeatCell({
   value,
@@ -12,6 +15,7 @@ export function HeatCell({
   label,
   title,
   dense,
+  method = "tracker",
 }: {
   value: number | null;
   min: number;
@@ -20,6 +24,7 @@ export function HeatCell({
   title?: string;
   /** Smaller, for tables with many columns (24 months). */
   dense?: boolean;
+  method?: Method;
 }) {
   if (value === null) return <span className="text-muted-foreground">-</span>;
   const step = max === min ? 5 : 1 + Math.min(4, Math.floor((5 * (value - min)) / (max - min)));
@@ -30,7 +35,7 @@ export function HeatCell({
         "inline-block rounded-md text-center tabular-nums",
         dense ? "min-w-8 px-1 py-0.5 text-xs print:min-w-0" : "min-w-12 px-2 py-1",
       )}
-      style={{ backgroundColor: `var(--tint-${step})` }}
+      style={{ backgroundColor: `var(--${METHOD_TINT[method]}-${step})` }}
     >
       {label}
     </span>

@@ -21,6 +21,29 @@ export function MaturityLegend({
   );
 }
 
+/** A bar for a value's size against the column's largest, filling the width it is given. */
+export function Bar({
+  value,
+  max,
+  faded,
+  color = "var(--chart-1)",
+}: {
+  value: number;
+  max: number;
+  faded?: boolean;
+  /** A data token; a method's colour where both methods' bars sit side by side. */
+  color?: string;
+}) {
+  return (
+    <span className="block h-2.5 min-w-px">
+      <span
+        className={cn("block h-full rounded-r-sm", faded && "opacity-40")}
+        style={{ width: `${max > 0 ? (100 * value) / max : 0}%`, backgroundColor: color }}
+      />
+    </span>
+  );
+}
+
 /** A value and a bar for its size against the column's largest, for ranked tables. */
 export function BarCell({
   value,
@@ -37,11 +60,8 @@ export function BarCell({
   return (
     <span className="flex items-center gap-2">
       <span className="w-16 shrink-0 text-right tabular-nums">{label}</span>
-      <span className="h-2.5 min-w-px flex-1">
-        <span
-          className={cn("block h-full rounded-r-sm bg-chart-1", faded && "opacity-40")}
-          style={{ width: `${max > 0 ? (100 * value) / max : 0}%` }}
-        />
+      <span className="flex-1">
+        <Bar value={value} max={max} faded={faded} />
       </span>
     </span>
   );

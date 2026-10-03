@@ -1,8 +1,12 @@
 import { activeCountry } from "@/config/countryConfig";
 
+/** FAO's OPEN ARTFISH toolkit, the reference for the FAO ARTFISH method (its FAO Open Knowledge record). */
+export const ARTFISH_TOOLKIT = "https://openknowledge.fao.org/handle/20.500.14283/i7680en";
+
 /** Names linked wherever the text of an explanation mentions them: proper names, spelt the same in every language. */
 const { partner } = activeCountry;
 const LINKS: Record<string, string | undefined> = {
+  "OPEN ARTFISH": ARTFISH_TOOLKIT,
   FishBase: "https://www.fishbase.se",
   SeaLifeBase: "https://www.sealifebase.se",
   // Before its prefix: the regex takes the first name that matches.

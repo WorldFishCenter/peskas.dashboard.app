@@ -51,6 +51,7 @@ export const pages = {
         "mean_catch_price",
         "n_submissions",
         "estimated_catch_tn",
+        "estimated_revenue",
       ],
     },
     load: () => import("@/pages/home"),

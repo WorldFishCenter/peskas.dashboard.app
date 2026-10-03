@@ -14,7 +14,7 @@ Each country has its own dashboard, built from this same code. The dashboards ar
 
 ## What you can do
 
-- See the headline figures for the last complete months against the same months a year earlier, with how confident each estimate is.
+- See the headline figures for the last complete months against the same months a year earlier, and the estimated catch, revenue and fishing trips of all boats by two methods side by side.
 - Follow catch, revenue, catch and revenue per trip, trip length and the number of recorded landings month by month, for the whole country or for chosen districts.
 - Compare districts on a map, in a ranked chart and in a table.
 - See where tracked boats spend their fishing time on a 1 km grid map of fishing effort.
@@ -27,6 +27,7 @@ Each country has its own dashboard, built from this same code. The dashboards ar
 
 - **Landing surveys.** Enumerators (trained data collectors) record landings at landing sites. A landing is a boat's return to shore with its catch.
 - **GPS trackers (Pelagic Data Systems).** Small solar-powered devices on some boats record where they travel. They feed the fishing-effort map, which covers only boats that carry a tracker.
+- **Estimates for all boats.** Two methods scale the surveyed landings up to every boat of a district: the GPS tracker method, from how often tracked boats fish, and FAO's ARTFISH method, from the days fishers say they fished and the boat census. The dashboards show both, and the Data and methods page explains why their figures differ.
 
 Each country's Peskas data pipeline cleans and summarises these records by month and district, and the dashboard reads those summaries. New data appears every few days, when the pipeline runs (every 2 days for Kenya and Mozambique, every 4 days for Zanzibar).
 

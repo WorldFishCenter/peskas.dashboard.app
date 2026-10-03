@@ -8,7 +8,7 @@
 /** Summed (a Total metric) or averaged, weighted by landings (an Average metric). */
 export type Combine = "sum" | "mean";
 
-type MetricSpec = {
+type MetricSpec<K extends string> = {
   overMonths: Combine;
   overDistricts: Combine;
   /** The same measure's name in the gear summaries. */
@@ -17,12 +17,16 @@ type MetricSpec = {
   districtsOnly?: true;
   /** Scaled up from the surveyed landings to the district's fleet, rather than recorded. */
   estimated?: true;
+  /** Raised with the FAO ARTFISH method rather than the GPS tracker method (see CONTEXT.md). */
+  artfish?: true;
+  /** The same estimate by the other method. */
+  twin?: K;
 };
 
 const TOTAL = { overMonths: "sum", overDistricts: "sum" } as const;
 const AVERAGE = { overMonths: "mean", overDistricts: "mean" } as const;
 
-const catalogue = <K extends string>(specs: Record<K, MetricSpec>) => specs;
+const catalogue = <K extends string>(specs: Record<K, MetricSpec<NoInfer<K>>>) => specs;
 
 /** District and monthly summaries (`districts_summaries`, `monthly_summaries`), in display order. */
 export const METRICS = catalogue({
@@ -35,13 +39,91 @@ export const METRICS = catalogue({
   n_submissions: { ...TOTAL, districtsOnly: true },
   trip_duration_hrs: { ...AVERAGE, districtsOnly: true },
   mean_price_kg: AVERAGE,
-  estimated_fishing_trips: { ...TOTAL, estimated: true },
-  estimated_revenue: { ...TOTAL, estimated: true },
-  estimated_catch_tn: { ...TOTAL, estimated: true },
+  estimated_fishing_trips: { ...TOTAL, estimated: true, twin: "estimated_fishing_trips_fao" },
+  estimated_revenue: { ...TOTAL, estimated: true, twin: "estimated_revenue_fao" },
+  estimated_catch_tn: { ...TOTAL, estimated: true, twin: "estimated_catch_tn_fao" },
+  estimated_fishing_trips_fao: {
+    ...TOTAL,
+    estimated: true,
+    artfish: true,
+    twin: "estimated_fishing_trips",
+  },
+  estimated_revenue_fao: { ...TOTAL, estimated: true, artfish: true, twin: "estimated_revenue" },
+  estimated_catch_tn_fao: { ...TOTAL, estimated: true, artfish: true, twin: "estimated_catch_tn" },
 });
 
 export type MetricKey = keyof typeof METRICS;
 export const METRIC_KEYS = Object.keys(METRICS) as [MetricKey, ...MetricKey[]];
+
+/** The same estimate by the other method, for an estimated figure both methods make. */
+export const twinOf = (metric: MetricKey): MetricKey | undefined => METRICS[metric].twin;
+
+/** The two methods an estimate is made by (CONTEXT.md). */
+export type Method = "tracker" | "artfish";
+export const METHODS: readonly Method[] = ["tracker", "artfish"];
+
+export const methodOf = (metric: MetricKey): Method =>
+  METRICS[metric].artfish ? "artfish" : "tracker";
+
+/** Each estimate both methods make as each method's key, built once so it is stable across calls. */
+const KEYS_BY_METRIC = Object.fromEntries(
+  METRIC_KEYS.flatMap((m) => {
+    const twin = twinOf(m);
+    if (!twin) return [];
+    return [
+      [m, METRICS[m].artfish ? { tracker: twin, artfish: m } : { tracker: m, artfish: twin }],
+    ];
+  }),
+) as Partial<Record<MetricKey, Record<Method, MetricKey>>>;
+
+/** An estimate both methods make as each method's key; null for any other metric. */
+export const methodKeys = (metric: MetricKey) => KEYS_BY_METRIC[metric] ?? null;
+
+/**
+ * The district-months to add up for a metric both methods estimate: only
+ * those both estimate (`shared`), so the two totals compare like with like.
+ * Where the two share none of them, each keeps its own: one alone, or both
+ * side by side with nothing to compare.
+ */
+export function comparable<C extends Partial<Record<MetricKey, number | null>>>(
+  cells: C[],
+  metric: MetricKey,
+): { cells: C[]; shared: boolean } {
+  const twin = twinOf(metric);
+  const both = twin ? cells.filter((c) => c[metric] != null && c[twin] != null) : [];
+  return both.length ? { cells: both, shared: true } : { cells, shared: false };
+}
+
+/**
+ * How many district-months both methods estimate, and how many only one does,
+ * which `comparable` then leaves out of both totals (none when nothing is shared).
+ */
+export function methodCoverage(
+  cells: Partial<Record<MetricKey, number | null>>[],
+  metric: MetricKey,
+) {
+  const twin = twinOf(metric);
+  const { cells: both, shared } = comparable(cells, metric);
+  if (!twin || !shared) return { shared: 0, unshared: 0 };
+  const unshared = cells.filter((c) => (c[metric] != null) !== (c[twin] != null)).length;
+  return { shared: both.length, unshared };
+}
+
+/**
+ * Why an estimate shows no change on a year earlier, if it doesn't: an FAO
+ * ARTFISH one never does; a GPS tracker one while under 10% of boats are
+ * tracked, when the change says more about which boats carried trackers than
+ * about the fishery.
+ * ponytail: ARTFISH never shows a change; give it its own confidence once coasts publishes its precision.
+ */
+export function changeHidden(
+  metric: MetricKey,
+  samplingRate: number | null | undefined,
+): "artfish" | "low" | null {
+  if (!METRICS[metric].estimated) return null;
+  if (METRICS[metric].artfish) return "artfish";
+  return confidenceBand(samplingRate) === "low" ? "low" : null;
+}
 
 /** Metrics the monthly summaries carry. */
 export const MONTHLY_METRIC_KEYS = METRIC_KEYS.filter((k) => !METRICS[k].districtsOnly) as [

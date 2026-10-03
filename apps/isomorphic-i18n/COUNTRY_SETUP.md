@@ -82,8 +82,10 @@ Strings to check: `metric-mean_rpue-unit`, `metric-mean_price_kg-unit` (currency
 Add the Data and methods page's country facts, keyed by the country code, to every language, each
 checked against the country pipeline rather than written from memory:
 `methods-fact-survey-<CODE>` (who runs the survey), `methods-fact-recorded-<CODE>` (what the form
-records), `methods-fact-weight-<CODE>` (weighed, or worked out from lengths or buckets) and
-`methods-update-<CODE>` (how often the pipeline runs; read its workflow cron).
+records), `methods-fact-weight-<CODE>` (weighed, or worked out from lengths or buckets),
+`methods-update-<CODE>` (how often the pipeline runs; read its workflow cron) and
+`methods-artfish-days-<CODE>` (which survey asks the FAO ARTFISH method's "days fished last week",
+`fao.surveys` in the pipeline config, and since when).
 Add `text-partner-<CODE>`, the line naming the organisation the dashboard is developed with in full:
 Data and methods lists it first among the facts, and the partner's logo in the top bar shows it on hover.
 

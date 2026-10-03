@@ -14,6 +14,7 @@
 export type AnalyticsEvent =
   | "filter_time_range_change"
   | "filter_metric_change"
+  | "filter_method_change"
   | "filter_district_change"
   | "map_basemap_change"
   | "map_effort_range_toggle"

@@ -1,3 +1,24 @@
+# peskas.dashboard 2.3.0
+
+## Two estimates of total catch and revenue, side by side
+
+- Estimated catch, revenue and fishing trips now show two figures wherever they appear: the GPS tracker method, as before, and FAO's ARTFISH method, which raises the landing survey with the boat census and the days fishers say they fished. Each method has its own name and colour in every figure, chart and table.
+- The two are compared like with like: their totals and trend lines add up only the districts and months both methods estimate, or each its own where they share none. The district charts draw every month each method estimates, and districts without tracked boats appear with their FAO ARTFISH figure.
+- The district map and the month-by-month pattern show one method at a time, in its own colours, with a switch between the two. In the district ranking each method has its own bars.
+- Estimates by both methods are rounded everywhere: figures, tables, charts and the map. FAO ARTFISH figures show no change on a year earlier, as their precision isn't shown yet.
+- Data and methods explains both methods side by side, each in its own colour with a diagram, says why their figures differ, and links FAO's OPEN ARTFISH toolkit.
+- Data and methods opens with a contents card, and each section is marked with its icon and a line on what it covers.
+
+## Changes
+
+- The GPS tracker totals can be lower than before: districts and months the FAO ARTFISH method doesn't estimate are left out, so the two totals compare.
+- The trend of an estimate shows its two methods instead of the same months a year earlier.
+- The estimates card on the home page reads left to right: the figures across, their confidence and rounding underneath.
+- A selected figure on the Catch and Revenue pages no longer covers the top bar when the page scrolls.
+- The district comparison on the home page also ranks and maps estimated revenue, and its measures scroll sideways on a phone instead of being cut off.
+- The fishing-effort map says that it counts only the time spent fishing, not the travel to and from the fishing grounds.
+- Chart explanations for estimates, fish sizes, gears and the district comparison are shorter and say what each chart shows. Data and methods no longer says the GPS tracker estimates leave out trips longer than 48 hours: those trips now count.
+
 # peskas.dashboard 2.2.0
 
 ## Clearer pages: the answer first, one district at a time

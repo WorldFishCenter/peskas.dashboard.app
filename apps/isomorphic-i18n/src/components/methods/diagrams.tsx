@@ -6,6 +6,8 @@ import { Legend } from "@/components/charts/legend";
 import { WarningIcon } from "@/components/charts/warning-icon";
 import { Change } from "@/components/dashboard/stat-tile";
 import { formatApprox } from "@/lib/dashboard/format";
+import type { Method } from "@repo/domain/metrics";
+import { METHOD_COLOR } from "@/lib/dashboard/metrics";
 import { MATURITY_FILL } from "@/lib/dashboard/species";
 
 /*
@@ -120,12 +122,41 @@ function Operator({ children }: { children: string }) {
   );
 }
 
-/** The fleet model of coasts' generate_fleet_analysis(), as two multiplications. */
-export function EstimateFormula() {
+/**
+ * Each method as two multiplications, its terms as [locale key, source]: the
+ * GPS tracker method of coasts' generate_fleet_analysis(), and the FAO ARTFISH
+ * method of its raise_catch_fao(), worked out per gear or boat type.
+ */
+const FORMULAS = {
+  tracker: {
+    prefix: "methods-formula",
+    terms: [
+      ["trips-per-boat", "trackers"],
+      ["boats", "boats"],
+      ["trips"],
+      ["per-trip", "surveys"],
+      ["totals"],
+    ],
+  },
+  artfish: {
+    prefix: "methods-artfish-formula",
+    terms: [
+      ["boats", "boats"],
+      ["days", "surveys"],
+      ["effort"],
+      ["per-trip", "surveys"],
+      ["totals"],
+    ],
+  },
+} as const satisfies Record<Method, { prefix: string; terms: readonly (readonly string[])[] }>;
+
+export function EstimateFormula({ method }: { method: Method }) {
   const { t } = useT();
-  const term = (key: string, source?: string, shown?: boolean) => (
+  const { prefix, terms } = FORMULAS[method];
+  const [a, b, product, rate, total] = terms;
+  const term = ([key, source]: readonly string[], shown?: boolean) => (
     <Node
-      name={t(`methods-formula-${key}`)}
+      name={t(`${prefix}-${key}`)}
       detail={source && t(`methods-flow-${source}`)}
       shown={shown}
     />
@@ -135,22 +166,22 @@ export function EstimateFormula() {
 
   return (
     <figure
-      aria-label={t("methods-formula-label")}
+      aria-label={t(`${prefix}-label`)}
       className="flex flex-col gap-3 print:break-inside-avoid"
     >
       <div className={row}>
-        {term("trips-per-boat", "trackers")}
+        {term(a)}
         <Operator>×</Operator>
-        {term("boats", "boats")}
+        {term(b)}
         <Operator>=</Operator>
-        {term("trips", undefined, true)}
+        {term(product, true)}
       </div>
       <div className={row}>
-        {term("trips")}
+        {term(product)}
         <Operator>×</Operator>
-        {term("per-trip", "surveys")}
+        {term(rate)}
         <Operator>=</Operator>
-        {term("totals", undefined, true)}
+        {term(total, true)}
       </div>
     </figure>
   );
@@ -338,16 +369,11 @@ export function SizeDiagram() {
   );
 }
 
-/** A short line with a grey line behind it, as in the trend chart and the district panels. */
-function Lines({ hollow }: { hollow?: boolean }) {
+/** A short line with a grey line (or another series) behind it, as in the trend chart and the district panels. */
+function Lines({ hollow, behind = "var(--context)" }: { hollow?: boolean; behind?: string }) {
   return (
     <svg viewBox="0 0 56 20" className="h-5 w-14" aria-hidden>
-      <polyline
-        points="2,14 18,11 34,13 54,8"
-        fill="none"
-        stroke="var(--context)"
-        strokeWidth={1.5}
-      />
+      <polyline points="2,14 18,11 34,13 54,8" fill="none" stroke={behind} strokeWidth={1.5} />
       <polyline
         points="2,10 18,6 34,9 54,4"
         fill="none"
@@ -379,6 +405,7 @@ export function ChartKey() {
     change: <Change pct={5} />,
     approx: <span className="font-semibold tabular-nums">≈{formatApprox(16000, lang)}</span>,
     grey: <Lines />,
+    methods: <Lines behind={METHOD_COLOR.artfish} />,
     range: (
       <span className="block w-14">
         <RangeBar least={0.45} most={0.6} />
