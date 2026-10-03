@@ -8,6 +8,7 @@ import {
   TableHeader,
   TableRow,
 } from "@workspace/ui/components/table";
+import { ScrollArea, ScrollBar } from "@workspace/ui/components/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@workspace/ui/components/tabs";
 import { ToggleGroup, ToggleGroupItem } from "@workspace/ui/components/toggle-group";
 import { cn } from "@workspace/ui/lib/utils";
@@ -21,7 +22,7 @@ import {
 } from "@repo/domain/metrics";
 import { ChartCard } from "@/components/charts/chart-card";
 import { ChartGate } from "@/components/charts/chart-state";
-import { BarCell } from "@/components/charts/inline-bars";
+import { Bar } from "@/components/charts/inline-bars";
 import { Legend } from "@/components/charts/legend";
 import { WarningIcon } from "@/components/charts/warning-icon";
 import { DistrictMetricsTable } from "@/components/dashboard/district-metrics-table";
@@ -86,28 +87,33 @@ export function DistrictComparison() {
           {view === "all" ? (
             <span />
           ) : (
-            <ToggleGroup
-              variant="outline"
-              size="sm"
-              spacing={0}
-              aria-label={t("text-metric")}
-              value={[metric]}
-              onValueChange={(value) => {
-                const next = value[0] as MetricKey | undefined;
-                if (!next || next === metric) return;
-                trackEvent("filter_metric_change", {
-                  metric: next,
-                  control_source: "district_widget",
-                });
-                setMetric(next);
-              }}
-            >
-              {pages.home.metric.options.map((key) => (
-                <ToggleGroupItem key={key} value={key} className={CHOSEN}>
-                  {metricTitle(t, key)}
-                </ToggleGroupItem>
-              ))}
-            </ToggleGroup>
+            // A phone can't fit every measure: the row scrolls sideways, as in shadcn's horizontal ScrollArea.
+            <ScrollArea className="max-w-full min-w-0 whitespace-nowrap">
+              <ToggleGroup
+                variant="outline"
+                size="sm"
+                spacing={0}
+                className="w-max pb-3 lg:pb-0"
+                aria-label={t("text-metric")}
+                value={[metric]}
+                onValueChange={(value) => {
+                  const next = value[0] as MetricKey | undefined;
+                  if (!next || next === metric) return;
+                  trackEvent("filter_metric_change", {
+                    metric: next,
+                    control_source: "district_widget",
+                  });
+                  setMetric(next);
+                }}
+              >
+                {pages.home.metric.options.map((key) => (
+                  <ToggleGroupItem key={key} value={key} className={CHOSEN}>
+                    {metricTitle(t, key)}
+                  </ToggleGroupItem>
+                ))}
+              </ToggleGroup>
+              <ScrollBar orientation="horizontal" />
+            </ScrollArea>
           )}
           <TabsList>
             <TabsTrigger value="ranking">{t("text-view-ranking")}</TabsTrigger>
@@ -198,7 +204,8 @@ function Ranking({
             <TableHead>{t("text-region")}</TableHead>
             {columns.map(({ key }) => (
               <Fragment key={key}>
-                <TableHead className={paired ? "w-[28%]" : "w-[40%]"}>
+                {/* The figure and its bar in two cells, so the table sizes the figures and every bar starts level. */}
+                <TableHead colSpan={2}>
                   {methodTitle(t, key)}
                   {unit && <span className="font-normal text-muted-foreground"> ({unit})</span>}
                 </TableHead>
@@ -232,14 +239,13 @@ function Ranking({
                 </TableCell>
                 {columns.map(({ key, method }) => (
                   <Fragment key={key}>
-                    <TableCell>
-                      <BarCell
-                        value={row[key]}
-                        max={max}
-                        label={formatValue(key, row[key], lang)}
-                        faded={thin}
-                        color={METHOD_COLOR[method]}
-                      />
+                    <TableCell className="pr-1 text-right tabular-nums">
+                      {row[key] == null ? "–" : formatValue(key, row[key], lang)}
+                    </TableCell>
+                    <TableCell className={paired ? "w-[22%]" : "w-[34%]"}>
+                      {row[key] != null && (
+                        <Bar value={row[key]} max={max} faded={thin} color={METHOD_COLOR[method]} />
+                      )}
                     </TableCell>
                     {changeAfter(key) && (
                       <TableCell className="text-right">

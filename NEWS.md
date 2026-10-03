@@ -15,6 +15,9 @@
 - The trend of an estimate shows its two methods instead of the same months a year earlier.
 - The estimates card on the home page reads left to right: the figures across, their confidence and rounding underneath.
 - A selected figure on the Catch and Revenue pages no longer covers the top bar when the page scrolls.
+- The district comparison on the home page also ranks and maps estimated revenue, and its measures scroll sideways on a phone instead of being cut off.
+- The fishing-effort map says that it counts only the time spent fishing, not the travel to and from the fishing grounds.
+- Chart explanations for estimates, fish sizes, gears and the district comparison are shorter and say what each chart shows. Data and methods no longer says the GPS tracker estimates leave out trips longer than 48 hours: those trips now count.
 
 # peskas.dashboard 2.2.0
 
