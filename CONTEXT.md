@@ -57,11 +57,11 @@ A total scaled up from the surveyed landings to all the boats of a district (est
 _Avoid_: total, modelled
 
 **GPS tracker method**:
-Registered boats × trips per GPS-tracked boat × catch per surveyed landing, per district and month: how often boats fish comes from the boats that carry a tracker. Short form: Tracker.
+Census boats × trips per GPS-tracked boat × catch per surveyed landing, per district and month: how often boats fish comes from the boats that carry a tracker. The catch per landing is averaged as ARTFISH does, each kind of boat and gear counting for its share of the census boats, so it is not the plain `mean_catch_kg` the dashboard shows. Short form: Tracker.
 _Avoid_: current method, Peskas method
 
 **FAO ARTFISH method**:
-FAO's standard way of raising a landing survey to the fleet, published beside the GPS tracker method: boats in the census × days fished, as fishers report them × catch per surveyed landing, by gear or boat type. It needs no trackers, so it also estimates districts and months without tracked boats. Its metrics end in `_fao`; the summaries don't carry its precision, so its figures never show a change on a year earlier. Short form: ARTFISH.
+FAO's standard way of raising a landing survey to the fleet, published beside the GPS tracker method: boats in the census × days fished, as fishers report them × catch per surveyed landing, by boat group and gear group (boat type alone in Mozambique). It needs no trackers, so it also estimates districts and months without tracked boats. Its metrics end in `_fao`; the summaries don't carry its precision, so its figures never show a change on a year earlier. Short form: ARTFISH.
 _Avoid_: FAO way, sample-survey method
 
 **Shared district-months**:
