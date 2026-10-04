@@ -214,6 +214,7 @@ export function SharksAndRays() {
               axisLine={false}
               width="auto"
               niceTicks="snap125"
+              domain={[0, "dataMax"]}
               tickFormatter={(v: number) => formatPercent(v, lang)}
             />
             <ChartTooltip

@@ -118,7 +118,9 @@ export function MetricTrend({ metric }: { metric: MetricKey }) {
               axisLine={false}
               width="auto"
               niceTicks="snap125"
-              domain={[0, "auto"]}
+              // "dataMax", not "auto": the keyword lets recharts stretch the domain to fill
+              // its tick count, which leaves the data in the lower half of the axis.
+              domain={[0, "dataMax"]}
               tickFormatter={(v: number) => formatTick(v, lang)}
             />
             <ChartTooltip
