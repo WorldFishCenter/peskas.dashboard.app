@@ -175,9 +175,10 @@ function Ranking({
   const scoped = useScopedHref();
   const unit = metricUnit(t, metric);
   const keys = methodKeys(metric);
-  const columns = keys
+  // A recorded figure has no method: its bar takes the single-series colour.
+  const columns: { key: MetricKey; method?: Method }[] = keys
     ? methods.map((method) => ({ key: keys[method], method }))
-    : [{ key: metric, method: "tracker" as const }];
+    : [{ key: metric }];
   const paired = columns.length === 2;
   const figuresOf = (row: DistrictRow) => columns.map((c) => row[c.key]);
   const ranked = rows
@@ -244,7 +245,12 @@ function Ranking({
                     </TableCell>
                     <TableCell className={paired ? "w-[22%]" : "w-[34%]"}>
                       {row[key] != null && (
-                        <Bar value={row[key]} max={max} faded={thin} color={METHOD_COLOR[method]} />
+                        <Bar
+                          value={row[key]}
+                          max={max}
+                          faded={thin}
+                          color={method && METHOD_COLOR[method]}
+                        />
                       )}
                     </TableCell>
                     {changeAfter(key) && (
@@ -267,7 +273,7 @@ function Ranking({
       </Table>
       {paired && (
         <Legend
-          items={columns.map(({ method }) => ({
+          items={methods.map((method) => ({
             label: t(`text-method-${method}`),
             color: METHOD_COLOR[method],
           }))}

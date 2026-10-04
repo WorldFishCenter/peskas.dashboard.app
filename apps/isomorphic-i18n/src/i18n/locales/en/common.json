@@ -515,7 +515,7 @@
   "methods-key-approx-name": "Rounded estimate",
   "methods-key-grey": "The grey line: the same months a year earlier in the trend chart of a recorded figure, the average of the selected districts in the district panels.",
   "methods-key-grey-name": "Grey line",
-  "methods-key-methods": "A cyan line and an orange one: the same estimate by the GPS tracker method (cyan) and the FAO ARTFISH method (orange).",
+  "methods-key-methods": "A wine-red line and a gold one: the same estimate by the GPS tracker method (wine-red) and the FAO ARTFISH method (gold).",
   "methods-key-methods-name": "Two methods",
   "methods-key-range": "A share known only between two bounds: at least the solid part, at most the end of the lighter part.",
   "methods-key-range-name": "Two-shade bar",

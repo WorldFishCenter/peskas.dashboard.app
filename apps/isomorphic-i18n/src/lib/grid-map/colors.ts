@@ -15,16 +15,24 @@ export const CHOROPLETH_COLORS: [number, number, number][] = [
 
 /** Each estimation method's ramp, for a map that shows one at a time. */
 export const METHOD_CHOROPLETH: Record<Method, [number, number, number][]> = {
-  tracker: CHOROPLETH_COLORS,
-  // The same ramp in the FAO ARTFISH method's hue (`--chart-2`), step for step as light.
+  // The same ramp in each method's hue (`--tracker`, `--artfish`), step for step as light.
+  tracker: [
+    [254, 236, 242],
+    [248, 210, 224],
+    [239, 175, 199],
+    [221, 133, 169],
+    [194, 97, 139],
+    [156, 75, 110],
+    [121, 55, 84],
+  ],
   artfish: [
-    [254, 238, 232],
-    [250, 213, 199],
-    [242, 179, 156],
-    [226, 139, 108],
-    [199, 103, 68],
-    [160, 80, 50],
-    [124, 59, 35],
+    [250, 240, 227],
+    [239, 219, 189],
+    [226, 190, 136],
+    [205, 155, 73],
+    [178, 122, 0],
+    [141, 96, 2],
+    [108, 73, 2],
   ],
 };
 

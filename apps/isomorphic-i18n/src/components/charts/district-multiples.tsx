@@ -159,7 +159,8 @@ export function DistrictMultiples({ metric }: { metric: MetricKey }) {
                 ? [
                     {
                       label: t("text-thin-month", { min: FEW_LANDINGS }),
-                      color: "var(--chart-1)",
+                      // Each method's hollow points wear its colour: the key takes neither.
+                      color: keys ? "var(--foreground)" : "var(--chart-1)",
                       shape: "hollow" as const,
                     },
                   ]

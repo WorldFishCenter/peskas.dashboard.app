@@ -25,7 +25,8 @@ const columnHelper = createColumnHelper<typeof features, DistrictRow>();
  * time range doesn't apply). Under two years of data most calendar months
  * have been seen once, so it shows a line saying so instead of the table.
  * An estimate both methods make shows one method at a time, in its own
- * colours: those with two years of data, picked with a toggle when both have.
+ * colours, picked with a toggle: the first with two years of data until one
+ * is picked, and a method with less says so in place of its table.
  */
 export function SeasonalityHeatmap({
   metric,
@@ -41,9 +42,9 @@ export function SeasonalityHeatmap({
   const keys = methodKeys(metric);
   const methods = query.data?.methods;
   const ready = (m: Method) => (methods?.[m].months ?? 0) >= MIN_MONTHS;
-  const [picked, setPicked] = useState<Method>("tracker");
-  // The picked method once it has two years of data; otherwise the one that has.
-  const method = ready(picked) ? picked : METHODS.find(ready) ?? picked;
+  const [picked, setPicked] = useState<Method | null>(null);
+  // The method picked with the toggle; until then the first with two years of data.
+  const method = picked ?? METHODS.find(ready) ?? "tracker";
   const data = methods ? methods[method] : query.data;
   const shown = keys ? keys[method] : metric;
   const months = data?.months ?? 0;
@@ -82,14 +83,14 @@ export function SeasonalityHeatmap({
                 value={getValue()}
                 {...range}
                 label={formatValue(shown, getValue(), lang)}
-                method={method}
+                method={keys ? method : undefined}
               />
             </span>
           ),
         }),
       ),
     ]);
-  }, [rows, lang, t, shown, method]);
+  }, [rows, lang, t, shown, method, keys]);
 
   const table = useTable({ features, data: rows, columns });
   const unit = metricUnit(t, metric);
@@ -97,7 +98,8 @@ export function SeasonalityHeatmap({
   // Under two years most calendar months have been seen once: that is a year, not a season.
   if (query.isPending) return null;
   // A failed request falls through to ChartGate's error, not to "needs 24 months".
-  if (query.data && months < MIN_MONTHS) {
+  // No method has two years yet: the line alone, with nothing to switch to.
+  if (query.data && (keys ? !METHODS.some(ready) : months < MIN_MONTHS)) {
     const most = Math.max(query.data.months, ...METHODS.map((m) => methods?.[m].months ?? 0));
     return (
       <p className="flex items-center gap-2 text-[13px] text-muted-foreground">
@@ -106,6 +108,8 @@ export function SeasonalityHeatmap({
       </p>
     );
   }
+  // The method picked has less than two years: its slot says so, the toggle leads back.
+  const tooShort = months < MIN_MONTHS;
 
   return (
     <ChartCard
@@ -120,7 +124,7 @@ export function SeasonalityHeatmap({
         .join(" · ")}
       action={
         keys &&
-        METHODS.every(ready) && (
+        METHODS.every((m) => (methods?.[m].months ?? 0) > 0) && (
           <MethodToggle value={method} onChange={setPicked} source="seasonality" />
         )
       }
@@ -128,7 +132,14 @@ export function SeasonalityHeatmap({
       download={rows}
       footer={t("text-seasonality-footer", { count: months })}
     >
-      <ChartGate query={query} isEmpty={!rows.length} className="h-40">
+      <ChartGate
+        query={query}
+        isEmpty={tooShort || !rows.length}
+        emptyDescription={
+          tooShort ? t("text-seasonality-needs", { count: months, min: MIN_MONTHS }) : undefined
+        }
+        className="h-40"
+      >
         <DataTable table={table} />
       </ChartGate>
     </ChartCard>

@@ -187,11 +187,11 @@ export function EstimateFormula({ method }: { method: Method }) {
   );
 }
 
-/** The confidence bands of the fleet model, on the share of a district's boats tracked. */
+/** The confidence bands of the fleet model, on the share of a district's boats tracked, in the GPS tracker method's ramp. */
 const CONFIDENCE = [
-  { band: "low", from: 0, to: 10, color: "var(--tint-1)" },
-  { band: "medium", from: 10, to: 30, color: "var(--tint-3)" },
-  { band: "high", from: 30, to: 100, color: "var(--tint-5)" },
+  { band: "low", from: 0, to: 10, color: "var(--tint-tracker-1)" },
+  { band: "medium", from: 10, to: 30, color: "var(--tint-tracker-3)" },
+  { band: "high", from: 30, to: 100, color: "var(--tint-tracker-5)" },
 ] as const;
 
 export function ConfidenceScale() {
@@ -370,25 +370,21 @@ export function SizeDiagram() {
 }
 
 /** A short line with a grey line (or another series) behind it, as in the trend chart and the district panels. */
-function Lines({ hollow, behind = "var(--context)" }: { hollow?: boolean; behind?: string }) {
+function Lines({
+  hollow,
+  front = "var(--chart-1)",
+  behind = "var(--context)",
+}: {
+  hollow?: boolean;
+  front?: string;
+  behind?: string;
+}) {
   return (
     <svg viewBox="0 0 56 20" className="h-5 w-14" aria-hidden>
       <polyline points="2,14 18,11 34,13 54,8" fill="none" stroke={behind} strokeWidth={1.5} />
-      <polyline
-        points="2,10 18,6 34,9 54,4"
-        fill="none"
-        stroke="var(--chart-1)"
-        strokeWidth={1.75}
-      />
+      <polyline points="2,10 18,6 34,9 54,4" fill="none" stroke={front} strokeWidth={1.75} />
       {hollow && (
-        <circle
-          cx={34}
-          cy={9}
-          r={3}
-          fill="var(--background)"
-          stroke="var(--chart-1)"
-          strokeWidth={1.5}
-        />
+        <circle cx={34} cy={9} r={3} fill="var(--background)" stroke={front} strokeWidth={1.5} />
       )}
     </svg>
   );
@@ -405,7 +401,7 @@ export function ChartKey() {
     change: <Change pct={5} />,
     approx: <span className="font-semibold tabular-nums">≈{formatApprox(16000, lang)}</span>,
     grey: <Lines />,
-    methods: <Lines behind={METHOD_COLOR.artfish} />,
+    methods: <Lines front={METHOD_COLOR.tracker} behind={METHOD_COLOR.artfish} />,
     range: (
       <span className="block w-14">
         <RangeBar least={0.45} most={0.6} />

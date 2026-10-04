@@ -15,7 +15,7 @@ export function HeatCell({
   label,
   title,
   dense,
-  method = "tracker",
+  method,
 }: {
   value: number | null;
   min: number;
@@ -24,6 +24,7 @@ export function HeatCell({
   title?: string;
   /** Smaller, for tables with many columns (24 months). */
   dense?: boolean;
+  /** The method of an estimate; a recorded figure has none. */
   method?: Method;
 }) {
   if (value === null) return <span className="text-muted-foreground">-</span>;
@@ -35,7 +36,7 @@ export function HeatCell({
         "inline-block rounded-md text-center tabular-nums",
         dense ? "min-w-8 px-1 py-0.5 text-xs print:min-w-0" : "min-w-12 px-2 py-1",
       )}
-      style={{ backgroundColor: `var(--${METHOD_TINT[method]}-${step})` }}
+      style={{ backgroundColor: `var(--${method ? METHOD_TINT[method] : "tint"}-${step})` }}
     >
       {label}
     </span>

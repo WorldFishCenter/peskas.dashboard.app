@@ -110,14 +110,17 @@ export const methodTitle = (t: Translate, metric: MetricKey) =>
     ? `${metricTitle(t, metric)} · ${t(`text-method-${methodOf(metric)}-short`)}`
     : metricTitle(t, metric);
 
-/** Each method's line colour, the same in every chart and tile. */
+/** Each method's line colour, the same in every chart and tile; neither is `--chart-1`, which recorded figures wear. */
 export const METHOD_COLOR: Record<Method, string> = {
-  tracker: "var(--chart-1)",
-  artfish: "var(--chart-2)",
+  tracker: "var(--tracker)",
+  artfish: "var(--artfish)",
 };
 
-/** Each method's heat-table ramp, the `--<tint>-1…5` tokens: the portal's own for the GPS tracker method. */
-export const METHOD_TINT: Record<Method, string> = { tracker: "tint", artfish: "tint-artfish" };
+/** Each method's heat-table ramp, the `--<tint>-1…5` tokens; a recorded figure takes the portal's own `--tint-*`. */
+export const METHOD_TINT: Record<Method, string> = {
+  tracker: "tint-tracker",
+  artfish: "tint-artfish",
+};
 
 /** An estimate both methods make, explained for both and for why they differ. */
 export const estimateInfo = (t: Translate, metric: MetricKey): ChartText => {

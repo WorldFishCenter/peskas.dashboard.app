@@ -1,3 +1,13 @@
+# peskas.dashboard 2.3.1
+
+## Each method has its own colour
+
+- Estimates by the GPS tracker method are now wine-red and those by the FAO ARTFISH method gold, in every figure, chart, table and map. Cyan is left to the figures recorded at the landings, so a colour means one thing on every page. The pair was chosen so that red-green colour-blind readers can tell the two methods apart, in the light and the dark theme.
+
+## Changes
+
+- The month-by-month pattern of an estimate, at the foot of the Catch and Revenue pages, always has the switch between the two methods. A method with under two years of data says so in place of its table.
+
 # peskas.dashboard 2.3.0
 
 ## Two estimates of total catch and revenue, side by side

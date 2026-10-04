@@ -18,6 +18,7 @@ import { trackEvent } from "@/lib/analytics";
 import { methodKeys, type Method } from "@repo/domain/metrics";
 import { formatValue, methodTitle } from "@/lib/dashboard/metrics";
 import {
+  CHOROPLETH_COLORS,
   forTheme,
   getColorForValue,
   interpolateChoroplethColor,
@@ -86,7 +87,8 @@ export function GridMap({
   const { t, lang } = useT();
   const isDark = useTheme().theme === "dark";
   const [picked] = usePageMetric(pages.home.metric);
-  const metric = methodKeys(picked)?.[method] ?? picked;
+  const keys = methodKeys(picked);
+  const metric = keys?.[method] ?? picked;
   const { months } = useScope();
   const [hovered, setHovered] = useState<string | null>(null);
 
@@ -115,7 +117,11 @@ export function GridMap({
   );
 
   const cellColors = useMemo(() => forTheme(COLOR_RANGE, isDark), [isDark]);
-  const choropleth = useMemo(() => forTheme(METHOD_CHOROPLETH[method], isDark), [isDark, method]);
+  // An estimate in its method's ramp, a recorded figure in the portal's own.
+  const choropleth = useMemo(
+    () => forTheme(keys ? METHOD_CHOROPLETH[method] : CHOROPLETH_COLORS, isDark),
+    [isDark, method, keys],
+  );
   const { latitude, zoom: initialZoom } = activeCountry.gridMapViewState;
   const [zoom, setZoom] = useState(initialZoom);
   const cellSize = cellSizeFor(zoom, latitude);

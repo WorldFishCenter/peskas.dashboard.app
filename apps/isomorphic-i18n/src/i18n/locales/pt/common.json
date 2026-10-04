@@ -515,7 +515,7 @@
   "methods-key-approx-name": "Estimativa arredondada",
   "methods-key-grey": "A linha cinzenta: os mesmos meses um ano antes no gráfico de tendência de um número registado, a média dos distritos selecionados nos painéis por distrito.",
   "methods-key-grey-name": "Linha cinzenta",
-  "methods-key-methods": "Uma linha ciano e uma laranja: a mesma estimativa pelo método dos localizadores GPS (ciano) e pelo método FAO ARTFISH (laranja).",
+  "methods-key-methods": "Uma linha cor de vinho e uma dourada: a mesma estimativa pelo método dos localizadores GPS (cor de vinho) e pelo método FAO ARTFISH (dourada).",
   "methods-key-methods-name": "Dois métodos",
   "methods-key-range": "Uma parte conhecida apenas entre dois limites: no mínimo a parte cheia, no máximo o fim da parte mais clara.",
   "methods-key-range-name": "Barra de dois tons",
