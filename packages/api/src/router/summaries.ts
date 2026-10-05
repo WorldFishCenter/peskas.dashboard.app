@@ -205,7 +205,11 @@ function inTotals(cells: Cells, months: string[], metric: MetricKey) {
 const sameBasis = (value: number | null, sharedNow: boolean, sharedBefore: boolean) =>
   sharedNow === sharedBefore ? value : null;
 
-/** One metric over the districts in one month (those in `keep`, or all), and the landings behind it. */
+/**
+ * One metric over the districts in one month (those in `keep`, or all), the
+ * landings behind it, and how many districts it combines: a total covers only
+ * those with a value.
+ */
 function acrossDistricts(
   byDistrict: Map<string, Cell> | undefined,
   metric: MetricKey,
@@ -220,6 +224,7 @@ function acrossDistricts(
       landings,
     ),
     landings: sum(landings),
+    districts: rows.filter((r) => r[metric] != null).length,
   };
 }
 
@@ -273,6 +278,8 @@ function overWindow(cells: Cells, months: string[], metric: MetricKey) {
     perMonth,
     /** Whether it added up only the district-months both methods estimate. */
     shared,
+    /** The district-months with a value behind it. */
+    covered: sum(perMonth.map((p) => p.districts)),
   };
 }
 
@@ -355,6 +362,8 @@ export const summariesRouter = createTRPCRouter({
     return {
       window: { start: window[0], end },
       previous: previous && { start: previous[0], end: previous.at(-1)! },
+      /** The district-months selected, which a figure's `covered` is out of. */
+      districtMonths: window.length * scopeDistricts(input.districts).length,
       /** Mean share of the fleet tracked behind the window's estimates. */
       samplingRate: combine(
         window.flatMap((m) => [...(cells.get(m)?.values() ?? [])].map((c) => c.sampling_rate)),
@@ -369,6 +378,7 @@ export const summariesRouter = createTRPCRouter({
             {
               value: now.value,
               previous: before && sameBasis(before.value, now.shared, before.shared),
+              covered: now.covered,
               series: now.perMonth.map(({ month, value }) => ({ month, value })),
             },
           ];
@@ -378,6 +388,7 @@ export const summariesRouter = createTRPCRouter({
         {
           value: number | null;
           previous: number | null;
+          covered: number;
           series: { month: string; value: number | null }[];
         }
       >,
@@ -388,9 +399,10 @@ export const summariesRouter = createTRPCRouter({
    * One metric per month: a value per district, the district-months
    * (`YYYY-MM|district`) resting on fewer than FEW_LANDINGS landings, and the
    * districts combined (weighted by landings) with the same month a year
-   * earlier. An estimate both methods make gets the same per method
-   * (`methods`), both combining only the shared district-months, the counts of
-   * district-months shared and left out, and no year earlier: it shows none.
+   * earlier, and how many districts each month combines. An estimate both
+   * methods make gets the same per method (`methods`), both combining only the
+   * shared district-months, the counts of district-months shared and left out,
+   * and no year earlier: it shows none.
    */
   monthly: publicProcedure.input(monthlyMetric).query(async ({ input }) => {
     const { districts, months, metric } = input;
@@ -423,7 +435,7 @@ export const summariesRouter = createTRPCRouter({
       metric,
     ).keep;
     const at = (key: MetricKey, month: string) =>
-      acrossDistricts(cells.get(month), key, inWindow(month) ? now : earlier).value;
+      acrossDistricts(cells.get(month), key, inWindow(month) ? now : earlier);
     const series = (key: MetricKey) => ({
       rows: window.map(
         (month): MonthRow => ({
@@ -435,11 +447,15 @@ export const summariesRouter = createTRPCRouter({
           ),
         }),
       ),
-      overall: window.map((month) => ({
-        month,
-        value: at(key, month),
-        previous: keys ? null : at(key, monthKey(addMonths(monthDate(month), -12))),
-      })),
+      overall: window.map((month) => {
+        const { value, districts } = at(key, month);
+        return {
+          month,
+          value,
+          districts,
+          previous: keys ? null : at(key, monthKey(addMonths(monthDate(month), -12))).value,
+        };
+      }),
     });
     const own = series(metric);
     return {

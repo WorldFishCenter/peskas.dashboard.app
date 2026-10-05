@@ -24,17 +24,19 @@ import { StatTile } from "@/components/dashboard/stat-tile";
 import { pages, type PageMetric } from "@/config/routes";
 import { useScopedHref, useT } from "@/i18n/use-lang";
 import { trackEvent } from "@/lib/analytics";
-import { formatPercent } from "@/lib/dashboard/format";
+import { formatPercent, shareRange } from "@/lib/dashboard/format";
 import { useDistrictScope, usePageMetric } from "@/store/filters";
 import { api } from "@/trpc/react";
 import {
   ESTIMATED,
   estimateInfo,
   formatValue,
+  isEstimatedTotal,
   METHOD_COLOR,
   metricInfo,
   metricTitle,
   metricUnit,
+  partialCoverage,
   RECORDED,
   yearChange,
   type Headline,
@@ -44,18 +46,16 @@ type Translate = ReturnType<typeof useT>["t"];
 
 /**
  * A tile's figure, change and sparkline for one metric; an estimate is
- * rounded, and its change `hidden` where `changeHidden` says why. An estimate
+ * rounded, and shows no change where `changeHidden` says so. An estimate
  * both methods make lists the methods with a figure, each with its own change.
  */
 function tileProps(t: Translate, lang: string, data: Headline, metric: MetricKey) {
   const m = data.metrics[metric];
   const change = (key: MetricKey) => {
     const { value, previous } = data.metrics[key];
-    const hidden = changeHidden(key, data.samplingRate);
     return {
-      pct: hidden ? null : yearChange(value, previous),
+      pct: changeHidden(key, data.samplingRate) ? null : yearChange(value, previous),
       previous: formatValue(key, previous, lang),
-      hidden,
     };
   };
   const keys = methodKeys(metric);
@@ -80,19 +80,26 @@ function tileProps(t: Translate, lang: string, data: Headline, metric: MetricKey
 }
 
 /**
- * The line under a tile that hides a change, naming whose: none when nothing
- * is hidden (a missing year earlier needs no note). Where only some methods
- * hide theirs, it is ARTFISH's: the tracker hides its own only when ARTFISH does too.
+ * Estimated totals that leave part of the selection out, flagged like the
+ * confidence of the estimates: the share of its districts and months they add
+ * up (a range where they differ), of its months alone for one district (`single`).
  */
-function changeNote(tile: ReturnType<typeof tileProps>) {
-  const changes = tile.methods?.map((r) => r.change) ?? (tile.change ? [tile.change] : []);
-  const hidden = changes.filter((c) => c.hidden);
-  if (!hidden.length) return null;
-  if (hidden.length < changes.length) return "text-estimates-artfish-no-change";
-  if (changes.length > 1) return "text-estimates-no-change";
-  return hidden[0].hidden === "artfish"
-    ? "text-estimates-artfish-no-change"
-    : "text-confidence-low-no-change";
+export function CoverageBadge({
+  coverage,
+  single,
+}: {
+  coverage: NonNullable<ReturnType<typeof partialCoverage>>;
+  single?: boolean;
+}) {
+  const { t, lang } = useT();
+  return (
+    <Badge variant="outline">
+      <WarningIcon />
+      {t(single ? "text-coverage-share-months" : "text-coverage-share", {
+        pct: shareRange(t, lang, coverage),
+      })}
+    </Badge>
+  );
 }
 
 /** Four tiles of recorded figures, each against the same months a year earlier. */
@@ -135,6 +142,10 @@ export function EstimatesCard({ data }: { data: Headline }) {
   })).filter(({ tile }) => tile.methods);
   const artfish = shown.some(({ tile }) => tile.methods?.some((r) => r.method === "artfish"));
   if (!shown.length) return null;
+  const coverage = partialCoverage(
+    data,
+    shown.map(({ metric }) => metric),
+  );
   const note = artfish
     ? t(low ? "text-estimates-rounded-both" : "text-estimates-artfish")
     : low && t("text-estimates-low");
@@ -158,8 +169,9 @@ export function EstimatesCard({ data }: { data: Headline }) {
           <StatTile key={metric} {...tile} spark={undefined} info={estimateInfo(t, metric)} />
         ))}
       </CardContent>
-      {(confidence || note) && (
+      {(confidence || note || coverage) && (
         <CardFooter className="flex-wrap gap-x-3 gap-y-1 text-[13px] text-muted-foreground">
+          {coverage && <CoverageBadge coverage={coverage} />}
           {confidence && (
             <>
               <Badge variant="outline">
@@ -199,7 +211,9 @@ export function HeadlineState({ isLoading, error }: { isLoading: boolean; error:
 /**
  * The page's measures as tiles over the district selection, each against a
  * year earlier; the tile picked is the measure the charts below show.
- * Estimates on low confidence are rounded and show no change, as on the overview.
+ * Estimates on low confidence are rounded and show no change, as on the
+ * overview. The tiles keep to their figures: what the estimated totals cover
+ * is said once, under the row or, when an estimate is charted, under its chart.
  */
 export function MetricPicker({ page }: { page: PageMetric }) {
   const { t, lang } = useT();
@@ -207,39 +221,41 @@ export function MetricPicker({ page }: { page: PageMetric }) {
   const { data, isLoading, error } = api.summaries.headline.useQuery(scope.input, scope.options);
   const [metric, setMetric] = usePageMetric(page);
   if (!data) return <HeadlineState isLoading={isLoading || !scope.options.enabled} error={error} />;
+  const tiles = page.options.map((key) => ({ key, tile: tileProps(t, lang, data, key) }));
+  const coverage = partialCoverage(data, page.options);
 
   return (
-    <ToggleGroup
-      variant="outline"
-      spacing={4}
-      aria-label={t("text-metric")}
-      value={[metric]}
-      onValueChange={(value) => {
-        const next = value[0] as MetricKey | undefined;
-        if (!next || next === metric) return;
-        trackEvent("filter_metric_change", { metric: next, control_source: "page" });
-        setMetric(next);
-      }}
-      className="grid w-full grid-cols-1 items-stretch sm:grid-cols-2 xl:grid-cols-4"
-    >
-      {page.options.map((key) => {
-        const tile = tileProps(t, lang, data, key);
-        const note = changeNote(tile);
-        return (
+    <div className="flex flex-col gap-2">
+      <ToggleGroup
+        variant="outline"
+        spacing={4}
+        aria-label={t("text-metric")}
+        value={[metric]}
+        onValueChange={(value) => {
+          const next = value[0] as MetricKey | undefined;
+          if (!next || next === metric) return;
+          trackEvent("filter_metric_change", { metric: next, control_source: "page" });
+          setMetric(next);
+        }}
+        className="grid w-full grid-cols-1 items-stretch sm:grid-cols-2 xl:grid-cols-4"
+      >
+        {tiles.map(({ key, tile }) => (
           <ToggleGroupItem
             key={key}
             value={key}
             // The charted measure is marked in the accent colour, so the tiles read as a choice.
             className="h-auto items-stretch p-4 font-normal whitespace-normal aria-pressed:border-primary aria-pressed:bg-primary/5 aria-pressed:ring-1 aria-pressed:ring-primary"
           >
-            <StatTile
-              {...tile}
-              note={note && <span className="text-muted-foreground">{t(note)}</span>}
-              spark={undefined}
-            />
+            <StatTile {...tile} spark={undefined} />
           </ToggleGroupItem>
-        );
-      })}
-    </ToggleGroup>
+        ))}
+      </ToggleGroup>
+      {/* Under the tiles while a recorded figure is charted: an estimate's own chart carries it below. */}
+      {coverage && !isEstimatedTotal(metric) && (
+        <div>
+          <CoverageBadge coverage={coverage} single={scope.input.districts.length === 1} />
+        </div>
+      )}
+    </div>
   );
 }

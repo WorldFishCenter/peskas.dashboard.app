@@ -239,7 +239,9 @@ test("both methods' totals add up only the districts and months both estimate", 
   await MonthlySummaryDistrictModel.insertMany(cells);
   const districts = ["Chake Chake", "Kaskazini A", "Magharibi A"];
 
-  const { metrics } = (await summaries.headline({ districts }))!;
+  const { metrics, districtMonths } = (await summaries.headline({ districts }))!;
+  // A total says what it covers: one of the 24 district-months selected (3 districts, 8 months).
+  expect([metrics.estimated_catch_tn.covered, districtMonths]).toEqual([1, 24]);
   const series = (m: keyof typeof metrics, ago: number) =>
     metrics[m].series.find((p) => p.month === key(ago))?.value;
   expect([series("estimated_catch_tn", 6), series("estimated_catch_tn_fao", 6)]).toEqual([4, 6]);
@@ -254,6 +256,8 @@ test("both methods' totals add up only the districts and months both estimate", 
   // One call carries both methods, and the district-months the lines leave out.
   const both = await summaries.monthly({ districts, metric: "estimated_catch_tn" });
   expect(both.overall.map((p) => p.value)).toEqual([null, 4]);
+  // Each month says how many of the selected districts its point adds up.
+  expect(both.overall.map((p) => p.districts)).toEqual([0, 1]);
   expect(both.methods?.artfish.overall.map((p) => p.value)).toEqual([null, 6]);
   // The metric's own line is the tracker method's.
   expect(both.methods?.tracker.overall).toEqual(both.overall);
@@ -318,8 +322,8 @@ test("monthly rows are keyed YYYY-MM; seasonality averages a calendar month acro
     thin: [], // Wete had 10 and 20 landings
     // The same month a year earlier comes from outside the window.
     overall: [
-      { month: key(1), value: 2, previous: null },
-      { month: key(0), value: 1, previous: 3 },
+      { month: key(1), value: 2, districts: 1, previous: null },
+      { month: key(0), value: 1, districts: 1, previous: 3 },
     ],
     methods: null,
     shared: 0,

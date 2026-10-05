@@ -70,6 +70,29 @@ export const ESTIMATED: MetricKey[] = [
   "estimated_fishing_trips",
 ];
 
+/** An estimate added up over districts: it covers only the districts that have one. */
+export const isEstimatedTotal = (metric: MetricKey) =>
+  !!METRICS[metric].estimated && METRICS[metric].overDistricts === "sum";
+
+/**
+ * The share of the selected districts and months that the estimated totals
+ * among `metrics` add up, as a range over them: such a total covers only the
+ * district-months with an estimate, so below 1 it is no total for the whole
+ * selection. Null where each covers it all, or none is such a total.
+ */
+export function partialCoverage(data: Headline, metrics: readonly MetricKey[]) {
+  const shares = metrics.filter(isEstimatedTotal).flatMap((metric) => {
+    // An estimate both methods make is the same district-months by either: the one with a figure.
+    const keys = methodKeys(metric);
+    const shown = (keys ? METHODS.map((m) => keys[m]) : [metric]).find(
+      (key) => data.metrics[key].value != null,
+    );
+    return shown ? [data.metrics[shown].covered / data.districtMonths] : [];
+  });
+  const [least, most] = [Math.min(...shares), Math.max(...shares)];
+  return shares.length && least < 1 ? { least, most } : null;
+}
+
 /** Whether a headline has anything to compare with a year earlier. */
 export const hasComparison = (data: Headline) =>
   data.previous != null && RECORDED.some((m) => data.metrics[m].previous != null);

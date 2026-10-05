@@ -113,9 +113,12 @@ export function StatTile({
           {unit && <span className="text-[15px] text-muted-foreground">{unit}</span>}
         </div>
       )}
-      <div className="min-h-5 text-[13px]">
-        {change?.pct != null ? <Change pct={change.pct} previous={change.previous} /> : note}
-      </div>
+      {/* A single figure keeps this line for its change, so the tiles of a row stay level; two methods fill theirs. */}
+      {(!methods || note) && (
+        <div className="min-h-5 text-[13px]">
+          {change?.pct != null ? <Change pct={change.pct} previous={change.previous} /> : note}
+        </div>
+      )}
       {spark && <Sparkline values={spark} />}
     </div>
   );

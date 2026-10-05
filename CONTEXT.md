@@ -68,6 +68,10 @@ _Avoid_: FAO way, sample-survey method
 The district-months both methods estimate. The totals and trend lines of an estimate add up only these, so the two methods compare like with like; where the two share none of the selection, each shows its own. A district's own figures follow the same rule over its months, and its panel draws every month each method estimates.
 _Avoid_: overlap, matched cells
 
+**Coverage**:
+What an estimated total adds up, out of the selection: the district-months with an estimate over the district-months selected (districts × months), and for one month the districts with an estimate that month. A total of estimates covers only those, so below 100% it is no total for the whole selection, let alone the country. Each view of such totals says so once: a warning badge with the share under the tiles, and on the trend the range of districts in its subtitle and the number under each month.
+_Avoid_: completeness, national total
+
 **Landing**:
 A boat's return to shore with its catch, as an enumerator records it. The count of landings behind a value (`n_submissions`) weights averages and flags thin data (fewer than 10).
 _Avoid_: submission (in screens), trip record
