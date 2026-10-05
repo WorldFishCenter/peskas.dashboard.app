@@ -3,8 +3,8 @@
 One codebase for the Peskas fisheries dashboards of Zanzibar, Kenya and Mozambique. Each dashboard gives fisheries managers and researchers a view of small-scale coastal fisheries (catch, revenue, fishing effort and fishing gear), broken down by district and updated regularly from field data.
 
 - [Peskas Zanzibar](https://zanzibar.peskas.org)
-- [Peskas Kenya](https://peskas-dashboard-kenya.vercel.app/en)
-- [Peskas Mozambique](https://peskas-dashboard-mozambique.vercel.app)
+- [Peskas Kenya](https://kenya.peskas.org)
+- [Peskas Mozambique](https://mozambique.peskas.org)
 
 ![Peskas Zanzibar dashboard](.github/images/screenshot.png)
 
