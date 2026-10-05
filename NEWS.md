@@ -1,3 +1,12 @@
+# peskas.dashboard 2.3.2
+
+## Estimated totals say what they cover
+
+- An estimated total adds up only the districts and months that have an estimate, which is often a small part of those selected. The dashboard now says so: a warning gives the share the estimates cover (for example "Estimates cover 16% of districts and months"), under the chart of an estimate or, while another figure is charted, under the figures at the top.
+- The trend of an estimate says in its subtitle how many districts a month counts on average ("About 5 of 20 districts a month, total") and shows the count under each month, in the tooltip and in the CSV. A note under the chart reads one of the numbers out and says why a district can be missing from a month: too few surveyed landings, or no tracked boats.
+- On the Catch and Revenue pages the figures at the top are the same size, and the line saying that estimates show no change on a year earlier is gone from there.
+- Data and methods explains this next to how the two methods are compared, and under the limits of each estimate.
+
 # peskas.dashboard 2.3.1
 
 ## Each method has its own colour
