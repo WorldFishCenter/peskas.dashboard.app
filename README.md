@@ -1,3 +1,8 @@
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset=".github/images/peskas-logo-dark.svg">
+  <img src=".github/images/peskas-logo.svg" alt="Peskas" height="48">
+</picture>
+
 # Peskas country dashboards
 
 One codebase for the Peskas fisheries dashboards of Zanzibar, Kenya and Mozambique. Each dashboard gives fisheries managers and researchers a view of small-scale coastal fisheries (catch, revenue, fishing effort and fishing gear), broken down by district and updated regularly from field data.

@@ -44,6 +44,11 @@
   --color-concern-3: var(--concern-3);
   --color-concern-4: var(--concern-4);
   --color-warning: var(--warning);
+  --color-peskas-1: var(--peskas-1);
+  --color-peskas-2: var(--peskas-2);
+  --color-peskas-3: var(--peskas-3);
+  --color-peskas-4: var(--peskas-4);
+  --color-peskas-eye: var(--peskas-eye);
   --color-chart-4: var(--chart-4);
   --color-chart-3: var(--chart-3);
   --color-chart-2: var(--chart-2);
@@ -134,6 +139,14 @@
   --concern-4: #833404;
   /* Thin data and caveats; always with an icon and words. */
   --warning: #b45309;
+  /* The Peskas logo (components/peskas-logo.tsx; brand kit in peskas-context/brand): its cells shade
+       from the tail (1) to the head (4), darkest at the head on a light page and lightest on a dark
+       one, and the wordmark takes the head's colour; the eye is coral. */
+  --peskas-1: #a9d1d4;
+  --peskas-2: #5aa8af;
+  --peskas-3: #006d77;
+  --peskas-4: #0b2233;
+  --peskas-eye: #d96c50;
   --radius: 0.625rem;
   --sidebar: oklch(0.985 0.001 106.423);
   --sidebar-foreground: oklch(0.147 0.004 49.25);
@@ -190,6 +203,11 @@
   --tint-artfish-4: #684602;
   --tint-artfish-5: #7a5301;
   --warning: #fbbf24;
+  --peskas-1: #3a6c77;
+  --peskas-2: #3f8a93;
+  --peskas-3: #8ccbd0;
+  --peskas-4: #ffffff;
+  --peskas-eye: #e69f8d;
   --sidebar: oklch(0.216 0.006 56.043);
   --sidebar-foreground: oklch(0.985 0.001 106.423);
   --sidebar-primary: oklch(0.715 0.143 215.221);

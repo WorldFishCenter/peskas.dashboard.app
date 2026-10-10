@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MenuIcon, SailboatIcon } from "lucide-react";
+import { MenuIcon } from "lucide-react";
 import { Link, useLocation } from "react-router";
 import { Button } from "@workspace/ui/components/button";
 import {
@@ -21,6 +21,7 @@ import { cn } from "@workspace/ui/lib/utils";
 import { useLocalizedHref, useScopedHref, useT } from "@/i18n/use-lang";
 import { activeCountry } from "@/config/countryConfig";
 import { allPages, pages } from "@/config/routes";
+import { PeskasLogo, PeskasMark } from "@/components/peskas-logo";
 
 const NAV_ITEMS = allPages.flatMap((p) => (p.nav ? [{ ...p.nav, href: p.path }] : []));
 
@@ -39,14 +40,14 @@ function useNavItems() {
 export function Brand() {
   const scoped = useScopedHref();
   return (
-    <Link to={scoped(pages.home.path)} className="flex shrink-0 items-center gap-2">
-      <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-        <SailboatIcon className="size-4" />
-      </div>
-      <div className="grid text-sm leading-tight">
-        <span className="font-semibold">PESKAS™</span>
-        <span className="text-xs text-muted-foreground">{activeCountry.countryName}</span>
-      </div>
+    <Link to={scoped(pages.home.path)} className="flex shrink-0 items-center gap-2.5">
+      {/* The full logo, or the mark alone in a phone's top bar; with the country it reads "Peskas Zanzibar".
+          Beside the full logo the name drops 0.15em, onto the wordmark's baseline. */}
+      <PeskasLogo className="hidden h-7 w-auto sm:block" />
+      <PeskasMark className="h-7 w-auto sm:hidden" />
+      <span className="text-base font-medium text-muted-foreground sm:translate-y-[0.15em]">
+        {activeCountry.countryName}
+      </span>
       {activeCountry.flagIconSrc && (
         <img src={activeCountry.flagIconSrc} alt="" width={24} height={16} className="rounded-sm" />
       )}
@@ -135,7 +136,7 @@ export function MobileNav() {
       </SheetTrigger>
       <SheetContent side="left" className="w-72">
         <SheetHeader>
-          <SheetTitle className="sr-only">PESKAS™</SheetTitle>
+          <SheetTitle className="sr-only">Peskas {activeCountry.countryName}</SheetTitle>
           <Brand />
         </SheetHeader>
         <nav className="flex flex-col gap-1 px-4">

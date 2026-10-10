@@ -55,6 +55,14 @@ function countryHead(country: CountryConfig, env: Record<string, string>): HtmlT
     og("site_name", country.siteTitle),
     og("locale", country.locale.replace("-", "_")),
     og("type", "website"),
+    og("url", `${country.siteUrl}/`),
+    // The country's card (public/og/<code>.png, 1200x630, from the brand kit in peskas-context);
+    // link previews need its absolute URL.
+    og("image", `${country.siteUrl}/og/${country.countryCode.toLowerCase()}.png`),
+    og("image:width", "1200"),
+    og("image:height", "630"),
+    og("image:alt", `Peskas ${country.countryName}`),
+    { tag: "meta", attrs: { name: "twitter:card", content: "summary_large_image" } },
   ];
 
   const measurementId = env.VITE_GA_MEASUREMENT_ID;

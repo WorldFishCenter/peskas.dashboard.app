@@ -28,6 +28,8 @@ export interface CountryConfig {
   siteTitle: string;
   /** Meta description */
   siteDescription: string;
+  /** The deployment's public address, for the absolute URLs link previews need (no trailing slash) */
+  siteUrl: string;
   /** Optional country flag asset path (e.g. for header/branding) */
   flagIconSrc?: string;
   /** The organisation the dashboard is developed with, beside the brand in the top bar; `text-partner-<CODE>` names it in full */
@@ -78,6 +80,7 @@ const zanzibarConfig: CountryConfig = {
   countryName: "Zanzibar",
   siteTitle: "PESKAS | Zanzibar Fisheries",
   siteDescription: "Peskas | Zanzibar Fisheries Dashboard",
+  siteUrl: "https://zanzibar.peskas.org",
   flagIconSrc: "/zanzibar-flag.svg",
   partner: { name: "ZAFIRI", logoSrc: "/zafiri-logo.png" },
   currencyCode: "TZS",
@@ -135,6 +138,7 @@ const kenyaConfig: CountryConfig = {
   countryName: "Kenya",
   siteTitle: "PESKAS | Kenya Fisheries",
   siteDescription: "Peskas | Kenya Fisheries Dashboard",
+  siteUrl: "https://kenya.peskas.org",
   flagIconSrc: "/kenya-flag.svg",
   partner: { name: "KEFS", logoSrc: "/kefs-logo.png", url: "https://kefs.go.ke/" },
   currencyCode: "KES",
@@ -209,6 +213,7 @@ const mozambiqueConfig: CountryConfig = {
   countryName: "Mozambique",
   siteTitle: "PESKAS | Mozambique Fisheries",
   siteDescription: "Peskas | Mozambique Fisheries Dashboard",
+  siteUrl: "https://mozambique.peskas.org",
   flagIconSrc: "/mozambique-flag.svg",
   // DINAPA replaced ADNAP and has no website or logo yet.
   partner: { name: "DINAPA" },

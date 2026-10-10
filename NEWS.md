@@ -1,3 +1,11 @@
+# peskas.dashboard 2.3.3
+
+## The Peskas logo
+
+- The top bar shows the official Peskas logo, a fish made of small hexagons that turn from light at the tail to dark at the head, with a coral eye, and the word "peskas", followed by the country: "peskas Zanzibar". It replaces the sailboat and "PESKAS™". It has its own colours in the light and the dark theme, and on a phone the fish stands alone.
+- The browser tab shows the same fish, in the browser's light or dark colours, and a phone that saves the dashboard to its home screen gets it as the app icon.
+- A link to the dashboard shared in a chat or on social media now shows a card with the logo and the country.
+
 # peskas.dashboard 2.3.2
 
 ## Estimated totals say what they cover
