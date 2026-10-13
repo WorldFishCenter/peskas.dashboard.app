@@ -129,7 +129,7 @@ loaded. Add new event names to the `AnalyticsEvent` union there so typos fail th
 | Event | Parameters | Fired when |
 |---|---|---|
 | `filter_time_range_change` | `time_range` (`"3"`, `"6"`, `"12"`, `"all"`) | Time range picked in the page header |
-| `filter_metric_change` | `metric`, `control_source` (`page` \| `district_widget`) | Metric picked: a tile on the catch or revenue page (`page`), or a measure in the overview's district card (`district_widget`) |
+| `filter_metric_change` | `metric`, `control_source` (`page` \| `district_widget` \| `district_species`) | Metric picked: a tile on the catch or revenue page (`page`), a measure in the overview's district card (`district_widget`), or recorded or ARTFISH catch in the species page's district table (`district_species`: `catch_kg` or `estimated_catch_tn_fao`) |
 | `filter_method_change` | `method` (`tracker` \| `artfish`), `control_source` (`district_map` \| `seasonality`) | Estimation method picked for the overview's district map or the seasonality table |
 | `filter_district_change` | `action`, `district`, `peskas_region`, `district_count` | District selection changed |
 | `map_basemap_change` | `basemap` (`satellite` \| `map`) | Basemap toggled on the grid map |
@@ -166,6 +166,7 @@ and blow through GA4 event quotas.
 
 `chart_info_open` and `chart_download` carry the card's `id` (also the CSV file name), e.g.
 `district-comparison`, `trend-mean_cpue`, `districts-mean_cpue`, `species-ranking`,
+`district-species`, `district-species-estimate` (its ARTFISH option),
 `length-frequency`, `caught-small`, `gear-profile`, `gear-species`, `vulnerability-bands`,
 `species-status`, `coverage`. Tiles' explanations fire `chart_info_open` with `headline-<metric>`
 or `vulnerable-<name>`.

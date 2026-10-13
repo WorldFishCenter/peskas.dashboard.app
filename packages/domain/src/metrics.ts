@@ -136,6 +136,8 @@ export const TAXA_METRICS = catalogue({
   catch_kg: TOTAL,
   mean_length: AVERAGE,
   price_kg: AVERAGE,
+  // Tonnes landed by every boat (coasts >= 4.23.0); no GPS tracker twin.
+  estimated_catch_tn_fao: { ...TOTAL, estimated: true, artfish: true },
 });
 
 export type TaxaMetricKey = keyof typeof TAXA_METRICS;

@@ -10,6 +10,7 @@ import {
 import { Skeleton } from "@workspace/ui/components/skeleton";
 import { cn } from "@workspace/ui/lib/utils";
 import { useT } from "@/i18n/use-lang";
+import { Linked } from "@/components/linked-text";
 
 /** Chart height for the analysis cards, as in the official shadcn chart examples. */
 export const CHART_HEIGHT = "h-[250px]";
@@ -44,7 +45,11 @@ export function ChartState({
         {/* A failed request says so: "no data" would tell the reader the fishery had none. */}
         <EmptyTitle>{isError ? t("text-load-error-title") : t("text-no-data")}</EmptyTitle>
         <EmptyDescription>
-          {isError ? t("text-load-error") : description ?? t("text-no-data-available-for-filters")}
+          {isError ? (
+            t("text-load-error")
+          ) : (
+            <Linked text={description ?? t("text-no-data-available-for-filters")} />
+          )}
         </EmptyDescription>
       </EmptyHeader>
     </Empty>

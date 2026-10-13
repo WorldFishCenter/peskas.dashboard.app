@@ -115,6 +115,9 @@
        the GPS tracker method (wine) and the FAO ARTFISH method (gold), checked with chart-1 in both themes. */
   --tracker: #882255;
   --artfish: #c68906;
+  /* A method's name in running text, in its hue at 4.5:1 or more on the card and muted surfaces. */
+  --tracker-text: #882255;
+  --artfish-text: #8b6004;
   /* One-hue ramp for magnitude in table cells; text stays --foreground on every step. */
   --tint-1: #e6f7fe;
   --tint-2: #c8e9f7;
@@ -187,6 +190,8 @@
   --context-muted: #44403c;
   --tracker: #a84171;
   --artfish: #c18503;
+  --tracker-text: #cf82a6;
+  --artfish-text: #c18503;
   --tint-1: #152a32;
   --tint-2: #103846;
   --tint-3: #0b4759;
@@ -225,8 +230,10 @@
   body {
     @apply bg-background text-foreground;
   }
+  /* A link to a section lands below the sticky top bar. Set on the page, not per section: a card
+     clips its overflow, and Chrome then ignores the card's own scroll margin. */
   html {
-    @apply font-sans;
+    @apply font-sans scroll-pt-16;
   }
   /* Tailwind 4 gives buttons the default cursor; shadcn's Tailwind 4 guide puts the pointer back
      this way. Base UI's list and menu items are divs with a role, so they are named too. */

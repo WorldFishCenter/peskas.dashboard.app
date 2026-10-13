@@ -283,6 +283,30 @@ function overWindow(cells: Cells, months: string[], metric: MetricKey) {
   };
 }
 
+/** A taxa metric per taxon, largest first: each district's months combined, then the districts. */
+function composition(input: Scope, metric: TaxaMetricKey) {
+  const { overMonths, overDistricts } = TAXA_METRICS[metric];
+  return TaxaSummaryDistrictModel.aggregate<CompositionRow>([
+    { $match: { ...match(input), metric, value: { $gt: 0 } } },
+    {
+      $group: {
+        _id: { taxon: "$catch_taxon", district: "$gaul_2_name" },
+        value: accumulate(overMonths),
+      },
+    },
+    {
+      $group: {
+        _id: "$_id.taxon",
+        total: accumulate(overDistricts),
+        groups: { $push: { group: "$_id.district", value: "$value" } },
+      },
+    },
+    { $match: { total: { $gt: 0 } } },
+    { $project: { _id: 0, taxon: "$_id", total: 1, groups: 1 } },
+    { $sort: { total: -1 } },
+  ]).exec();
+}
+
 const monthlyMetric = scope.extend({ metric: z.enum(MONTHLY_METRIC_KEYS) });
 
 const warned = new Set<string>();
@@ -628,28 +652,47 @@ export const summariesRouter = createTRPCRouter({
   /** One taxa metric per taxon, largest first: each district's months combined, then the districts. */
   composition: publicProcedure
     .input(scope.extend({ metric: z.enum(TAXA_METRIC_KEYS) }))
-    .query(({ input }) => {
-      const { overMonths, overDistricts } = TAXA_METRICS[input.metric];
-      return TaxaSummaryDistrictModel.aggregate<CompositionRow>([
-        { $match: { ...match(input), metric: input.metric, value: { $gt: 0 } } },
+    .query(({ input }) => composition(input, input.metric)),
+
+  /**
+   * Catch per taxon landed by every boat, estimated by the FAO ARTFISH method,
+   * largest first; the district-months it adds up (`covered`: those ARTFISH
+   * estimates, not only those both methods do); and the share of the recorded
+   * catch in them (`recordedCovered`), how far the recorded composition beside
+   * it rests on the same landings. Unavailable before coasts 4.23.0.
+   * ponytail: drop the gate once every country's portal has the species estimates.
+   */
+  speciesEstimates: publicProcedure.input(scope).query(async ({ input }) => {
+    const metric = "estimated_catch_tn_fao";
+    type Cell = { _id: { district: string; date: Date; metric: TaxaMetricKey }; value: number };
+    // Both figures per district-month in one pass.
+    const [rows, perCell] = await Promise.all([
+      composition(input, metric),
+      TaxaSummaryDistrictModel.aggregate<Cell>([
+        { $match: { ...match(input), metric: { $in: [metric, "catch_kg"] }, value: { $gt: 0 } } },
         {
           $group: {
-            _id: { taxon: "$catch_taxon", district: "$gaul_2_name" },
-            value: accumulate(overMonths),
+            _id: { district: "$gaul_2_name", date: "$date", metric: "$metric" },
+            value: { $sum: "$value" },
           },
         },
-        {
-          $group: {
-            _id: "$_id.taxon",
-            total: accumulate(overDistricts),
-            groups: { $push: { group: "$_id.district", value: "$value" } },
-          },
-        },
-        { $match: { total: { $gt: 0 } } },
-        { $project: { _id: 0, taxon: "$_id", total: 1, groups: 1 } },
-        { $sort: { total: -1 } },
-      ]).exec();
-    }),
+      ]).exec(),
+    ]);
+    const key = ({ _id }: Cell) => `${_id.district}|${_id.date.toISOString()}`;
+    const cells = perCell.filter((c) => c._id.metric === metric);
+    const recorded = perCell.filter((c) => c._id.metric === "catch_kg");
+    const estimated = new Set(cells.map(key));
+    const recordedKg = sum(recorded.map((c) => c.value));
+    return {
+      // Any estimate in the selection settles it; only without one is the whole collection asked.
+      available: rows.length > 0 || !!(await TaxaSummaryDistrictModel.exists({ metric })),
+      rows,
+      covered: cells.length,
+      recordedCovered: recordedKg
+        ? sum(recorded.filter((c) => estimated.has(key(c))).map((c) => c.value)) / recordedKg
+        : 0,
+    };
+  }),
 
   /** Recorded catch per taxon and gear over the scope; unavailable before coasts 4.15.0 wrote the table. */
   gearComposition: publicProcedure.input(scope).query(async ({ input }) => {
