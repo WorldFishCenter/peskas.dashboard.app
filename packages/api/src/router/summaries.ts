@@ -1,4 +1,3 @@
-import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import {
   combine,
@@ -29,7 +28,8 @@ import { LengthSummaryModel } from "@repo/nosql/schema/length-summary";
 import { MonthlySummaryDistrictModel } from "@repo/nosql/schema/monthly-summary-district";
 import { TaxaSummaryDistrictModel } from "@repo/nosql/schema/taxa-summary-district";
 import { TaxaTraitsModel } from "@repo/nosql/schema/taxa-traits";
-import { activeCountry } from "../lib/country";
+import { activeCountry, scopeDistricts } from "../lib/country";
+import { addMonths, monthWindow, thisMonth, windowStart } from "../lib/months";
 import { createTRPCRouter, publicProcedure } from "../trpc";
 
 /*
@@ -72,19 +72,6 @@ const scope = z.object({
 });
 type Scope = z.infer<typeof scope>;
 
-/** First day (UTC) of the month `by` months from `date`'s. Summaries are dated on the 1st, in UTC. */
-const addMonths = (date: Date, by: number) =>
-  new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + by, 1));
-
-/**
- * First day (UTC) of the current month, where every window ends (excluded):
- * its landings are still coming in, so it would read as a drop.
- */
-const thisMonth = () => addMonths(new Date(), 0);
-
-/** First day (UTC) of the window's earliest month: `months` complete months back. */
-const windowStart = (months: number) => addMonths(thisMonth(), -months);
-
 const monthKey = (date: Date) => date.toISOString().slice(0, 7);
 const monthDate = (key: string) => new Date(`${key}-01T00:00:00Z`);
 
@@ -95,24 +82,11 @@ function monthRange(start: string, end: string) {
   return keys;
 }
 
-/** Districts in scope, checked against the active country. */
-function scopeDistricts(districts?: string[]) {
-  const known = activeCountry().districts;
-  const unknown = districts?.filter((d) => !known.includes(d)) ?? [];
-  if (unknown.length) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: `Unknown districts: ${unknown.join(", ")}`,
-    });
-  }
-  return districts ?? known;
-}
-
 /** The Mongo filter for a scope. */
 function match({ districts, months }: Scope) {
   return {
     gaul_2_name: { $in: scopeDistricts(districts) },
-    date: { ...(months ? { $gte: windowStart(months) } : {}), $lt: thisMonth() },
+    date: monthWindow(months ? windowStart(months) : null),
   };
 }
 
@@ -308,7 +282,7 @@ export const summariesRouter = createTRPCRouter({
     const cells = await districtCells(
       {
         ...match({ districts }),
-        ...(start ? { date: { $gte: addMonths(start, -12), $lt: thisMonth() } } : {}),
+        ...(start ? { date: monthWindow(addMonths(start, -12)) } : {}),
       },
       [...METRIC_KEYS, "sampling_rate"],
     );
@@ -412,7 +386,7 @@ export const summariesRouter = createTRPCRouter({
     const from = start && !keys ? addMonths(start, -12) : start;
     const filter = {
       ...match({ districts }),
-      ...(from ? { date: { $gte: from, $lt: thisMonth() } } : {}),
+      ...(from ? { date: monthWindow(from) } : {}),
     };
     const [docs, landingDocs] = await Promise.all([
       MonthlySummaryDistrictModel.find({ ...filter, metric: { $in: withTwin(metric) } }).lean(),

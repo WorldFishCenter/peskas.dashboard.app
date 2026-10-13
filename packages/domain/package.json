@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./askfish": "./src/askfish.ts",
     "./country": "./src/country.ts",
     "./metrics": "./src/metrics.ts",
     "./sizes": "./src/sizes.ts"

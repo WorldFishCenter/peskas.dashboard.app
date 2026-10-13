@@ -1,3 +1,4 @@
+import { TRPCError } from "@trpc/server";
 import { resolveCountry } from "@repo/domain/country";
 
 /**
@@ -6,3 +7,16 @@ import { resolveCountry } from "@repo/domain/country";
  * module load.
  */
 export const activeCountry = () => resolveCountry(process.env.VITE_COUNTRY_CODE);
+
+/** Districts in scope, checked against the active country; all of them when left out. */
+export function scopeDistricts(districts?: string[]) {
+  const known = activeCountry().districts;
+  const unknown = districts?.filter((d) => !known.includes(d)) ?? [];
+  if (unknown.length) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: `Unknown districts: ${unknown.join(", ")}`,
+    });
+  }
+  return districts ?? known;
+}

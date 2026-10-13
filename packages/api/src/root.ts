@@ -1,8 +1,14 @@
-import { fishingEffortRouter, gaul2BoundariesRouter, summariesRouter } from "./router";
+import {
+  askfishRouter,
+  fishingEffortRouter,
+  gaul2BoundariesRouter,
+  summariesRouter,
+} from "./router";
 import { createTRPCRouter } from "./trpc";
 
 export const appRouter = createTRPCRouter({
   summaries: summariesRouter,
+  askfish: askfishRouter,
   fishingEffort: fishingEffortRouter,
   gaul2Boundaries: gaul2BoundariesRouter,
 });

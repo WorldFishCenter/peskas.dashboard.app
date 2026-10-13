@@ -6,6 +6,8 @@
       "dependsOn": ["^build"],
       "outputs": ["dist/**", ".output/**", ".vercel/output/**"],
       "env": [
+        "ASKFISH_SERVICE_TOKEN",
+        "ASKFISH_URL",
         "MONGODB_URI",
         "MONGODB_URI_COASTS",
         "VERCEL",
@@ -27,6 +29,8 @@
   },
   "ui": "stream",
   "globalEnv": [
+    "ASKFISH_SERVICE_TOKEN",
+    "ASKFISH_URL",
     "MONGODB_URI",
     "MONGODB_URI_COASTS",
     "VERCEL",

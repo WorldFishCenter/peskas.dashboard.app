@@ -10,6 +10,8 @@ import { resolveCountry, type CountryConfig } from "@repo/domain/country";
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd());
   const country = resolveCountry(env.VITE_COUNTRY_CODE);
+  // AskFish's address stays on the server; the browser only learns whether there is one.
+  const { ASKFISH_URL } = loadEnv(mode, process.cwd(), "ASKFISH_");
 
   return {
     plugins: [
@@ -23,6 +25,7 @@ export default defineConfig(({ mode }) => {
       },
     ],
     nitro: { serverDir: "./server" },
+    define: { __ASKFISH__: JSON.stringify(Boolean(ASKFISH_URL)) },
     resolve: {
       alias: {
         "@": path.resolve(import.meta.dirname, "./src"),

@@ -5,6 +5,9 @@ interface ImportMetaEnv {
   readonly VITE_MAPBOX_TOKEN?: string;
 }
 
+/** Whether this deployment has AskFish: the server's `ASKFISH_URL` is set (`vite.config.ts`). */
+declare const __ASKFISH__: boolean;
+
 interface ImportMeta {
   readonly env: ImportMetaEnv;
 }

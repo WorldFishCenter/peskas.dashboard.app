@@ -9,6 +9,7 @@ import {
   ShieldAlertIcon,
   type LucideIcon,
 } from "lucide-react";
+import type { AskFishPage } from "@repo/domain/askfish";
 import type { MetricKey } from "@repo/domain/metrics";
 import { useAppRoute } from "@/i18n/use-lang";
 
@@ -28,6 +29,8 @@ export type Page = {
   districts?: true;
   /** The metrics the page's charts can show. Each page keeps its own choice. */
   metric?: PageMetric;
+  /** The page offers AskFish (`components/askfish`), under the name AskFish knows it by. */
+  askfish?: AskFishPage;
   load: () => Promise<{ default: ComponentType }>;
 };
 
@@ -67,6 +70,7 @@ export const pages = {
       default: "mean_cpue",
       options: ["mean_cpue", "mean_catch_kg", "estimated_catch_tn", "estimated_fishing_trips"],
     },
+    askfish: "catch_trends",
     load: () => import("@/pages/catch"),
   },
   revenue: {
@@ -80,6 +84,7 @@ export const pages = {
       default: "mean_rpue",
       options: ["mean_rpue", "mean_catch_price", "mean_price_kg", "estimated_revenue"],
     },
+    askfish: "revenue",
     load: () => import("@/pages/revenue"),
   },
   catchComposition: {
@@ -89,6 +94,7 @@ export const pages = {
     nav: { labelKey: "nav-catch-composition", icon: ChartPieIcon },
     timeRange: true,
     districts: true,
+    askfish: "catch_composition",
     load: () => import("@/pages/catch-composition"),
   },
   gear: {

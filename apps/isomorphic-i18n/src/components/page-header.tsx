@@ -1,5 +1,6 @@
 import { Link } from "react-router";
 import { FEW_LANDINGS } from "@repo/domain/metrics";
+import { AskFish } from "@/components/askfish/panel";
 import { DistrictFilter } from "@/components/filters/district-filter";
 import { TimeRangeToggle } from "@/components/filters/time-range-toggle";
 import { WarningIcon } from "@/components/charts/warning-icon";
@@ -30,6 +31,8 @@ export function PageHeader() {
           <div className="flex flex-wrap items-center gap-2 print:hidden">
             {page.districts && <DistrictFilter />}
             <TimeRangeToggle />
+            {/* Each page keeps its own conversation. */}
+            {__ASKFISH__ && <AskFish key={page.path} page={page} />}
           </div>
         )}
       </div>

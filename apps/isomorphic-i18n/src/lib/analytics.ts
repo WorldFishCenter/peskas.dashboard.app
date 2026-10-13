@@ -20,7 +20,9 @@ export type AnalyticsEvent =
   | "map_effort_range_toggle"
   | "map_effort_layer_toggle"
   | "chart_info_open"
-  | "chart_download";
+  | "chart_download"
+  | "askfish_open"
+  | "askfish_ask";
 
 type AnalyticsParams = Record<string, string | number | boolean>;
 
