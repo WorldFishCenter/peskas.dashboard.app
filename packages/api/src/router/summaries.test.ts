@@ -477,3 +477,66 @@ test("before coasts 4.15.0 the species views say so instead of drawing old price
     await LengthSummaryModel.insertMany(lengths);
   }
 });
+
+test("species estimates add up ARTFISH's tonnes per taxon and count the district-months behind them", async () => {
+  const estimate = (
+    gaul_2_name: string,
+    value: number,
+    ago: number,
+    catch_taxon: string | null,
+  ) => ({
+    gaul_2_name,
+    catch_taxon,
+    metric: "estimated_catch_tn_fao",
+    value,
+    date: month(ago),
+  });
+  expect(await summaries.speciesEstimates({ districts: ["Wete"] })).toEqual({
+    available: false,
+    rows: [],
+    covered: 0,
+    recordedCovered: 0,
+  });
+  // Written as coasts writes them, past the schema: a catch without a taxon has none.
+  await TaxaSummaryDistrictModel.collection.insertMany([
+    estimate("Wete", 3, 0, "Octopus cyanea"),
+    estimate("Wete", 1, 0, null), // catch with no species recorded
+    estimate("Wete", 2, 1, "Octopus cyanea"),
+    estimate("Mkoani", 4, 0, "Carcharhinidae"),
+    estimate("Wete", 50, 5, "Octopus cyanea"), // outside a 3-month window
+    estimate("Wete", 99, -1, "Octopus cyanea"), // this month, still coming in
+  ]);
+  // Recorded catch in a month ARTFISH doesn't estimate.
+  await TaxaSummaryDistrictModel.collection.insertOne({
+    gaul_2_name: "Mkoani",
+    catch_taxon: "Octopus cyanea",
+    metric: "catch_kg",
+    value: 15,
+    date: month(2),
+  });
+  try {
+    const { available, rows, covered, recordedCovered } = await summaries.speciesEstimates({
+      districts: ["Wete", "Mkoani"],
+      months: 3,
+    });
+    expect(available).toBe(true);
+    expect(rows.map((r) => [r.taxon, r.total])).toEqual([
+      ["Octopus cyanea", 5],
+      ["Carcharhinidae", 4],
+      [null, 1],
+    ]);
+    expect(covered).toBe(3); // Wete in two months, Mkoani in one
+    // Of the 60 kg recorded, the 15 of Mkoani two months ago fall outside them.
+    expect(recordedCovered).toBeCloseTo(45 / 60);
+    // The recorded composition is untouched by the estimates beside it.
+    const [octopus] = await summaries.composition({
+      districts: ["Wete", "Mkoani"],
+      metric: "catch_kg",
+      months: 3,
+    });
+    expect(octopus).toMatchObject({ taxon: "Octopus cyanea", total: 50 });
+  } finally {
+    await TaxaSummaryDistrictModel.deleteMany({ metric: "estimated_catch_tn_fao" });
+    await TaxaSummaryDistrictModel.deleteMany({ gaul_2_name: "Mkoani", date: month(2) });
+  }
+});

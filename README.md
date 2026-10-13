@@ -24,7 +24,7 @@ Each country has its own dashboard, built from this same code. The dashboards ar
 - Compare districts on a map, in a ranked chart and in a table.
 - See where tracked boats spend their fishing time on a 1 km grid map of fishing effort.
 - Compare fishing gears: how often each is used, what it catches and earns per hour, and how much of its catch is below the size at which fish first reproduce.
-- Explore the species landed: their share of the catch, their price, the size of the fish against the size at maturity, and the catch's mean trophic level.
+- Explore the species landed: their share of the catch, how many tonnes of each all boats land (FAO ARTFISH estimate), their price, the size of the fish against the size at maturity, and the catch's mean trophic level.
 - Check vulnerable species: catch by vulnerability to fishing, sharks and rays, and IUCN and CITES status.
 - Read how every figure is made, and its limits, on the Data and methods page, and download any chart's data.
 

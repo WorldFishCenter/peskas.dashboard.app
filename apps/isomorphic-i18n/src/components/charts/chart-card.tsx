@@ -72,10 +72,11 @@ export function InfoPopover({
 }
 
 /**
- * Card shell shared by the charts: title and description, the explanation
- * popover, a CSV download of the chart's rows, and a `footer` for what only
- * this chart rests on (the page header already says what they all do). `id`
- * names the CSV file and the chart in analytics events.
+ * Card shell shared by the charts: title and description (a text goes through
+ * `Linked`, as the explanation does), the explanation popover, a CSV download
+ * of the chart's rows, and a `footer` for what only this chart rests on (the
+ * page header already says what they all do). `id` names the CSV file and the
+ * chart in analytics events.
  */
 export function ChartCard({
   id,
@@ -104,7 +105,11 @@ export function ChartCard({
     <Card size="sm" className={cn("print:break-inside-avoid", className)}>
       <CardHeader>
         <CardTitle>{title}</CardTitle>
-        {description && <CardDescription>{description}</CardDescription>}
+        {description && (
+          <CardDescription>
+            {typeof description === "string" ? <Linked text={description} /> : description}
+          </CardDescription>
+        )}
         {(action || info || canDownload) && (
           <CardAction className="flex items-center gap-1">
             {action}

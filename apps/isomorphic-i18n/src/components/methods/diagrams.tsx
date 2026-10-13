@@ -1,4 +1,5 @@
 import { ArrowDownIcon, ArrowRightIcon } from "lucide-react";
+import { Linked } from "@/components/linked-text";
 import { cn } from "@workspace/ui/lib/utils";
 import { useT } from "@/i18n/use-lang";
 import { RangeBar } from "@/components/charts/inline-bars";
@@ -38,7 +39,11 @@ function Node({
       )}
     >
       <span className="font-medium">{name}</span>
-      {detail && <span className="text-[13px] leading-snug text-muted-foreground">{detail}</span>}
+      {detail && (
+        <span className="text-[13px] leading-snug text-muted-foreground">
+          <Linked text={detail} />
+        </span>
+      )}
     </div>
   );
 }
@@ -416,7 +421,9 @@ export function ChartKey() {
             {mark}
             <span className="sr-only">{t(`methods-key-${key}-name`)}</span>
           </dt>
-          <dd className="text-sm text-muted-foreground">{t(`methods-key-${key}`)}</dd>
+          <dd className="text-sm text-muted-foreground">
+            <Linked text={t(`methods-key-${key}`)} />
+          </dd>
         </div>
       ))}
     </dl>

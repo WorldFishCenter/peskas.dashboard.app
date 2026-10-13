@@ -1,3 +1,22 @@
+# peskas.dashboard 2.4.0
+
+## How much of each species all boats land
+
+- On Species and sizes, the chart of the species that make up the catch now shows two bars for each species group: its share of the recorded catch, and, in the ARTFISH gold, its share of the catch all the boats land, as the FAO ARTFISH method estimates it, with the tonnes. Where the two differ shows at a glance. The groups shown are the 15 largest by either measure.
+- The two can rank a species differently: the estimate counts each district and kind of boat and gear by its boats, not by how much catch was recorded there. The chart's explanation says so in a few lines; Data and methods has the rest under the FAO ARTFISH method, with why the estimate's total can be higher than the ARTFISH catch on the Catch page, which adds up only the districts and months both methods estimate. Under the chart, a warning says what share of the districts and months the estimate covers, and how much of the recorded catch those hold.
+- The table of species by district can switch from the recorded catch to the same estimate, in tonnes and in gold. It says how many districts have no estimate in the months selected, and that a dash means none for that species there.
+- Data and methods describes it under the FAO ARTFISH method.
+- Until the next data update publishes these estimates, the chart shows the recorded catch alone and the table has no switch. If the estimates can't be loaded, both say so and show the recorded catch.
+
+## The two methods by their colours, wherever they are named
+
+- In explanations and notes, the GPS tracker method is named in wine-red and the FAO ARTFISH method in gold, as in the charts, each a link to how it works on Data and methods. The gold and the wine are shaded a little where needed, so the words are as easy to read as the text around them.
+- The warning that estimates cover only part of the districts and months is a link to where Data and methods explains it.
+
+## Changes
+
+- A link to a section of Data and methods now lands with its title in view; before, the top bar covered it.
+
 # peskas.dashboard 2.3.3
 
 ## The Peskas logo
