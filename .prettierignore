@@ -4,3 +4,5 @@ packages/ui/src/components
 *.md
 pnpm-lock.yaml
 .output
+# synced from peskas-context/brand (brand/sync.py); the kit owns their format
+apps/isomorphic-i18n/src/components/peskas-logo.*
