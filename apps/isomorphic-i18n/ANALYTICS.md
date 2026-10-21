@@ -198,6 +198,11 @@ views (client-side navigations included), clicks and, if turned on in the PostHo
 session replays. `trackEvent()` sends every custom event above to PostHog as well, with the
 same name and parameters, so no PostHog admin setup is needed for them.
 
+Crashes the app catches itself go to PostHog's error tracking through `trackError()` (same
+file): the route's error page (`RouteError`, `src/router.tsx`) and a chart that fails to draw
+(`RenderGuard`, `components/charts/chart-state.tsx`). React keeps those from `window.onerror`,
+so PostHog's exception autocapture (a project setting, off for now) would miss them.
+
 Session replay masks every form input by default. The dashboard has no sign-in and asks
 for no personal data, so nothing else is masked. Like the GA tag, PostHog loads without a
 consent banner and sets its own cookie.

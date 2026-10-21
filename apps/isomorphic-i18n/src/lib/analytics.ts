@@ -37,3 +37,10 @@ export function trackEvent(event: AnalyticsEvent, params?: AnalyticsParams) {
     void import("posthog-js").then(({ default: posthog }) => posthog.capture(event, params));
   }
 }
+
+/** Sends a crash an error boundary caught to PostHog's error tracking; such errors never reach `window.onerror`. */
+export function trackError(error: unknown) {
+  if (import.meta.env.VITE_POSTHOG_KEY) {
+    void import("posthog-js").then(({ default: posthog }) => posthog.captureException(error));
+  }
+}
