@@ -1,6 +1,13 @@
 import { type ComponentType, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { createBrowserRouter, Navigate, Outlet, useLocation, useParams } from "react-router";
+import {
+  createBrowserRouter,
+  Navigate,
+  Outlet,
+  useLocation,
+  useParams,
+  useRouteError,
+} from "react-router";
 import { TriangleAlertIcon } from "lucide-react";
 import { Button } from "@workspace/ui/components/button";
 import {
@@ -16,6 +23,7 @@ import { SiteHeader } from "@/components/site-header";
 import { languages, preferredLang, rememberLang } from "@/i18n/settings";
 import { useT } from "@/i18n/use-lang";
 import { allPages } from "@/config/routes";
+import { trackError } from "@/lib/analytics";
 
 /** Load a page on first visit, so each route ships its own chunk. */
 const page = (load: () => Promise<{ default: ComponentType }>) => async () => ({
@@ -62,6 +70,8 @@ function DashboardLayout() {
 /** Shown instead of a page that crashed outside a chart, with a way back rather than a stack trace. */
 function RouteError() {
   const { t } = useT();
+  const error = useRouteError();
+  useEffect(() => trackError(error), [error]);
   return (
     <main className="flex min-h-svh items-center justify-center p-4">
       <Empty>
