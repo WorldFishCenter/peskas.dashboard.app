@@ -33,4 +33,7 @@ declare global {
 export function trackEvent(event: AnalyticsEvent, params?: AnalyticsParams) {
   if (typeof window === "undefined") return;
   window.gtag?.("event", event, params);
+  if (import.meta.env.VITE_POSTHOG_KEY) {
+    void import("posthog-js").then(({ default: posthog }) => posthog.capture(event, params));
+  }
 }

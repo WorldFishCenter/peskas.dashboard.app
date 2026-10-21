@@ -1,3 +1,9 @@
+# peskas.dashboard 2.4.1
+
+## Changes
+
+- A deployment can also send its visits, clicks and the dashboard's own events to PostHog (EU cloud), beside Google Analytics, with session replays if they are turned on in PostHog. It is on only where `VITE_POSTHOG_KEY` is set, first on Zanzibar as a trial, and the other deployments don't download it. ANALYTICS.md has the details.
+
 # peskas.dashboard 2.4.0
 
 ## How much of each species all boats land

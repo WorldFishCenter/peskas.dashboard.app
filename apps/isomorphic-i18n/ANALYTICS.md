@@ -189,6 +189,21 @@ ID and read the queue in the browser console — `trackEvent` pushes through gta
 
 ---
 
+## PostHog (trial, Zanzibar)
+
+PostHog runs beside GA4 on the deployments where `VITE_POSTHOG_KEY` is set (Production
+only, like the GA variables; read at build time, so a change needs a redeploy). It is
+initialised in `src/main.tsx` against the EU cloud (`eu.i.posthog.com`) and records page
+views (client-side navigations included), clicks and, if turned on in the PostHog project,
+session replays. `trackEvent()` sends every custom event above to PostHog as well, with the
+same name and parameters, so no PostHog admin setup is needed for them.
+
+Session replay masks every form input by default. The dashboard has no sign-in and asks
+for no personal data, so nothing else is masked. Like the GA tag, PostHog loads without a
+consent banner and sets its own cookie.
+
+---
+
 ## Not implemented
 
 - **Cookie consent / Consent Mode v2.** The tag currently loads unconditionally. Users are
