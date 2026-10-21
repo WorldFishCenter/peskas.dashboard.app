@@ -80,9 +80,10 @@ deployments do not pollute the reports.
 |---|---|---|---|
 | `VITE_GA_MEASUREMENT_ID` | that country's stream | that country's stream | that country's stream |
 | `VITE_GA_ROLLUP_ID` | same on all three, or unset | same | same |
+| `VITE_POSTHOG_KEY` | same on all three ([PostHog](#posthog)) | same | same |
 
-Both are read at build time, so **changing either value requires a
-redeploy**, not just an env update. Both are declared in the root `turbo.json` `env` list;
+All are read at build time, so **changing any value requires a
+redeploy**, not just an env update. All are declared in the root `turbo.json` `env` list;
 omitting them there would let Turborepo reuse one country's cached build for another.
 
 ---
@@ -189,10 +190,13 @@ ID and read the queue in the browser console — `trackEvent` pushes through gta
 
 ---
 
-## PostHog (trial, Zanzibar)
+## PostHog
 
 PostHog runs beside GA4 on the deployments where `VITE_POSTHOG_KEY` is set (Production
-only, like the GA variables; read at build time, so a change needs a redeploy). It is
+only, like the GA variables; read at build time, so a change needs a redeploy). A deployment
+without it never downloads `posthog-js`. All three countries share one PostHog project, with
+the same key on each Vercel project; tell them apart by the built-in Host or Current URL
+property (`zanzibar.peskas.org`, `kenya.peskas.org`, `mozambique.peskas.org`). It is
 initialised in `src/main.tsx` against the EU cloud (`eu.i.posthog.com`) and records page
 views (client-side navigations included), clicks and, if turned on in the PostHog project,
 session replays. `trackEvent()` sends every custom event above to PostHog as well, with the
