@@ -8,7 +8,7 @@ import {
   semanticCategoryKey,
 } from "./category-resolution";
 import { handleAskFish } from "./handler";
-import { semanticCatalog } from "./semantic-catalog";
+import { semanticCatalog, semanticCatalogForCountry } from "./semantic-catalog";
 
 /** The month `ago` complete months back, dated as coasts dates it; month(-1) is this month. */
 function month(ago: number) {
@@ -34,6 +34,7 @@ beforeAll(async () => {
   process.env.MONGODB_URI = mongod.getUri("portal-prod");
   process.env.VITE_COUNTRY_CODE = "TZ";
   process.env.ASKFISH_SERVICE_TOKEN = "secret";
+  delete process.env.ASKFISH_SHARED_TOKEN;
   const db = await getDb();
 
   const row = (value: number, ago: number, pushed: string) => ({
@@ -71,6 +72,20 @@ test("every route needs the service token", async () => {
   delete process.env.ASKFISH_SERVICE_TOKEN;
   expect((await call("catalog")).status).toBe(503);
   process.env.ASKFISH_SERVICE_TOKEN = "secret";
+});
+
+// ASKFISH SHARED TOKEN: The same bearer key authorizes reverse data reads;
+// a stale legacy credential cannot silently override it.
+test("shared token authorizes catalog reads and overrides the legacy service token", async () => {
+  process.env.ASKFISH_SHARED_TOKEN = "shared-server-only-secret";
+  try {
+    expect((await call("catalog", undefined, "secret")).status).toBe(401);
+    const catalog = await call("catalog", undefined, "shared-server-only-secret");
+    expect(catalog.status).toBe(200);
+    expect((await catalog.json()).deployment.countryCode).toBe("TZ");
+  } finally {
+    delete process.env.ASKFISH_SHARED_TOKEN;
+  }
 });
 
 test("a month window is the dashboard's, and a repeated row counts once", async () => {
@@ -128,6 +143,34 @@ test("all time ends at the last complete month", async () => {
     months: null,
   });
   expect((await trends.json()).series.map((p: { value: number }) => p.value)).toEqual([5, 2]);
+});
+
+// ASKFISH PAGE-SCOPE FIX: Selected CPUE is a chart-selection hint, not the
+// complete permission list for the Catch page. District/time restrictions stay hard.
+test("restricted Catch accepts estimated catch when CPUE is selected, but rejects revenue", async () => {
+  const filters = { districts: ["Wete"], metric: "mean_cpue", months: 3 };
+  const permitted = await call("query", {
+    contractVersion: "1.0",
+    countryCode: "TZ",
+    dataset: "monthly_district_summary",
+    measure: "estimated_catch_tn",
+    scope: { mode: "restricted", pageId: "catch", dashboardFilters: filters },
+  });
+  expect(permitted.status).toBe(200);
+  const accepted = await permitted.json();
+  expect(accepted.measure).toBe("estimated_catch_tn");
+  expect(accepted.scope.effectiveFilters.district).toEqual(["Wete"]);
+  expect(accepted.scope.effectiveTimeRange).toEqual({ lastMonths: 3 });
+
+  const forbidden = await call("query", {
+    contractVersion: "1.0",
+    countryCode: "TZ",
+    dataset: "monthly_district_summary",
+    measure: "estimated_revenue",
+    scope: { mode: "restricted", pageId: "catch", dashboardFilters: filters },
+  });
+  expect(forbidden.status).toBe(400);
+  expect((await forbidden.json()).error).toMatch(/outside the approved 'catch' page metric family/);
 });
 
 test("a query outside the page's scope is refused with its reason", async () => {
@@ -189,7 +232,7 @@ test("a gear or taxon label resolves to one observed value, or to none", () => {
 });
 
 test("Kenya's BMU sources stay at their own grain, bound to Kenya's app database", () => {
-  expect(semanticCatalog.catalogVersion).toBe("0.5.0");
+  expect(semanticCatalog.catalogVersion).toBe("0.6.0");
   for (const id of ["kenya_bmu_monthly", "kenya_bmu_gear_monthly"]) {
     const dataset = semanticCatalog.datasets[id]!;
     expect(dataset.pageScopes).toEqual([]);
@@ -210,4 +253,29 @@ test("Kenya's BMU sources stay at their own grain, bound to Kenya's app database
   const bmus = ["Example BMU", "Other BMU"];
   expect(resolveExactSemanticCategoryValue("example-bmu", bmus).resolved).toBe("Example BMU");
   expect(resolveExactSemanticCategoryValue("Example", bmus).resolved).toBeNull();
+});
+
+// ASKFISH GEO CAPABILITIES: All three country catalogs expose the same shared
+// semantic district dataset with a country-bound analytical substitution policy.
+// Kenya's native BMU capability stays independent of the district fallback.
+test("country-scoped alternatives never invent BMU joins or cross-country sources", () => {
+  for (const country of ["KE", "TZ", "MZ"]) {
+    const view = semanticCatalogForCountry(country);
+    expect(view.deployment.countryCode).toBe(country);
+    const alternative = view.geographicAlternatives.find(
+      (rule) => rule.requestedLevel === "bmu" && rule.replacementLevel === "district",
+    );
+    expect(alternative).toBeDefined();
+    expect(alternative?.targetDataset).toBe("monthly_district_summary");
+    expect(alternative?.supportedMeasures).toEqual(
+      expect.arrayContaining(["estimated_catch_tn", "estimated_revenue"]),
+    );
+    expect(Object.keys(view.datasets)).toContain("monthly_district_summary");
+    expect(view.datasets.monthly_district_summary.binding).toEqual(
+      semanticCatalog.datasets.monthly_district_summary.bindings[country],
+    );
+    expect(alternative?.reason).toMatch(/NOT|not/i);
+  }
+  expect(Object.keys(semanticCatalogForCountry("TZ").datasets)).not.toContain("kenya_bmu_monthly");
+  expect(Object.keys(semanticCatalogForCountry("KE").datasets)).toContain("kenya_bmu_monthly");
 });

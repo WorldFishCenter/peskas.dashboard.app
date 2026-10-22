@@ -108,8 +108,10 @@ export async function handleAskFish(req: Request): Promise<Response> {
   if (req.method !== route.method) return json({ error: "Method not allowed." }, 405);
 
   // Without a token configured nothing is served, rather than everything.
-  const token = process.env.ASKFISH_SERVICE_TOKEN;
-  if (!token) return json({ error: "ASKFISH_SERVICE_TOKEN is not configured." }, 503);
+  // ASKFISH SHARED TOKEN: Accept the same server-only credential that the
+  // Peskas tRPC router sends to AskFish. Keep the legacy setting as fallback.
+  const token = process.env.ASKFISH_SHARED_TOKEN || process.env.ASKFISH_SERVICE_TOKEN;
+  if (!token) return json({ error: "AskFish service token is not configured." }, 503);
   if (!tokenMatches(req, token)) return json({ error: "Unauthorized." }, 401);
 
   try {

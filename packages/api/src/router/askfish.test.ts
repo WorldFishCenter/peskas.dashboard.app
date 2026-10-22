@@ -76,6 +76,10 @@ beforeEach(() => {
   process.env.VITE_COUNTRY_CODE = "TZ";
   process.env.ASKFISH_URL = "http://askfish.test/";
   process.env.ASKFISH_SERVICE_TOKEN = "secret";
+  // ASKFISH MULTI-COUNTRY: Prevent a developer's real per-country Token B
+  // from changing test expectations or appearing in intercepted requests.
+  delete process.env.ASKFISH_BACKEND_TOKEN;
+  delete process.env.ASKFISH_SHARED_TOKEN;
   fetchMock.mockReset();
   vi.stubGlobal("fetch", fetchMock);
 });
@@ -142,7 +146,9 @@ test("another country's district or a metric AskFish lacks never reaches AskFish
   await expect(askfish.ask({ ...scope, districts: ["Mombasa"], question })).rejects.toMatchObject({
     code: "BAD_REQUEST",
   });
-  await expect(askfish.ask({ ...scope, metric: "mean_catch_kg", question })).rejects.toMatchObject({
+  // ASKFISH INTEGRATION: mean_catch_kg is a valid new Catch metric, so
+  // ensure an unrelated district-only measure still fails before network IO.
+  await expect(askfish.ask({ ...scope, metric: "n_fishers", question })).rejects.toMatchObject({
     code: "BAD_REQUEST",
   });
   expect(fetchMock).not.toHaveBeenCalled();
@@ -227,4 +233,67 @@ test("a suggestion runs AskFish's kept plan, and a failure is not hidden", async
   fetchMock.mockResolvedValue(Response.json({ detail: "Unknown suggestion." }, { status: 422 }));
   await expect(askfish.ask(picked)).rejects.toThrow();
   expect(fetchMock).toHaveBeenCalledTimes(1);
+});
+
+
+// ASKFISH INTEGRATION: The new Peskas page metric pickers must remain
+// compatible with AskFish's strict context contract and the legacy Catch mode.
+test.each([
+  ["catch_trends", "mean_catch_kg", "dashboard.semantic_context.v1"],
+  ["catch_trends", "estimated_fishing_trips", "dashboard.semantic_context.v1"],
+  ["revenue", "mean_catch_price", "dashboard.semantic_context.v1"],
+  ["revenue", "mean_price_kg", "dashboard.semantic_context.v1"],
+] as const)("new %s metric %s uses %s", async (page, metric, operation) => {
+  fetchMock.mockResolvedValueOnce(reply(REPLY));
+  await askfish.ask({ ...scope, page, metric, question: "How did this metric change?" });
+  expect(calls()[0]!.body.context.payload.filters.metric).toBe(metric);
+  expect(calls()[0]!.body.context.payload.requestedOperation).toBe(operation);
+});
+
+// ASKFISH INTEGRATION: The browser never gets this secret; it is only attached
+// by the Peskas server to the server-to-server AskFish request.
+test("outbound AskFish token is sent only from the Peskas server", async () => {
+  process.env.ASKFISH_BACKEND_TOKEN = "private-test-token";
+  try {
+    fetchMock.mockResolvedValueOnce(reply(REPLY));
+    await askfish.ask({ ...scope, question: "How did catch change?" });
+    expect(calls()[0]!.headers.authorization).toBe("Bearer private-test-token");
+  } finally {
+    delete process.env.ASKFISH_BACKEND_TOKEN;
+  }
+});
+
+// ASKFISH SHARED TOKEN: All dashboards use one server-only credential.
+// The Peskas server still stamps the correct country into the request.
+test.each([
+  ["KE", "Kenya", "Kilifi North"],
+  ["TZ", "Zanzibar", "Wete"],
+  ["MZ", "Mozambique", "Moma"],
+] as const)("server-derived %s context uses common bearer token", async (code, name, district) => {
+  process.env.VITE_COUNTRY_CODE = code;
+  process.env.ASKFISH_SHARED_TOKEN = "same-shared-secret-for-every-deployment";
+  try {
+    fetchMock.mockResolvedValueOnce(reply(REPLY));
+    await askfish.ask({ ...scope, districts: [district], question: "How has catch changed?" });
+    const [call] = calls();
+    expect(call!.body.context.payload.country).toEqual({ code, name });
+    expect(call!.headers.authorization).toBe("Bearer same-shared-secret-for-every-deployment");
+    expect(call!.path).toBe("ask");
+  } finally {
+    delete process.env.ASKFISH_SHARED_TOKEN;
+  }
+});
+
+// New common token overrides an obsolete legacy outbound credential.
+test("shared token takes precedence over ASKFISH_BACKEND_TOKEN", async () => {
+  process.env.ASKFISH_SHARED_TOKEN = "shared-secret-for-both-directions";
+  process.env.ASKFISH_BACKEND_TOKEN = "obsolete-legacy-token";
+  try {
+    fetchMock.mockResolvedValueOnce(reply(REPLY));
+    await askfish.ask({ ...scope, question: "How did catch change?" });
+    expect(calls()[0]!.headers.authorization).toBe("Bearer shared-secret-for-both-directions");
+  } finally {
+    delete process.env.ASKFISH_SHARED_TOKEN;
+    delete process.env.ASKFISH_BACKEND_TOKEN;
+  }
 });

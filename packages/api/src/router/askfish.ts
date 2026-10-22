@@ -62,7 +62,13 @@ function request({ page, metric, districts, months, lang, restrict }: Scope) {
         // AskFish's planner reads this label, in English.
         timeRangeLabel: months ? `Last ${months} months` : "All time",
       },
-      requestedOperation: ASKFISH_PAGES[page].operation,
+      // ASKFISH INTEGRATION: The legacy Catch Trends endpoint only accepts
+      // mean_cpue/estimated_catch_tn. Other Catch metrics are valid semantic
+      // queries, but must not falsely advertise the legacy operation.
+      requestedOperation:
+        page === "catch_trends" && !["mean_cpue", "estimated_catch_tn"].includes(metric)
+          ? "dashboard.semantic_context.v1"
+          : ASKFISH_PAGES[page].operation,
     },
   };
   return { context, restrictToCurrentPageAndFilters: restrict };
@@ -70,12 +76,20 @@ function request({ page, metric, districts, months, lang, restrict }: Scope) {
 
 /** Call AskFish's Peskas API (`/api/integration/peskas/<path>`) and return the `data` of its reply. */
 async function askFish(path: string, body: object): Promise<unknown> {
-  // ponytail: AskFish doesn't yet check who calls it, so no secret is sent; add the header once it does.
+  // ASKFISH SHARED TOKEN: Prefer the single common token when configured.
+  // The dashboard server, never the browser, adds the credential.
   const base = process.env.ASKFISH_URL;
   if (!base) throw new Error("ASKFISH_URL is not defined");
   const response = await fetch(`${base.replace(/\/$/, "")}/api/integration/peskas/${path}`, {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    // ASKFISH INTEGRATION: Optional shared bearer token protects the public
+    // AskFish backend from unauthenticated direct calls in production.
+    headers: {
+      "content-type": "application/json",
+      ...(process.env.ASKFISH_SHARED_TOKEN || process.env.ASKFISH_BACKEND_TOKEN
+        ? { authorization: `Bearer ${process.env.ASKFISH_SHARED_TOKEN || process.env.ASKFISH_BACKEND_TOKEN}` }
+        : {}),
+    },
     body: JSON.stringify(body),
     // Planning a question is one AI call; a minute means AskFish isn't answering.
     signal: AbortSignal.timeout(60_000),

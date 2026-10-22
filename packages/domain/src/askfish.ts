@@ -10,11 +10,16 @@ import type { MetricKey, TaxaMetricKey } from "./metrics";
 export const ASKFISH_PAGES = {
   catch_trends: {
     operation: "catch_trends.monthly_time_series.v1",
-    metrics: ["mean_cpue", "estimated_catch_tn"],
+    // ASKFISH INTEGRATION: Match every metric offered by the new Catch page. The
+    // legacy catch-trends operation still handles only its original two measures;
+    // additional measures use the governed semantic-context operation.
+    metrics: ["mean_cpue", "mean_catch_kg", "estimated_catch_tn", "estimated_fishing_trips"],
   },
   revenue: {
     operation: "dashboard.semantic_context.v1",
-    metrics: ["mean_rpue", "estimated_revenue"],
+    // ASKFISH INTEGRATION: Keep Revenue's selected metric and AskFish's strict
+    // context model in sync with the dashboard's four supported page metrics.
+    metrics: ["mean_rpue", "mean_catch_price", "mean_price_kg", "estimated_revenue"],
   },
   // No metric picker on the page: its one measure, catch by species.
   catch_composition: {

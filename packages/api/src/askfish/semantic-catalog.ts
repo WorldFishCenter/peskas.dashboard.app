@@ -128,6 +128,16 @@ const scopeModeSchema = z.object({
   description: z.string().min(1),
 });
 
+// ASKFISH GEO CAPABILITIES: An explicit, country-scoped *analytical* substitute.
+// This never creates a BMU-to-district row mapping or authorizes additional metrics.
+const geographicAlternativeSchema = z.object({
+  requestedLevel: z.string().min(1),
+  replacementLevel: z.string().min(1),
+  targetDataset: z.string().min(1),
+  supportedMeasures: z.array(z.string().min(1)).min(1),
+  reason: z.string().min(1),
+});
+
 // STAGE 2 STEP 2.2: Validate the complete catalog once at module load. A malformed
 // catalog fails closed before it can be served to AskFish.
 const semanticCatalogSchema = z.object({
@@ -153,6 +163,7 @@ const semanticCatalogSchema = z.object({
   pageScopes: z.record(pageScopeSchema),
   datasets: z.record(datasetSchema),
   discoveredSources: z.array(discoveredSourceSchema),
+  geographicAlternatives: z.record(z.array(geographicAlternativeSchema)),
 });
 
 // STAGE 2 STEP 2.2: Parse and freeze the catalog contract before exposing helper
@@ -177,6 +188,21 @@ function validateCatalogReferences() {
     for (const pageId of dataset.pageScopes) {
       if (!pageIds.has(pageId)) {
         throw new Error(`Semantic catalog dataset ${datasetId} references unknown page ${pageId}.`);
+      }
+    }
+  }
+
+  // ASKFISH GEO CAPABILITIES: All alternatives must point to real, authorized
+  // country bindings and real measures; no invented data source may be exposed.
+  for (const [countryCode, alternatives] of Object.entries(semanticCatalog.geographicAlternatives)) {
+    if (!semanticCatalog.countries[countryCode]) throw new Error(`Unknown alternative country ${countryCode}`);
+    for (const alternative of alternatives) {
+      const dataset = semanticCatalog.datasets[alternative.targetDataset];
+      if (!dataset?.bindings[countryCode] || !dataset.dimensions[alternative.replacementLevel]) {
+        throw new Error(`Unbound geographic alternative ${countryCode}/${alternative.targetDataset}`);
+      }
+      if (alternative.supportedMeasures.some((measure) => !dataset.measures[measure])) {
+        throw new Error(`Unknown measure in geographic alternative ${countryCode}/${alternative.targetDataset}`);
       }
     }
   }
@@ -217,6 +243,7 @@ export function semanticCatalogForCountry(countryCode: string) {
     scopeModes: semanticCatalog.scopeModes,
     pageScopes: semanticCatalog.pageScopes,
     datasets,
+    geographicAlternatives: semanticCatalog.geographicAlternatives[countryCode] ?? [],
     discoveredSources: semanticCatalog.discoveredSources.filter(
       (source) => source.countryCode === countryCode,
     ),

@@ -2,6 +2,7 @@
 // the semantic catalog. The caller selects semantic dataset/measure/filter names only;
 // physical MongoDB fields and collections are resolved exclusively from the catalog.
 import { z } from "zod";
+import { ASKFISH_PAGES } from "@repo/domain/askfish";
 
 import getDb from "@repo/nosql";
 import { activeCountry } from "../lib/country";
@@ -184,34 +185,34 @@ function serializeValue(value: unknown): string | number | boolean | null {
   return String(value);
 }
 
-// STAGE 2 STEP 2.6.1: Keep restricted measure semantics explicit for every page
-// that now embeds AskFish. Catch/Revenue honor their single active metric selector;
-// Catch Composition has no single metric selector, so all catalogued taxa measures
-// remain within the page domain while dataset/grain/rollup rules still apply later.
+// ASKFISH PAGE-SCOPE FIX: "This page" restricts datasets and dashboard geography/time,
+// not the currently highlighted metric. The active metric is conversational context;
+// users can explicitly request any other validated measure belonging to this page.
+// Source permissions and metric availability still require catalog validation.
 function restrictedMeasureAllowed(
   pageId: string,
   datasetId: string,
   requestedMeasure: string,
-  dashboardMetric?: string,
 ) {
   if (pageId === "catch") {
-    if (datasetId === "monthly_district_summary") return requestedMeasure === dashboardMetric;
+    if (datasetId === "monthly_district_summary") {
+      return (ASKFISH_PAGES.catch_trends.metrics as readonly string[]).includes(requestedMeasure);
+    }
     if (datasetId === "gear_summary_district") return requestedMeasure === "cpue";
   }
   if (pageId === "revenue") {
-    if (datasetId === "monthly_district_summary") return requestedMeasure === dashboardMetric;
+    if (datasetId === "monthly_district_summary") {
+      return (ASKFISH_PAGES.revenue.metrics as readonly string[]).includes(requestedMeasure);
+    }
     if (datasetId === "gear_summary_district") return requestedMeasure === "rpue";
   }
 
-  // STAGE 2 STEP 2.6.1: Catch Composition is a multi-measure page backed by the
-  // taxa summary dataset. The generic catalog validation immediately above already
-  // rejects any measure that is not actually defined for this dataset.
+  // Catch Composition is intentionally multi-measure. Its cataloged dataset
+  // provides the definitive list of valid measures.
   if (pageId === "catch_composition" && datasetId === "taxa_summary_district") {
     return true;
   }
-
-  // STAGE 2 STEP 2.6.1: Any page not explicitly integrated remains fail-closed.
-  return false;
+  return false; // Other pages remain fail-closed.
 }
 
 // STAGE 2 STEP 2.3: Convert a dashboard rolling-period filter into the generic query
@@ -264,10 +265,10 @@ function applyScope(request: AskFishQueryRequest, catalog: DeploymentCatalogView
       );
     }
     if (
-      !restrictedMeasureAllowed(pageId, request.dataset, request.measure, dashboardFilters.metric)
+      !restrictedMeasureAllowed(pageId, request.dataset, request.measure)
     ) {
       throw new AskFishQueryError(
-        `Measure '${request.measure}' is not part of the currently visible restricted '${pageId}' scope.`,
+        `Measure '${request.measure}' is outside the approved '${pageId}' page metric family.`,
       );
     }
 

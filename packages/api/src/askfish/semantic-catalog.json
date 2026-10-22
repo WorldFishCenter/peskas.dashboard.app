@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "0.5.0",
+  "catalogVersion": "0.6.0",
   "contractVersion": "1.0",
   "status": "production_portal_plus_kenya_native_source_grain",
   "sourceEvidence": {
@@ -49,13 +49,13 @@
   "pageScopes": {
     "catch": {
       "datasets": ["monthly_district_summary", "gear_summary_district"],
-      "contextFilters": ["country", "districts", "time_range", "metric"],
-      "description": "Catch rate, estimated catch, and catch-by-gear analytics."
+      "contextFilters": ["country", "districts", "time_range"],
+      "description": "Catch rate, estimated catch, and catch-by-gear analytics. Current selected metric is only a hint; all approved Catch-page metrics remain available under the selected district/time filters."
     },
     "revenue": {
       "datasets": ["monthly_district_summary", "gear_summary_district"],
-      "contextFilters": ["country", "districts", "time_range", "metric"],
-      "description": "Revenue per unit effort, estimated revenue, and revenue-by-gear analytics."
+      "contextFilters": ["country", "districts", "time_range"],
+      "description": "Revenue per unit effort, estimated revenue, and revenue-by-gear analytics. Current selected metric is only a hint; all approved Revenue-page metrics remain available under the selected district/time filters."
     },
     "catch_composition": {
       "datasets": ["taxa_summary_district"],
@@ -1494,5 +1494,55 @@
       },
       "reason": "Production native DB currently exposes quality/operations collections; richer dev-only collections are intentionally excluded from planner capability claims."
     }
-  ]
+  ],
+  "geographicAlternatives": {
+    "KE": [
+      {
+        "requestedLevel": "bmu",
+        "replacementLevel": "district",
+        "targetDataset": "monthly_district_summary",
+        "supportedMeasures": [
+          "estimated_catch_tn",
+          "estimated_revenue",
+          "mean_cpue",
+          "mean_rpue",
+          "estimated_fishing_trips",
+          "mean_catch_kg"
+        ],
+        "reason": "If the requested Kenya measure or dashboard scope cannot be served at BMU grain, results use independent district-level summaries. They are NOT estimates for individual BMUs or a BMU-to-district conversion."
+      }
+    ],
+    "TZ": [
+      {
+        "requestedLevel": "bmu",
+        "replacementLevel": "district",
+        "targetDataset": "monthly_district_summary",
+        "supportedMeasures": [
+          "estimated_catch_tn",
+          "estimated_revenue",
+          "mean_cpue",
+          "mean_rpue",
+          "estimated_fishing_trips",
+          "mean_catch_kg"
+        ],
+        "reason": "BMU-level data are not available for these measures in the Zanzibar catalog. Results are independent district-level summaries, NOT estimates for individual BMUs or a BMU-to-district geographic conversion."
+      }
+    ],
+    "MZ": [
+      {
+        "requestedLevel": "bmu",
+        "replacementLevel": "district",
+        "targetDataset": "monthly_district_summary",
+        "supportedMeasures": [
+          "estimated_catch_tn",
+          "estimated_revenue",
+          "mean_cpue",
+          "mean_rpue",
+          "estimated_fishing_trips",
+          "mean_catch_kg"
+        ],
+        "reason": "BMU-level data are not available for these measures in the Mozambique catalog. Results are independent district-level summaries, NOT estimates for individual BMUs or a BMU-to-district geographic conversion."
+      }
+    ]
+  }
 }
