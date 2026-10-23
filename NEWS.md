@@ -1,3 +1,9 @@
+# peskas.dashboard 2.4.2
+
+## Changes
+
+- Mozambique: the district filter, the region groups and the coverage table now include Maganja Da Costa (Central) and Mossuril (North), where DINAPA enumerators collect data since October 2026. Namacurra and Nacala stay, with the data collected there before.
+
 # peskas.dashboard 2.4.1
 
 ## Changes
