@@ -24,7 +24,7 @@ Each country has its own dashboard, built from this same code. The dashboards ar
 - Compare districts on a map, in a ranked chart and in a table.
 - See where tracked boats spend their fishing time on a 1 km grid map of fishing effort.
 - Compare fishing gears: how often each is used, what it catches and earns per hour, and how much of its catch is below the size at which fish first reproduce.
-- Explore the species landed: their share of the catch, their price, the size of the fish against the size at maturity, and the catch's mean trophic level.
+- Explore the species landed: their share of the catch, how many tonnes of each all boats land (FAO ARTFISH estimate), their price, the size of the fish against the size at maturity, and the catch's mean trophic level.
 - Check vulnerable species: catch by vulnerability to fishing, sharks and rays, and IUCN and CITES status.
 - Read how every figure is made, and its limits, on the Data and methods page, and download any chart's data.
 
@@ -81,6 +81,7 @@ Fill in the values in `.env`. The full list of variables the build reads is in `
 - `VITE_MAPBOX_TOKEN`: base map for the fishing-effort map.
 - `VITE_GA_MEASUREMENT_ID`: the country's Google Analytics stream (see [`apps/isomorphic-i18n/ANALYTICS.md`](apps/isomorphic-i18n/ANALYTICS.md)).
 - `ASKFISH_URL` and `ASKFISH_SHARED_TOKEN` (optional): where the AskFish service runs, which the dashboard's server calls, and the secret the two share both ways (the same value on AskFish and on every country's deployment). Without both the dashboard shows no AskFish; they are read at build time too, so changing them needs a redeploy.
+- `VITE_POSTHOG_KEY`: the PostHog project all countries share (same file).
 
 `VITE_*` values are public and inlined into the browser bundle at build time, so changing one needs a redeploy; the others stay on the server. Country settings (districts, colours, currency, map view, languages) live in `packages/domain/src/country.ts`. To add a country, follow [`apps/isomorphic-i18n/COUNTRY_SETUP.md`](apps/isomorphic-i18n/COUNTRY_SETUP.md).
 

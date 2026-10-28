@@ -99,6 +99,7 @@ MONGODB_URI=<your-kenya-cluster-connection-string>
 MONGODB_URI_COASTS=<connection-string-of-the-database-holding-wio_gaul2>
 VITE_MAPBOX_TOKEN=<mapbox-token>
 VITE_GA_MEASUREMENT_ID=<the-new-country-GA4-stream>
+VITE_POSTHOG_KEY=<the-shared-PostHog-project-key>
 ```
 
 `VITE_COUNTRY_CODE` is inlined into the client bundle at build time (Vite exposes only
@@ -107,7 +108,8 @@ A redeploy is required when changing it. An unknown code fails the build.
 
 Each country reports into its own GA4 data stream, so the new deployment needs its own
 `VITE_GA_MEASUREMENT_ID` plus a registered `peskas_country` custom dimension.
-See [ANALYTICS.md](./ANALYTICS.md) for the GA4 admin steps.
+See [ANALYTICS.md](./ANALYTICS.md) for the GA4 admin steps. PostHog needs no admin step:
+the new deployment takes the same `VITE_POSTHOG_KEY` as the others.
 
 ---
 
@@ -119,4 +121,5 @@ See [ANALYTICS.md](./ANALYTICS.md) for the GA4 admin steps.
 - [ ] Locale files added for each language
 - [ ] Step 3 env vars (`VITE_COUNTRY_CODE`, `MONGODB_URI`, `MONGODB_URI_COASTS`, `VITE_MAPBOX_TOKEN`) set in the deployment environment
 - [ ] GA4 stream created and `VITE_GA_MEASUREMENT_ID` set on Production (see ANALYTICS.md)
+- [ ] The shared `VITE_POSTHOG_KEY` set on Production
 - [ ] `pnpm tsc -b` passes in `apps/isomorphic-i18n/` and `pnpm tsc --noEmit` in `packages/api/`

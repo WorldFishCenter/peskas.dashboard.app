@@ -4,9 +4,11 @@ import {
   methodOf,
   METHODS,
   METRICS,
+  TAXA_METRICS,
   twinOf,
   type Method,
   type MetricKey,
+  type TaxaMetricKey,
 } from "@repo/domain/metrics";
 import { activeCountry } from "@/config/countryConfig";
 import type { ChartText } from "@/components/charts/chart-card";
@@ -41,6 +43,20 @@ export const compositionInfo = (t: Translate): ChartText => ({
   ]
     .filter(Boolean)
     .join(" "),
+});
+
+/** Catch by species estimated for every boat; how it is made is in Data and methods, under the method. */
+export const speciesEstimateInfo = (t: Translate): ChartText => ({
+  what: t("info-species-estimate-what"),
+  how: t("info-species-estimate-how"),
+  limits: t("info-species-estimate-limits"),
+});
+
+/** The recorded share and the ARTFISH estimate of each species, side by side. */
+export const speciesBothInfo = (t: Translate): ChartText => ({
+  what: t("info-species-both-what"),
+  how: t("info-species-both-how"),
+  limits: t("info-species-both-limits"),
 });
 
 /** Species prices, explained for a survey that prices each species or one that values the whole trip. */
@@ -103,9 +119,18 @@ export function yearChange(value: number | null | undefined, previous: number | 
   return ((value - previous) / Math.abs(previous)) * 100;
 }
 
+/** Every metric's spec, of the district and taxa summaries alike. */
+const SPECS: Record<MetricKey | TaxaMetricKey, { estimated?: true }> = {
+  ...TAXA_METRICS,
+  ...METRICS,
+};
 /** A metric's value as the dashboard shows it: every estimate, by either method, rounded with ≈. */
-export const formatValue = (metric: MetricKey, value: number | null | undefined, lang: string) =>
-  value != null && METRICS[metric].estimated
+export const formatValue = (
+  metric: MetricKey | TaxaMetricKey,
+  value: number | null | undefined,
+  lang: string,
+) =>
+  value != null && SPECS[metric].estimated
     ? `≈${formatApprox(value, lang)}`
     : formatNumber(value, lang);
 
@@ -137,6 +162,36 @@ export const methodTitle = (t: Translate, metric: MetricKey) =>
 export const METHOD_COLOR: Record<Method, string> = {
   tracker: "var(--tracker)",
   artfish: "var(--artfish)",
+};
+
+/**
+ * What a species view shows, the recorded catch or the catch of all boats as
+ * FAO ARTFISH estimates it (CONTEXT.md: Recorded figure, Estimated figure):
+ * each one's metric in the taxa summaries, method, colour, short name and unit.
+ */
+export const SPECIES_FIGURE = {
+  recorded: {
+    metric: "catch_kg",
+    method: undefined,
+    color: "var(--chart-1)",
+    label: "text-recorded",
+    unit: (_t: Translate) => "kg",
+  },
+  artfish: {
+    metric: "estimated_catch_tn_fao",
+    method: "artfish",
+    color: METHOD_COLOR.artfish,
+    label: "text-method-artfish-short",
+    unit: (t: Translate) => metricUnit(t, "estimated_catch_tn_fao"),
+  },
+} as const;
+export type SpeciesFigure = keyof typeof SPECIES_FIGURE;
+export const SPECIES_FIGURES = Object.keys(SPECIES_FIGURE) as SpeciesFigure[];
+
+/** Each method's name in running text: its hue, shaded where needed to read as text (CLAUDE.md, colours). */
+export const METHOD_TEXT: Record<Method, string> = {
+  tracker: "var(--tracker-text)",
+  artfish: "var(--artfish-text)",
 };
 
 /** Each method's heat-table ramp, the `--<tint>-1…5` tokens; a recorded figure takes the portal's own `--tint-*`. */

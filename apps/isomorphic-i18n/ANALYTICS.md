@@ -80,9 +80,10 @@ deployments do not pollute the reports.
 |---|---|---|---|
 | `VITE_GA_MEASUREMENT_ID` | that country's stream | that country's stream | that country's stream |
 | `VITE_GA_ROLLUP_ID` | same on all three, or unset | same | same |
+| `VITE_POSTHOG_KEY` | same on all three ([PostHog](#posthog)) | same | same |
 
-Both are read at build time, so **changing either value requires a
-redeploy**, not just an env update. Both are declared in the root `turbo.json` `env` list;
+All are read at build time, so **changing any value requires a
+redeploy**, not just an env update. All are declared in the root `turbo.json` `env` list;
 omitting them there would let Turborepo reuse one country's cached build for another.
 
 ---
@@ -129,7 +130,7 @@ loaded. Add new event names to the `AnalyticsEvent` union there so typos fail th
 | Event | Parameters | Fired when |
 |---|---|---|
 | `filter_time_range_change` | `time_range` (`"3"`, `"6"`, `"12"`, `"all"`) | Time range picked in the page header |
-| `filter_metric_change` | `metric`, `control_source` (`page` \| `district_widget`) | Metric picked: a tile on the catch or revenue page (`page`), or a measure in the overview's district card (`district_widget`) |
+| `filter_metric_change` | `metric`, `control_source` (`page` \| `district_widget` \| `district_species`) | Metric picked: a tile on the catch or revenue page (`page`), a measure in the overview's district card (`district_widget`), or recorded or ARTFISH catch in the species page's district table (`district_species`: `catch_kg` or `estimated_catch_tn_fao`) |
 | `filter_method_change` | `method` (`tracker` \| `artfish`), `control_source` (`district_map` \| `seasonality`) | Estimation method picked for the overview's district map or the seasonality table |
 | `filter_district_change` | `action`, `district`, `peskas_region`, `district_count` | District selection changed |
 | `map_basemap_change` | `basemap` (`satellite` \| `map`) | Basemap toggled on the grid map |
@@ -168,6 +169,7 @@ and blow through GA4 event quotas.
 
 `chart_info_open` and `chart_download` carry the card's `id` (also the CSV file name), e.g.
 `district-comparison`, `trend-mean_cpue`, `districts-mean_cpue`, `species-ranking`,
+`district-species`, `district-species-estimate` (its ARTFISH option),
 `length-frequency`, `caught-small`, `gear-profile`, `gear-species`, `vulnerability-bands`,
 `species-status`, `coverage`. Tiles' explanations fire `chart_info_open` with `headline-<metric>`
 or `vulnerable-<name>`.
@@ -187,6 +189,29 @@ or `vulnerable-<name>`.
 To check event wiring without a GA property, run the app with any placeholder measurement
 ID and read the queue in the browser console — `trackEvent` pushes through gtag, so
 `window.dataLayer.filter((e) => e[0] === 'event')` shows exactly what would be sent.
+
+---
+
+## PostHog
+
+PostHog runs beside GA4 on the deployments where `VITE_POSTHOG_KEY` is set (Production
+only, like the GA variables; read at build time, so a change needs a redeploy). A deployment
+without it never downloads `posthog-js`. All three countries share one PostHog project, with
+the same key on each Vercel project; tell them apart by the built-in Host or Current URL
+property (`zanzibar.peskas.org`, `kenya.peskas.org`, `mozambique.peskas.org`). It is
+initialised in `src/main.tsx` against the EU cloud (`eu.i.posthog.com`) and records page
+views (client-side navigations included), clicks and, if turned on in the PostHog project,
+session replays. `trackEvent()` sends every custom event above to PostHog as well, with the
+same name and parameters, so no PostHog admin setup is needed for them.
+
+Crashes the app catches itself go to PostHog's error tracking through `trackError()` (same
+file): the route's error page (`RouteError`, `src/router.tsx`) and a chart that fails to draw
+(`RenderGuard`, `components/charts/chart-state.tsx`). React keeps those from `window.onerror`,
+so PostHog's exception autocapture (a project setting, off for now) would miss them.
+
+Session replay masks every form input by default. The dashboard has no sign-in and asks
+for no personal data, so nothing else is masked. Like the GA tag, PostHog loads without a
+consent banner and sets its own cookie.
 
 ---
 
