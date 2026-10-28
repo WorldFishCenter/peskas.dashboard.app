@@ -49,7 +49,13 @@ export function Brand() {
         {activeCountry.countryName}
       </span>
       {activeCountry.flagIconSrc && (
-        <img src={activeCountry.flagIconSrc} alt="" width={24} height={16} className="rounded-sm" />
+        <img
+          src={activeCountry.flagIconSrc}
+          alt=""
+          width={24}
+          height={16}
+          className="rounded-sm max-sm:hidden"
+        />
       )}
     </Link>
   );

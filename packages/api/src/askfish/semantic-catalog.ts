@@ -194,15 +194,22 @@ function validateCatalogReferences() {
 
   // ASKFISH GEO CAPABILITIES: All alternatives must point to real, authorized
   // country bindings and real measures; no invented data source may be exposed.
-  for (const [countryCode, alternatives] of Object.entries(semanticCatalog.geographicAlternatives)) {
-    if (!semanticCatalog.countries[countryCode]) throw new Error(`Unknown alternative country ${countryCode}`);
+  for (const [countryCode, alternatives] of Object.entries(
+    semanticCatalog.geographicAlternatives,
+  )) {
+    if (!semanticCatalog.countries[countryCode])
+      throw new Error(`Unknown alternative country ${countryCode}`);
     for (const alternative of alternatives) {
       const dataset = semanticCatalog.datasets[alternative.targetDataset];
       if (!dataset?.bindings[countryCode] || !dataset.dimensions[alternative.replacementLevel]) {
-        throw new Error(`Unbound geographic alternative ${countryCode}/${alternative.targetDataset}`);
+        throw new Error(
+          `Unbound geographic alternative ${countryCode}/${alternative.targetDataset}`,
+        );
       }
       if (alternative.supportedMeasures.some((measure) => !dataset.measures[measure])) {
-        throw new Error(`Unknown measure in geographic alternative ${countryCode}/${alternative.targetDataset}`);
+        throw new Error(
+          `Unknown measure in geographic alternative ${countryCode}/${alternative.targetDataset}`,
+        );
       }
     }
   }

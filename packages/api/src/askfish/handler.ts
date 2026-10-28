@@ -8,10 +8,9 @@ import { semanticCatalogForCountry } from "./semantic-catalog";
 
 /*
  * The endpoints the AskFish service calls, server to server, under
- * `/api/askfish`, with `ASKFISH_SERVICE_TOKEN`: it reads the data behind an
- * answer here. (The browser never talks to AskFish: the chat asks it through
- * the `askfish` procedures, `../router/askfish.ts`.) The request and response
- * shapes are AskFish's contract; change them on both sides or not at all.
+ * `/api/askfish`, with `ASKFISH_SHARED_TOKEN`: it reads the data behind an
+ * answer here. The request and response shapes are AskFish's contract; change
+ * them on both sides or not at all.
  */
 
 const json = (body: unknown, status = 200) => Response.json(body, { status });
@@ -23,13 +22,6 @@ function tokenMatches(req: Request, expected: string) {
   const wanted = Buffer.from(expected);
   return given.length === wanted.length && timingSafeEqual(given, wanted);
 }
-
-/** The semantic catalog as the planner may see it for this deployment's country. */
-const catalog = () => json(semanticCatalogForCountry(activeCountry().countryCode));
-
-/** One catalog-validated read of source records (`query.ts`). */
-const query = async (req: Request) =>
-  json(await executeAskFishQuery(await req.json().catch(() => null)));
 
 const catchTrendsRequest = z.object({
   operation: z.literal(ASKFISH_PAGES.catch_trends.operation),
@@ -96,9 +88,15 @@ const ROUTES: Record<
   string,
   { method: string; run: (req: Request) => Response | Promise<Response> }
 > = {
-  catalog: { method: "GET", run: catalog },
+  catalog: {
+    method: "GET",
+    run: () => json(semanticCatalogForCountry(activeCountry().countryCode)),
+  },
   "catch-trends": { method: "POST", run: catchTrends },
-  query: { method: "POST", run: query },
+  query: {
+    method: "POST",
+    run: async (req) => json(await executeAskFishQuery(await req.json().catch(() => null))),
+  },
 };
 
 /** Answer a request under `/api/askfish`; every route needs the service token. */
@@ -108,10 +106,8 @@ export async function handleAskFish(req: Request): Promise<Response> {
   if (req.method !== route.method) return json({ error: "Method not allowed." }, 405);
 
   // Without a token configured nothing is served, rather than everything.
-  // ASKFISH SHARED TOKEN: Accept the same server-only credential that the
-  // Peskas tRPC router sends to AskFish. Keep the legacy setting as fallback.
-  const token = process.env.ASKFISH_SHARED_TOKEN || process.env.ASKFISH_SERVICE_TOKEN;
-  if (!token) return json({ error: "AskFish service token is not configured." }, 503);
+  const token = process.env.ASKFISH_SHARED_TOKEN?.trim();
+  if (!token) return json({ error: "ASKFISH_SHARED_TOKEN is not configured." }, 503);
   if (!tokenMatches(req, token)) return json({ error: "Unauthorized." }, 401);
 
   try {

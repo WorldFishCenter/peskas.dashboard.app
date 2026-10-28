@@ -137,7 +137,7 @@ loaded. Add new event names to the `AnalyticsEvent` union there so typos fail th
 | `map_effort_layer_toggle` | `layer` (`bars` \| `grounds`), `enabled` | Effort bars or fishing-grounds layer toggled on the map |
 | `chart_info_open` | `chart` | A chart's explanation (the ⓘ button) opened |
 | `chart_download` | `chart` | A chart's data downloaded as CSV |
-| `askfish_open` | none (GA4's own page path says where) | AskFish opened from a page header |
+| `askfish_open` | none (GA4's own page path says where) | AskFish opened from the top bar |
 | `askfish_ask` | `control_source` (`typed` \| `suggestion`) | A question sent to AskFish: typed, or picked from its suggestions. The question itself is never sent to GA4 |
 
 `filter_district_change.action` is one of `add`, `remove`, `clear`, `select_all`, `region_add` or

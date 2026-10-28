@@ -1,14 +1,7 @@
 import { useState } from "react";
-import { ArrowUpIcon, CircleHelpIcon, MapPinnedIcon, type LucideIcon } from "lucide-react";
+import { ArrowUpIcon } from "lucide-react";
 import { Bubble, BubbleContent, BubbleGroup } from "@workspace/ui/components/bubble";
 import { Button } from "@workspace/ui/components/button";
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@workspace/ui/components/empty";
 import {
   InputGroup,
   InputGroupAddon,
@@ -27,14 +20,10 @@ import {
 import { Separator } from "@workspace/ui/components/separator";
 import { Skeleton } from "@workspace/ui/components/skeleton";
 import { Spinner } from "@workspace/ui/components/spinner";
-import { ToggleGroup, ToggleGroupItem } from "@workspace/ui/components/toggle-group";
-import { ASKFISH_PAGES, ASKFISH_QUESTION, askFishKnows } from "@repo/domain/askfish";
+import { ASKFISH_QUESTION } from "@repo/domain/askfish";
 import { AnswerView } from "@/components/askfish/answer";
-import type { AskFishScope, Turn } from "@/components/askfish/panel";
-import { CHOSEN } from "@/components/filters/toggle-states";
-import { activeCountry } from "@/config/countryConfig";
+import type { Ask, AskFishFilters, Turn } from "@/components/askfish/panel";
 import { useT } from "@/i18n/use-lang";
-import { metricTitle } from "@/lib/dashboard/metrics";
 import { api } from "@/trpc/react";
 
 /**
@@ -42,52 +31,23 @@ import { api } from "@/trpc/react";
  * question with its answer, and the box to ask the next one.
  */
 export default function Chat({
-  scope,
+  filters,
   turns,
   onAsk,
-  onRestrict,
 }: {
-  scope: AskFishScope;
+  filters: AskFishFilters;
   turns: Turn[];
-  onAsk: (question: string, suggestionId?: string, retry?: number) => void;
-  onRestrict: (restrict: boolean) => void;
+  onAsk: (ask: Ask) => void;
 }) {
-  const { t, lang } = useT();
-  // AskFish refuses a question with no district, or about a page metric it doesn't list.
-  const known = askFishKnows(scope.page, scope.metric);
-  const askable = scope.districts.length > 0 && known;
-  // AskFish writes these with one AI call, then keeps them: asked once per page and filters,
+  const { t } = useT();
+  // AskFish writes these with one AI call, then keeps them: asked once per set of filters,
   // and only while they show, before the first question.
-  const suggestions = api.askfish.suggestions.useQuery(scope, {
-    enabled: askable && !turns.length,
+  const suggestions = api.askfish.suggestions.useQuery(filters, {
+    enabled: !turns.length,
     staleTime: Infinity,
     retry: false,
   });
-  // One question at a time.
   const busy = turns.some((turn) => !turn.answer && !turn.failed);
-
-  if (!scope.districts.length) {
-    return (
-      <Notice
-        icon={MapPinnedIcon}
-        title={t("text-askfish-no-districts-title")}
-        description={t("text-askfish-no-districts")}
-      />
-    );
-  }
-  if (!known) {
-    return (
-      <Notice
-        icon={CircleHelpIcon}
-        title={t("text-askfish-unknown-metric-title", { metric: metricTitle(t, scope.metric) })}
-        description={t("text-askfish-unknown-metric", {
-          known: new Intl.ListFormat(lang, { type: "disjunction" }).format(
-            ASKFISH_PAGES[scope.page].metrics.map((m) => metricTitle(t, m)),
-          ),
-        })}
-      />
-    );
-  }
 
   return (
     <>
@@ -120,7 +80,12 @@ export default function Chat({
                           <Bubble key={s.id} variant="tinted">
                             <BubbleContent
                               render={
-                                <button type="button" onClick={() => onAsk(s.question, s.id)} />
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    onAsk({ question: s.question, suggestionId: s.id })
+                                  }
+                                />
                               }
                             >
                               {s.question}
@@ -158,7 +123,7 @@ export default function Chat({
                             size="sm"
                             className="self-start"
                             disabled={busy}
-                            onClick={() => onAsk(turn.question, undefined, turn.id)}
+                            onClick={() => onAsk({ question: turn.question, retry: turn.id })}
                           >
                             {t("text-askfish-retry")}
                           </Button>
@@ -182,32 +147,22 @@ export default function Chat({
         </MessageScroller>
       </MessageScrollerProvider>
       <Separator />
-      <Composer busy={busy} restrict={scope.restrict} onAsk={onAsk} onRestrict={onRestrict} />
+      <Composer busy={busy} onAsk={onAsk} />
     </>
   );
 }
 
 /**
- * The box to ask the next question and what its answer may draw on. It alone
- * holds the draft, so typing redraws neither the conversation nor its charts.
+ * The box to ask the next question. It alone holds the draft, so typing
+ * redraws neither the conversation nor its charts.
  */
-function Composer({
-  busy,
-  restrict,
-  onAsk,
-  onRestrict,
-}: {
-  busy: boolean;
-  restrict: boolean;
-  onAsk: (question: string) => void;
-  onRestrict: (restrict: boolean) => void;
-}) {
+function Composer({ busy, onAsk }: { busy: boolean; onAsk: (ask: Ask) => void }) {
   const { t } = useT();
   const [draft, setDraft] = useState("");
   const question = draft.trim();
   const submit = () => {
     if (busy || question.length < ASKFISH_QUESTION.min) return;
-    onAsk(question);
+    onAsk({ question });
     setDraft("");
   };
 
@@ -235,22 +190,6 @@ function Composer({
           rows={2}
         />
         <InputGroupAddon align="block-end" className="pt-1">
-          {/* What an answer may draw on: this page as filtered, or all the country's summaries. */}
-          <ToggleGroup
-            variant="outline"
-            size="sm"
-            spacing={0}
-            aria-label={t("text-askfish-scope")}
-            value={[restrict ? "page" : "all"]}
-            onValueChange={(next) => next[0] && onRestrict(next[0] === "page")}
-          >
-            <ToggleGroupItem value="page" className={CHOSEN}>
-              {t("text-askfish-scope-page")}
-            </ToggleGroupItem>
-            <ToggleGroupItem value="all" className={CHOSEN}>
-              {t("text-askfish-scope-all", { country: activeCountry.countryName })}
-            </ToggleGroupItem>
-          </ToggleGroup>
           <InputGroupButton
             type="submit"
             variant="default"
@@ -267,28 +206,5 @@ function Composer({
       </InputGroup>
       <p className="text-xs text-muted-foreground">{t("text-askfish-note")}</p>
     </form>
-  );
-}
-
-/** Why AskFish can't be asked right now, in place of the conversation. */
-function Notice({
-  icon: Icon,
-  title,
-  description,
-}: {
-  icon: LucideIcon;
-  title: string;
-  description: string;
-}) {
-  return (
-    <Empty className="flex-1">
-      <EmptyHeader>
-        <EmptyMedia variant="icon">
-          <Icon />
-        </EmptyMedia>
-        <EmptyTitle>{title}</EmptyTitle>
-        <EmptyDescription>{description}</EmptyDescription>
-      </EmptyHeader>
-    </Empty>
   );
 }

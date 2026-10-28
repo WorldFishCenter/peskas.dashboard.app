@@ -7,16 +7,13 @@
 export const addMonths = (date: Date, by: number) =>
   new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + by, 1));
 
-/**
- * First day (UTC) of the current month, where every window ends (excluded):
- * its landings are still coming in, so it would read as a drop.
- */
+/** First day (UTC) of the current month: its landings are still coming in, so no window includes it. */
 export const thisMonth = () => addMonths(new Date(), 0);
 
 /** First day (UTC) of the window's earliest month: `months` complete months back. */
 export const windowStart = (months: number) => addMonths(thisMonth(), -months);
 
-/** The last instant (UTC) of the last complete month, where every window ends (included). */
+/** The last instant (UTC) of the last complete month. */
 export const lastMonthEnd = () => new Date(thisMonth().getTime() - 1);
 
 /**

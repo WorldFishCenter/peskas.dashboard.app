@@ -1,3 +1,4 @@
+import { AskFish } from "@/components/askfish/panel";
 import { LanguageMenu } from "@/components/language-menu";
 import { Brand, MainNav, MobileNav, Partner } from "@/components/site-nav";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -12,6 +13,7 @@ export function SiteHeader() {
         <Partner />
         <MainNav />
         <div className="ml-auto flex items-center gap-1 print:hidden">
+          {__ASKFISH__ && <AskFish />}
           <LanguageMenu />
           <ThemeToggle />
         </div>

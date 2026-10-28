@@ -1,19 +1,13 @@
-import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import {
-  ASKFISH_MAX_MONTHS,
-  ASKFISH_PAGE_IDS,
-  ASKFISH_PAGES,
-  ASKFISH_QUESTION,
-  askFishKnows,
-} from "@repo/domain/askfish";
+import { ASKFISH_MAX_MONTHS, ASKFISH_QUESTION } from "@repo/domain/askfish";
 import { isMetricKey, METRICS } from "@repo/domain/metrics";
 import { activeCountry, scopeDistricts } from "../lib/country";
 import { createTRPCRouter, publicProcedure } from "../trpc";
 
 /*
- * AskFish for the dashboard's own chat (the app's `components/askfish`). The
- * browser sends the page, its filters and the question. This server adds what
+ * AskFish for the dashboard's own chat (the app's `components/askfish`), one
+ * for the whole dashboard: every question may use all the country's data. The
+ * browser sends the filters picked on screen and the question. This server adds what
  * the browser isn't trusted with (the country, AskFish's address), asks the
  * AskFish service and returns only what the chat draws.
  * AskFish, in turn, reads the data through `/api/askfish` (`../askfish/handler.ts`).
@@ -23,73 +17,65 @@ import { createTRPCRouter, publicProcedure } from "../trpc";
  * the Vercel Firewall; move the limit into code if that proves too coarse.
  */
 
-const scope = z.object({
-  page: z.enum(ASKFISH_PAGE_IDS),
-  /** The page's metric; one AskFish knows on that page. */
-  metric: z.string(),
-  /** Districts of the active country, at least one: AskFish takes no question without. */
-  districts: z.array(z.string()).min(1),
-  /** The last `months` complete months; all of them when left out. */
-  months: z.number().int().positive().max(ASKFISH_MAX_MONTHS).optional(),
-  lang: z.string().min(2).max(5),
-  /** Answer from this page and its filters only, or from all the country's data AskFish may read. */
-  restrict: z.boolean(),
-});
-type Scope = z.infer<typeof scope>;
+/**
+ * Where every question says it comes from: AskFish's contract wants one of its
+ * pages and one of that page's metrics, though every question may use all the data.
+ * ponytail: stands in until AskFish accepts a page for the whole dashboard; send that then.
+ */
+const ASKFISH_CONTEXT = {
+  page: "catch_trends",
+  metric: "mean_cpue",
+  operation: "dashboard.semantic_context.v1",
+} as const;
 
 /**
- * What every AskFish call starts from: the page and its filters as AskFish's
- * contract words them, checked against the active country, and the scope.
+ * The filters picked on screen. AskFish takes them as context only: a question
+ * uses them when it asks about the selection, and all the data otherwise.
  */
-function request({ page, metric, districts, months, lang, restrict }: Scope) {
-  scopeDistricts(districts);
-  if (!askFishKnows(page, metric)) {
-    throw new TRPCError({ code: "BAD_REQUEST", message: `AskFish has no ${metric} on ${page}` });
-  }
+const filters = z.object({
+  /** Districts of the active country; none picked stands for all of them. */
+  districts: z.array(z.string()),
+  /** The last `months` complete months; all of them when left out. */
+  months: z.number().int().positive().max(ASKFISH_MAX_MONTHS).optional(),
+  lang: z.string().refine((lang) => activeCountry().languages.includes(lang), "Unknown language"),
+});
+type Filters = z.infer<typeof filters>;
+
+/** What every AskFish call starts from: the filters as AskFish's contract words them, checked against the active country. */
+function contextFor({ districts, months, lang }: Filters) {
   const country = activeCountry();
+  // AskFish takes no question without a district.
+  const picked = scopeDistricts(districts.length ? districts : undefined);
   const context = {
     type: "PESKAS_PAGE_CONTEXT",
     version: "1.0",
     payload: {
       // The contract asks for a route and a title; AskFish reads neither.
-      page: { id: page, route: `/${page}`, title: page },
+      page: { id: ASKFISH_CONTEXT.page, route: "/", title: "Peskas dashboard" },
       country: { code: country.countryCode, name: country.countryName },
       locale: lang,
       filters: {
-        districts,
-        metric,
+        districts: picked,
+        metric: ASKFISH_CONTEXT.metric,
         months: months ?? null,
         // AskFish's planner reads this label, in English.
         timeRangeLabel: months ? `Last ${months} months` : "All time",
       },
-      // ASKFISH INTEGRATION: The legacy Catch Trends endpoint only accepts
-      // mean_cpue/estimated_catch_tn. Other Catch metrics are valid semantic
-      // queries, but must not falsely advertise the legacy operation.
-      requestedOperation:
-        page === "catch_trends" && !["mean_cpue", "estimated_catch_tn"].includes(metric)
-          ? "dashboard.semantic_context.v1"
-          : ASKFISH_PAGES[page].operation,
+      requestedOperation: ASKFISH_CONTEXT.operation,
     },
   };
-  return { context, restrictToCurrentPageAndFilters: restrict };
+  return { context, restrictToCurrentPageAndFilters: false };
 }
 
 /** Call AskFish's Peskas API (`/api/integration/peskas/<path>`) and return the `data` of its reply. */
 async function askFish(path: string, body: object): Promise<unknown> {
-  // ASKFISH SHARED TOKEN: Prefer the single common token when configured.
-  // The dashboard server, never the browser, adds the credential.
-  const base = process.env.ASKFISH_URL;
-  if (!base) throw new Error("ASKFISH_URL is not defined");
+  // Trimmed: a value pasted with a space around it would break the address or the token.
+  const base = process.env.ASKFISH_URL?.trim();
+  const token = process.env.ASKFISH_SHARED_TOKEN?.trim();
+  if (!base || !token) throw new Error("ASKFISH_URL or ASKFISH_SHARED_TOKEN is not defined");
   const response = await fetch(`${base.replace(/\/$/, "")}/api/integration/peskas/${path}`, {
     method: "POST",
-    // ASKFISH INTEGRATION: Optional shared bearer token protects the public
-    // AskFish backend from unauthenticated direct calls in production.
-    headers: {
-      "content-type": "application/json",
-      ...(process.env.ASKFISH_SHARED_TOKEN || process.env.ASKFISH_BACKEND_TOKEN
-        ? { authorization: `Bearer ${process.env.ASKFISH_SHARED_TOKEN || process.env.ASKFISH_BACKEND_TOKEN}` }
-        : {}),
-    },
+    headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
     body: JSON.stringify(body),
     // Planning a question is one AI call; a minute means AskFish isn't answering.
     signal: AbortSignal.timeout(60_000),
@@ -126,6 +112,11 @@ function readable(detail: unknown, label: string) {
     said([...inside.matchAll(/: '([^']*)'/g)].map((m) => m[1])),
   );
 }
+
+/** The kinds of chart the chat draws; one AskFish adds later is left out, its figures still in the answer. */
+const CHART_TYPES = ["line", "bar", "stacked_bar", "scatter", "quadrant"] as const;
+const drawable = (type: string): type is (typeof CHART_TYPES)[number] =>
+  (CHART_TYPES as readonly string[]).includes(type);
 
 /** A chart as AskFish describes it: plain series, drawn by the dashboard's own charts. */
 const chart = z.object({
@@ -170,7 +161,7 @@ const reply = z.object({
 });
 
 /** AskFish's reply in the dashboard's terms. */
-function answer(data: unknown) {
+function readReply(data: unknown) {
   const { answer, charts, provenance } = reply.parse(data);
   const metric = (measure: string) => (isMetricKey(measure) ? measure : null);
 
@@ -206,36 +197,39 @@ function answer(data: unknown) {
       detail: readable(s.detail, s.label),
       metric: byUnit(s.unit),
     })),
-    charts: charts.map((c) => {
+    charts: charts.flatMap((c) => {
+      if (!drawable(c.type)) return [];
       const byMonth = c.series.every((s) => s.points.every((p) => toMonthKey(p.x)));
       // Lines and bars draw one measure, a scatter one on each axis; the others draw counts
       // (months found) or percentage changes, in no metric's unit.
-      const values = c.type === "line" || c.type === "bar";
-      return {
-        type: c.type,
-        title: c.title,
-        xLabel: c.xLabel ?? null,
-        yLabel: c.yLabel ?? null,
-        note: c.note ?? null,
-        /** `x` is a month key (`YYYY-MM`). */
-        byMonth,
-        /** The metric on each axis, when the axis is one. */
-        metrics: {
-          x: c.type === "scatter" ? byLabel(c.xLabel) : null,
-          y: values ? byLabel(c.title) : c.type === "scatter" ? byLabel(c.yLabel) : null,
-        },
-        /** Lines at zero on both axes, for changes up and down. */
-        zero: !!c.referenceLines?.length,
-        series: c.series.map((s) => ({
-          name: s.name,
-          trend: s.role === "trendline",
-          points: s.points.map((p) => ({
-            x: byMonth ? toMonthKey(p.x)! : p.x,
-            y: p.y,
-            label: p.label ?? null,
+      const oneMeasure = c.type === "line" || c.type === "bar";
+      return [
+        {
+          type: c.type,
+          title: c.title,
+          xLabel: c.xLabel ?? null,
+          yLabel: c.yLabel ?? null,
+          note: c.note ?? null,
+          /** `x` is a month key (`YYYY-MM`). */
+          byMonth,
+          /** The metric on each axis, when the axis is one. */
+          metrics: {
+            x: c.type === "scatter" ? byLabel(c.xLabel) : null,
+            y: oneMeasure ? byLabel(c.title) : c.type === "scatter" ? byLabel(c.yLabel) : null,
+          },
+          /** Lines at zero on both axes, for changes up and down. */
+          zero: !!c.referenceLines?.length,
+          series: c.series.map((s) => ({
+            name: s.name,
+            trend: s.role === "trendline",
+            points: s.points.map((p) => ({
+              x: byMonth ? toMonthKey(p.x)! : p.x,
+              y: p.y,
+              label: p.label ?? null,
+            })),
           })),
-        })),
-      };
+        },
+      ];
     }),
     sources: provenance.map((p) => ({
       label: p.measureLabel,
@@ -247,9 +241,9 @@ function answer(data: unknown) {
 }
 
 export const askfishRouter = createTRPCRouter({
-  /** Questions AskFish has already checked it can answer for this page and these filters. */
-  suggestions: publicProcedure.input(scope).query(async ({ input }) => {
-    const data = await askFish("suggestions", request(input));
+  /** Questions AskFish has already checked it can answer with the country's data. */
+  suggestions: publicProcedure.input(filters).query(async ({ input }) => {
+    const data = await askFish("suggestions", contextFor(input));
     return z
       .object({ suggestions: z.array(z.object({ id: z.string(), question: z.string() })) })
       .parse(data).suggestions;
@@ -258,17 +252,17 @@ export const askfishRouter = createTRPCRouter({
   /** One question, typed or picked from the suggestions. */
   ask: publicProcedure
     .input(
-      scope.extend({
+      filters.extend({
         question: z.string().trim().min(ASKFISH_QUESTION.min).max(ASKFISH_QUESTION.max),
         suggestionId: z.string().min(8).max(100).optional(),
       }),
     )
     .mutation(async ({ input }) => {
-      const base = request(input);
+      const base = contextFor(input);
       // A picked suggestion runs the plan AskFish kept for it, with no AI call. AskFish keeps
       // those in memory for a while: one it no longer has fails, and the chat's "Try again"
       // asks it as a typed question.
-      return answer(
+      return readReply(
         input.suggestionId
           ? await askFish("suggestions/ask", { ...base, suggestionId: input.suggestionId })
           : await askFish("ask", { ...base, question: input.question }),

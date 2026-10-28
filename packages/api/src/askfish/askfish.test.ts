@@ -33,8 +33,7 @@ beforeAll(async () => {
   // The catalog binds the portal summaries to the `portal-prod` database.
   process.env.MONGODB_URI = mongod.getUri("portal-prod");
   process.env.VITE_COUNTRY_CODE = "TZ";
-  process.env.ASKFISH_SERVICE_TOKEN = "secret";
-  delete process.env.ASKFISH_SHARED_TOKEN;
+  process.env.ASKFISH_SHARED_TOKEN = "secret";
   const db = await getDb();
 
   const row = (value: number, ago: number, pushed: string) => ({
@@ -57,7 +56,7 @@ afterAll(async () => {
   await mongod.stop();
 });
 
-test("every route needs the service token", async () => {
+test("every route needs the shared token", async () => {
   expect((await call("catalog", undefined, "wrong")).status).toBe(401);
   expect((await call("nothing-here")).status).toBe(404);
   expect((await call("query")).status).toBe(405); // a GET on a POST route
@@ -69,23 +68,9 @@ test("every route needs the service token", async () => {
   // Kenya's BMU sources are bound to Kenya alone.
   expect(Object.keys(body.datasets)).not.toContain("kenya_bmu_monthly");
 
-  delete process.env.ASKFISH_SERVICE_TOKEN;
+  delete process.env.ASKFISH_SHARED_TOKEN;
   expect((await call("catalog")).status).toBe(503);
-  process.env.ASKFISH_SERVICE_TOKEN = "secret";
-});
-
-// ASKFISH SHARED TOKEN: The same bearer key authorizes reverse data reads;
-// a stale legacy credential cannot silently override it.
-test("shared token authorizes catalog reads and overrides the legacy service token", async () => {
-  process.env.ASKFISH_SHARED_TOKEN = "shared-server-only-secret";
-  try {
-    expect((await call("catalog", undefined, "secret")).status).toBe(401);
-    const catalog = await call("catalog", undefined, "shared-server-only-secret");
-    expect(catalog.status).toBe(200);
-    expect((await catalog.json()).deployment.countryCode).toBe("TZ");
-  } finally {
-    delete process.env.ASKFISH_SHARED_TOKEN;
-  }
+  process.env.ASKFISH_SHARED_TOKEN = "secret";
 });
 
 test("a month window is the dashboard's, and a repeated row counts once", async () => {
@@ -145,8 +130,6 @@ test("all time ends at the last complete month", async () => {
   expect((await trends.json()).series.map((p: { value: number }) => p.value)).toEqual([5, 2]);
 });
 
-// ASKFISH PAGE-SCOPE FIX: Selected CPUE is a chart-selection hint, not the
-// complete permission list for the Catch page. District/time restrictions stay hard.
 test("restricted Catch accepts estimated catch when CPUE is selected, but rejects revenue", async () => {
   const filters = { districts: ["Wete"], metric: "mean_cpue", months: 3 };
   const permitted = await call("query", {
@@ -188,8 +171,6 @@ test("a query outside the page's scope is refused with its reason", async () => 
   expect(refused.status).toBe(400);
   expect((await refused.json()).error).toMatch(/outside the restricted 'catch' page scope/);
 });
-
-// The checks below came with AskFish as standalone scripts (stages 2.7.1, 2.7.3 and 3.3).
 
 test("versions of one row collapse to the newest and are never added up", () => {
   const at = (iso: string) => new Date(iso);
@@ -255,9 +236,6 @@ test("Kenya's BMU sources stay at their own grain, bound to Kenya's app database
   expect(resolveExactSemanticCategoryValue("Example", bmus).resolved).toBeNull();
 });
 
-// ASKFISH GEO CAPABILITIES: All three country catalogs expose the same shared
-// semantic district dataset with a country-bound analytical substitution policy.
-// Kenya's native BMU capability stays independent of the district fallback.
 test("country-scoped alternatives never invent BMU joins or cross-country sources", () => {
   for (const country of ["KE", "TZ", "MZ"]) {
     const view = semanticCatalogForCountry(country);

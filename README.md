@@ -80,7 +80,7 @@ Fill in the values in `.env`. The full list of variables the build reads is in `
 - `MONGODB_URI_COASTS`: the database that holds the district boundaries (`wio_gaul2`).
 - `VITE_MAPBOX_TOKEN`: base map for the fishing-effort map.
 - `VITE_GA_MEASUREMENT_ID`: the country's Google Analytics stream (see [`apps/isomorphic-i18n/ANALYTICS.md`](apps/isomorphic-i18n/ANALYTICS.md)).
-- `ASKFISH_URL` and `ASKFISH_SERVICE_TOKEN` (optional): where the country's AskFish service runs, which the dashboard's server calls, and the secret AskFish sends when it reads the data from `/api/askfish`. Without `ASKFISH_URL` the dashboard shows no AskFish; it is read at build time too, so changing it needs a redeploy.
+- `ASKFISH_URL` and `ASKFISH_SHARED_TOKEN` (optional): where the AskFish service runs, which the dashboard's server calls, and the secret the two share both ways (the same value on AskFish and on every country's deployment). Without both the dashboard shows no AskFish; they are read at build time too, so changing them needs a redeploy.
 
 `VITE_*` values are public and inlined into the browser bundle at build time, so changing one needs a redeploy; the others stay on the server. Country settings (districts, colours, currency, map view, languages) live in `packages/domain/src/country.ts`. To add a country, follow [`apps/isomorphic-i18n/COUNTRY_SETUP.md`](apps/isomorphic-i18n/COUNTRY_SETUP.md).
 

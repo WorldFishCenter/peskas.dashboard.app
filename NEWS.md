@@ -1,3 +1,16 @@
+# peskas.dashboard 2.5.0
+
+## AskFish
+
+- A button in the top bar opens AskFish, an assistant that answers questions about the country's data in a side panel: its words, the figures behind them, its charts drawn like the dashboard's own, and the data it read. It offers a few questions to start from. The conversation stays open while the reader moves between pages.
+- Every question may use all of the country's data. The districts and months picked on screen go along, and AskFish uses them when a question asks about the selection.
+- Figures are rounded and coloured as on the pages. AskFish knows only the GPS tracker method's estimates, and an answer that uses one says so. Its words are in English whatever the page language.
+- AskFish is a separate service. The dashboard asks it from its server, never from the browser, and AskFish reads the data back through the dashboard, with one secret shared both ways. It is on only where `ASKFISH_URL` and `ASKFISH_SHARED_TOKEN` are set; elsewhere nothing changes and the chat isn't built.
+
+## Changes
+
+- On a phone, the flag next to the country name is hidden, to leave room in the top bar.
+
 # peskas.dashboard 2.3.3
 
 ## The Peskas logo

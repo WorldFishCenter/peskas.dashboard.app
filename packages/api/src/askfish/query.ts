@@ -189,11 +189,7 @@ function serializeValue(value: unknown): string | number | boolean | null {
 // not the currently highlighted metric. The active metric is conversational context;
 // users can explicitly request any other validated measure belonging to this page.
 // Source permissions and metric availability still require catalog validation.
-function restrictedMeasureAllowed(
-  pageId: string,
-  datasetId: string,
-  requestedMeasure: string,
-) {
+function restrictedMeasureAllowed(pageId: string, datasetId: string, requestedMeasure: string) {
   if (pageId === "catch") {
     if (datasetId === "monthly_district_summary") {
       return (ASKFISH_PAGES.catch_trends.metrics as readonly string[]).includes(requestedMeasure);
@@ -264,9 +260,7 @@ function applyScope(request: AskFishQueryRequest, catalog: DeploymentCatalogView
         `Dataset '${request.dataset}' is outside the restricted '${pageId}' page scope.`,
       );
     }
-    if (
-      !restrictedMeasureAllowed(pageId, request.dataset, request.measure)
-    ) {
+    if (!restrictedMeasureAllowed(pageId, request.dataset, request.measure)) {
       throw new AskFishQueryError(
         `Measure '${request.measure}' is outside the approved '${pageId}' page metric family.`,
       );
