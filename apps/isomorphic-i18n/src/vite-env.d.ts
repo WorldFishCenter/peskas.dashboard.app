@@ -7,7 +7,7 @@ interface ImportMetaEnv {
   readonly VITE_POSTHOG_KEY?: string;
 }
 
-/** Whether this deployment has AskFish: the server's `ASKFISH_URL` is set (`vite.config.ts`). */
+/** Whether this deployment has AskFish: the server's `ASKFISH_URL` and `ASKFISH_SHARED_TOKEN` are both set (`vite.config.ts`). */
 declare const __ASKFISH__: boolean;
 
 interface ImportMeta {

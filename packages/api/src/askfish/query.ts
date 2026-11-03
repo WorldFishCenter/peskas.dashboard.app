@@ -17,6 +17,7 @@ import {
   resolveExactSemanticCategoryValue,
   resolveSemanticCategoryValue,
 } from "./category-resolution";
+import { COMBINED } from "./combine";
 
 // STAGE 2 STEP 2.3: Keep generic filter values scalar and bounded. Date filtering is
 // handled separately so arbitrary MongoDB operators can never enter the query surface.
@@ -34,6 +35,8 @@ type ResolvedQueryTimeWindow = {
   endDate: string | null;
   basis: "rolling_months" | "explicit_dates";
 };
+const COMBINABLE = ["time", "district", "gear", "taxon"] as const;
+type Combinable = (typeof COMBINABLE)[number];
 type AskFishQueryRequestShape = {
   contractVersion: "1.0";
   countryCode: string;
@@ -41,6 +44,8 @@ type AskFishQueryRequestShape = {
   measure: string;
   filters: Record<string, QueryScalar[]>;
   timeRange: QueryTimeRange | null;
+  /** Dimensions to combine the measure over, by the pages' rules (combine.ts); none for source rows. */
+  aggregateOver: Combinable[];
   limit: number;
   scope: {
     mode: "restricted" | "unrestricted";
@@ -69,6 +74,7 @@ type CatalogDatasetView = {
       unit: { value: string };
       kind: "rate" | "count" | "total";
       derivationStatus: string;
+      rollups: Record<string, { status: string; method?: string; note?: string }>;
     }
   >;
   binding: { database: string; collection: string };
@@ -147,6 +153,7 @@ export const askFishQueryRequestSchema = z.object({
   measure: z.string().min(1).max(100),
   filters: z.record(z.array(filterValueSchema).min(1).max(100)).default({}),
   timeRange: timeRangeSchema.nullable().default(null),
+  aggregateOver: z.array(z.enum(COMBINABLE)).max(4).default([]),
   limit: z.number().int().min(1).max(25000).default(5000),
   scope: scopeSchema,
 });
@@ -619,6 +626,51 @@ function semanticRecords(
     );
 }
 
+const ACROSS: Record<Combinable, string> = {
+  time: "acrossTime",
+  district: "acrossDistrict",
+  gear: "acrossGear",
+  taxon: "acrossTaxon",
+};
+
+/**
+ * The measure combined over `over` by the pages' rules (combine.ts), keeping the
+ * rest of its grain, when its dataset is a portal summary and the catalog lets it
+ * combine over each of them. Refused before anything is read.
+ */
+function combination(
+  datasetId: string,
+  dataset: CatalogDatasetView,
+  measure: string,
+  over: Combinable[],
+  filters: Record<string, Array<string | number>>,
+  date: Record<string, Date> | null,
+) {
+  const rollups = dataset.measures[measure]!.rollups;
+  const blocked = over.filter((d) => rollups[ACROSS[d]]?.status !== "allowed");
+  const figures = COMBINED[datasetId];
+  if (!figures || blocked.length) {
+    throw new AskFishQueryError(
+      `'${measure}' does not combine across ${(blocked.length ? blocked : over).join(", ")}.`,
+    );
+  }
+  const time = Object.keys(dataset.dimensions).find(
+    (id) => dataset.dimensions[id]!.field === dataset.timeField,
+  );
+  const combined = new Set(over.map((d) => (d === "time" ? time : d)));
+  const keep = dataset.grain.filter((d) => d !== "metric" && d !== "indicator" && !combined.has(d));
+  const picked = (dimension: string) => filters[dimension]?.map(String);
+  const records = figures(measure, keep, {
+    districts: picked("district"),
+    date,
+    gear: picked("gear"),
+    taxon: picked("taxon"),
+  });
+  const said = (key: "method" | "note") =>
+    [...new Set(over.map((d) => rollups[ACROSS[d]]![key]).filter(Boolean))].join("; ") || null;
+  return { records, aggregation: { over, method: said("method"), note: said("note") } };
+}
+
 // STAGE 2 STEP 2.3: Execute one bounded catalog-approved source-record query. This
 // function never accepts a MongoDB collection, field, operator, or aggregation pipeline
 // from the caller; all such details are resolved from the validated semantic catalog.
@@ -678,13 +730,27 @@ export async function executeAskFishQuery(input: unknown) {
 
   // STAGE 2 STEP 2.3: Refuse broad result sets rather than silently truncating them.
   // This is the database-cost ceiling for the first generic query contract.
+  // A combined query returns a few figures, whatever the rows behind them.
+  const combined = request.aggregateOver.length
+    ? combination(
+        request.dataset,
+        dataset,
+        request.measure,
+        request.aggregateOver,
+        effectiveFilters,
+        resolvedTimeWindow.mongoBounds,
+      )
+    : null;
   const scanLimit = dataset.queryPolicy.maxRows;
-  const rawRecords = await mongoDb
-    .collection(dataset.binding.collection)
-    .find(mongoQuery, { projection })
-    .limit(scanLimit + 1)
-    .toArray();
-  if (rawRecords.length > scanLimit) {
+  const [rawRecords, combinedRecords] = await Promise.all([
+    mongoDb
+      .collection(dataset.binding.collection)
+      .find(mongoQuery, { projection })
+      .limit(combined ? 0 : scanLimit + 1)
+      .toArray(),
+    combined?.records,
+  ]);
+  if (!combined && rawRecords.length > scanLimit) {
     throw new AskFishQueryError(
       `Query matches more than ${scanLimit} source rows. Narrow the filters or time range.`,
       413,
@@ -697,7 +763,8 @@ export async function executeAskFishQuery(input: unknown) {
     request.measure,
   );
   const converted = semanticRecords(canonicalRecords, dataset, request.measure);
-  const returnedRecords = converted.slice(0, request.limit);
+  const records = combinedRecords ?? converted;
+  const returnedRecords = records.slice(0, request.limit);
 
   // STAGE 2 STEP 2.3: Data version is derived from the same canonical rows returned
   // by the governed query, using timestamp/date/ObjectId evidence in that order.
@@ -710,7 +777,7 @@ export async function executeAskFishQuery(input: unknown) {
     const objectId = record._id as { getTimestamp?: () => Date } | undefined;
     return objectId?.getTimestamp?.().getTime() ?? 0;
   });
-  const maxVersion = versionCandidates.length ? Math.max(...versionCandidates) : 0;
+  const maxVersion = versionCandidates.reduce((a, b) => Math.max(a, b), 0);
 
   return {
     contractVersion: "1.0" as const,
@@ -751,7 +818,8 @@ export async function executeAskFishQuery(input: unknown) {
     duplicateRecordCount: rawRecords.length - canonicalRecords.length,
     matchedCanonicalRecordCount: converted.length,
     recordCount: returnedRecords.length,
-    truncated: converted.length > returnedRecords.length,
+    truncated: records.length > returnedRecords.length,
     records: returnedRecords,
+    ...(combined ? { aggregation: combined.aggregation } : {}),
   };
 }

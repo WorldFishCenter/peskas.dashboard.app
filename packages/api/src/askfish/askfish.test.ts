@@ -213,7 +213,7 @@ test("a gear or taxon label resolves to one observed value, or to none", () => {
 });
 
 test("Kenya's BMU sources stay at their own grain, bound to Kenya's app database", () => {
-  expect(semanticCatalog.catalogVersion).toBe("0.6.0");
+  expect(semanticCatalog.catalogVersion).toBe("0.7.0");
   for (const id of ["kenya_bmu_monthly", "kenya_bmu_gear_monthly"]) {
     const dataset = semanticCatalog.datasets[id]!;
     expect(dataset.pageScopes).toEqual([]);
@@ -256,4 +256,45 @@ test("country-scoped alternatives never invent BMU joins or cross-country source
   }
   expect(Object.keys(semanticCatalogForCountry("TZ").datasets)).not.toContain("kenya_bmu_monthly");
   expect(Object.keys(semanticCatalogForCountry("KE").datasets)).toContain("kenya_bmu_monthly");
+});
+
+test("figures across months come combined by the pages' rules, never as rows to add up", async () => {
+  const db = await getDb();
+  const row = (gaul_2_name: string, indicator: string, value: number, ago: number) => ({
+    gaul_2_name,
+    indicator,
+    value,
+    date: month(ago),
+  });
+  await db.connection
+    .collection("districts_summaries")
+    .insertMany([
+      row("Wete", "n_submissions", 10, 0),
+      row("Wete", "mean_cpue", 1, 0),
+      row("Wete", "n_submissions", 30, 1),
+      row("Wete", "mean_cpue", 3, 1),
+    ]);
+  const query = (dataset: string, measure: string, aggregateOver: string[]) =>
+    call("query", {
+      contractVersion: "1.0",
+      countryCode: "TZ",
+      dataset,
+      measure,
+      filters: { district: ["Wete"] },
+      timeRange: { lastMonths: 3 },
+      aggregateOver,
+      scope: { mode: "unrestricted", pageId: null, dashboardFilters: null },
+    });
+
+  const combined = await (await query("district_summary", "mean_cpue", ["time"])).json();
+  // Weighted by landings, as the district table: (1 × 10 + 3 × 30) / 40.
+  expect(combined.records).toEqual([{ dimensions: { district: "Wete" }, value: 2.5 }]);
+  expect(combined.aggregation).toMatchObject({
+    over: ["time"],
+    method: "weighted_mean_by_landings",
+  });
+
+  const refused = await query("taxa_summary_district", "mean_length", ["taxon"]);
+  expect(refused.status).toBe(400);
+  expect((await refused.json()).error).toBe("'mean_length' does not combine across taxon.");
 });

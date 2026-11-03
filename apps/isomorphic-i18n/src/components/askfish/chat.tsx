@@ -68,8 +68,6 @@ export default function Chat({
                     </MessageContent>
                   </Message>
                 </MessageScrollerItem>,
-                // Questions AskFish has checked it can answer, offered as replies to pick
-                // (shadcn's button bubbles).
                 <MessageScrollerItem key="suggestions" messageId="suggestions">
                   <Message align="end">
                     <MessageContent>

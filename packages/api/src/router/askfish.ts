@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { ASKFISH_MAX_MONTHS, ASKFISH_QUESTION } from "@repo/domain/askfish";
-import { isMetricKey, METRICS } from "@repo/domain/metrics";
+import { estimateMethod, isMetricKey, METRICS, type MetricKey } from "@repo/domain/metrics";
 import { activeCountry, scopeDistricts } from "../lib/country";
 import { createTRPCRouter, publicProcedure } from "../trpc";
 
@@ -69,7 +69,6 @@ function contextFor({ districts, months, lang }: Filters) {
 
 /** Call AskFish's Peskas API (`/api/integration/peskas/<path>`) and return the `data` of its reply. */
 async function askFish(path: string, body: object): Promise<unknown> {
-  // Trimmed: a value pasted with a space around it would break the address or the token.
   const base = process.env.ASKFISH_URL?.trim();
   const token = process.env.ASKFISH_SHARED_TOKEN?.trim();
   if (!base || !token) throw new Error("ASKFISH_URL or ASKFISH_SHARED_TOKEN is not defined");
@@ -77,7 +76,6 @@ async function askFish(path: string, body: object): Promise<unknown> {
     method: "POST",
     headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
     body: JSON.stringify(body),
-    // Planning a question is one AI call; a minute means AskFish isn't answering.
     signal: AbortSignal.timeout(60_000),
   });
   if (!response.ok) {
@@ -183,13 +181,16 @@ function readReply(data: unknown) {
       .sort((a, b) => b.measureLabel.length - a.measureLabel.length)[0];
     return named ? metric(named.measure) : null;
   };
+  const drawnMethod = (...metrics: (MetricKey | null)[]) =>
+    metrics.map((m) => m && estimateMethod(m)).find(Boolean) ?? null;
+  /** The method of the answer's estimates, when it reads only estimates and all by one method. */
+  const methods = new Set(provenance.map((p) => drawnMethod(metric(p.measure))));
+  const answerMethod = methods.size === 1 ? [...methods][0]! : null;
 
   return {
     headline: answer.headline,
     narrative: answer.narrative,
     caveats: answer.caveats,
-    /** It draws on an estimate, which AskFish reads by the GPS tracker method only. */
-    estimated: provenance.some((p) => isMetricKey(p.measure) && METRICS[p.measure].estimated),
     statistics: answer.statistics.map((s) => ({
       label: s.label,
       value: s.value ?? null,
@@ -203,6 +204,8 @@ function readReply(data: unknown) {
       // Lines and bars draw one measure, a scatter one on each axis; the others draw counts
       // (months found) or percentage changes, in no metric's unit.
       const oneMeasure = c.type === "line" || c.type === "bar";
+      const x = c.type === "scatter" ? byLabel(c.xLabel) : null;
+      const y = oneMeasure ? byLabel(c.title) : c.type === "scatter" ? byLabel(c.yLabel) : null;
       return [
         {
           type: c.type,
@@ -213,10 +216,9 @@ function readReply(data: unknown) {
           /** `x` is a month key (`YYYY-MM`). */
           byMonth,
           /** The metric on each axis, when the axis is one. */
-          metrics: {
-            x: c.type === "scatter" ? byLabel(c.xLabel) : null,
-            y: oneMeasure ? byLabel(c.title) : c.type === "scatter" ? byLabel(c.yLabel) : null,
-          },
+          metrics: { x, y },
+          /** The method of the estimate drawn: an axis's, or for counts and changes the answer's. */
+          method: oneMeasure || c.type === "scatter" ? drawnMethod(x, y) : answerMethod,
           /** Lines at zero on both axes, for changes up and down. */
           zero: !!c.referenceLines?.length,
           series: c.series.map((s) => ({

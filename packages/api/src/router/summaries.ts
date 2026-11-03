@@ -1,14 +1,11 @@
 import { z } from "zod";
 import {
   combine,
-  comparable,
   FEW_LANDINGS,
   METRIC_KEYS,
-  METRICS,
   MONTHLY_METRIC_KEYS,
   TAXA_METRIC_KEYS,
   TAXA_METRICS,
-  twinOf,
   methodCoverage,
   methodKeys,
   METHODS,
@@ -29,6 +26,21 @@ import { MonthlySummaryDistrictModel } from "@repo/nosql/schema/monthly-summary-
 import { TaxaSummaryDistrictModel } from "@repo/nosql/schema/taxa-summary-district";
 import { TaxaTraitsModel } from "@repo/nosql/schema/taxa-traits";
 import { activeCountry, scopeDistricts } from "../lib/country";
+import {
+  acrossDistricts,
+  cellsOf,
+  districtCells,
+  districtMetrics,
+  entry,
+  groupCells,
+  inTotals,
+  monthKey,
+  monthlyCells,
+  overWindow,
+  scopeMatch,
+  sum,
+  withTwin,
+} from "../lib/cells";
 import { addMonths, monthWindow, thisMonth, windowStart } from "../lib/months";
 import { createTRPCRouter, publicProcedure } from "../trpc";
 
@@ -72,7 +84,6 @@ const scope = z.object({
 });
 type Scope = z.infer<typeof scope>;
 
-const monthKey = (date: Date) => date.toISOString().slice(0, 7);
 const monthDate = (key: string) => new Date(`${key}-01T00:00:00Z`);
 
 /** Every month key from `start` to `end`, both included. */
@@ -84,70 +95,11 @@ function monthRange(start: string, end: string) {
 
 /** The Mongo filter for a scope. */
 function match({ districts, months }: Scope) {
-  return {
-    gaul_2_name: { $in: scopeDistricts(districts) },
-    date: monthWindow(months ? windowStart(months) : null),
-  };
+  return scopeMatch(districts, monthWindow(months ? windowStart(months) : null));
 }
-
-/** `map.get(key)`, creating the entry with `make()` first when it is missing. */
-const entry = <K, V>(map: Map<K, V>, key: K, make: () => V) =>
-  map.get(key) ?? map.set(key, make()).get(key)!;
 
 /** The Mongo accumulator for a combine rule. */
 const accumulate = (how: Combine) => (how === "sum" ? { $sum: "$value" } : { $avg: "$value" });
-
-const sum = (values: readonly (number | null | undefined)[]) => combine(values, "sum") ?? 0;
-
-/** Indicator values of one district in one month. */
-type Cell = Record<string, number>;
-/** month → district → indicator values. */
-type Cells = Map<string, Map<string, Cell>>;
-
-/** Add summary docs' values to month → district → values, each under `field(doc)`. */
-function addCells<D extends { gaul_2_name: string; date: Date; value?: number | null }>(
-  cells: Cells,
-  docs: D[],
-  field: (d: D) => string,
-) {
-  for (const d of docs) {
-    if (d.value == null) continue;
-    entry(
-      entry(cells, monthKey(d.date), () => new Map()),
-      d.gaul_2_name,
-      (): Cell => ({}),
-    )[field(d)] = d.value;
-  }
-  return cells;
-}
-
-/** Read district summaries into month → district → indicator values. */
-async function districtCells(filter: object, indicators: string[]): Promise<Cells> {
-  const docs = await DistrictSummaryModel.find({
-    ...filter,
-    indicator: { $in: indicators },
-  }).lean();
-  return addCells(new Map(), docs, (d) => d.indicator);
-}
-
-/** Summary docs' values gathered per group and per district-month: group → "district|month" → field → value. */
-function groupCells<D extends { gaul_2_name: string; date?: Date; value?: number | null }>(
-  docs: D[],
-  group: (d: D) => string | null,
-  field: (d: D) => string,
-) {
-  const groups = new Map<string | null, Map<string, Cell>>();
-  for (const d of docs) {
-    if (d.value == null) continue;
-    const cell = entry(
-      entry(groups, group(d), () => new Map()),
-      `${d.gaul_2_name}|${d.date?.toISOString()}`,
-      (): Cell => ({}),
-    );
-    cell[field(d)] = d.value;
-  }
-  return groups;
-}
 
 /** Taxon → a length trait, for the taxa that have it. */
 const lengthsOf = <T extends { catch_taxon: string }>(traits: T[], key: keyof T) =>
@@ -155,107 +107,9 @@ const lengthsOf = <T extends { catch_taxon: string }>(traits: T[], key: keyof T)
     traits.filter((t) => Number(t[key]) > 0).map((t) => [t.catch_taxon, Number(t[key])]),
   ) as Record<string, number>;
 
-/** A metric's key, with its twin's for an estimate both methods make. */
-const withTwin = (metric: MetricKey) => {
-  const twin = twinOf(metric);
-  return twin ? [metric, twin] : [metric];
-};
-
-/** Every cell of some months, as one list. */
-const cellsOf = (cells: Cells, months: string[]) =>
-  months.flatMap((m) => [...(cells.get(m)?.values() ?? [])]);
-
-/**
- * The cells of some months a metric adds up (`keep`, null for all of them):
- * for an estimate both methods make, the shared district-months (CONTEXT.md)
- * when there are any, which `shared` says.
- */
-function inTotals(cells: Cells, months: string[], metric: MetricKey) {
-  const { cells: used, shared } = comparable(cellsOf(cells, months), metric);
-  return { keep: shared ? new Set(used) : null, shared };
-}
-
 /** A year earlier's figure, when it was added up the same way as the window's: shared months both times or neither. */
 const sameBasis = (value: number | null, sharedNow: boolean, sharedBefore: boolean) =>
   sharedNow === sharedBefore ? value : null;
-
-/**
- * One metric over the districts in one month (those in `keep`, or all), the
- * landings behind it, and how many districts it combines: a total covers only
- * those with a value.
- */
-function acrossDistricts(
-  byDistrict: Map<string, Cell> | undefined,
-  metric: MetricKey,
-  keep: Set<Cell> | null,
-) {
-  const rows = [...(byDistrict?.values() ?? [])].filter((r) => !keep || keep.has(r));
-  const landings = rows.map((r) => r.n_submissions);
-  return {
-    value: combine(
-      rows.map((r) => r[metric]),
-      METRICS[metric].overDistricts,
-      landings,
-    ),
-    landings: sum(landings),
-    districts: rows.filter((r) => r[metric] != null).length,
-  };
-}
-
-/** Every metric of one district over the months in `cells`, each combined across months by its rule. */
-function districtMetrics(
-  cells: Cells,
-  district: string,
-  keep: (month: string) => boolean = () => true,
-) {
-  const months = [...cells]
-    .filter(([month]) => keep(month))
-    .map(([, byDistrict]) => byDistrict.get(district))
-    .filter((c): c is Cell => !!c);
-  const used = Object.fromEntries(METRIC_KEYS.map((m) => [m, comparable(months, m)]));
-  return {
-    metrics: Object.fromEntries(
-      METRIC_KEYS.map((m) => [
-        m,
-        combine(
-          used[m].cells.map((c) => c[m]),
-          METRICS[m].overMonths,
-          used[m].cells.map((c) => c.n_submissions),
-        ),
-      ]),
-    ) as Record<MetricKey, number | null>,
-    /** Whether each metric added up only the months both methods estimate. */
-    shared: Object.fromEntries(METRIC_KEYS.map((m) => [m, used[m].shared])) as Record<
-      MetricKey,
-      boolean
-    >,
-    samplingRate: combine(
-      months.map((c) => c.sampling_rate),
-      "mean",
-    ),
-  };
-}
-
-/** One metric over some districts and months: districts combined per month, then the months. */
-function overWindow(cells: Cells, months: string[], metric: MetricKey) {
-  const { keep, shared } = inTotals(cells, months, metric);
-  const perMonth = months.map((month) => ({
-    month,
-    ...acrossDistricts(cells.get(month), metric, keep),
-  }));
-  return {
-    value: combine(
-      perMonth.map((p) => p.value),
-      METRICS[metric].overMonths,
-      perMonth.map((p) => p.landings),
-    ),
-    perMonth,
-    /** Whether it added up only the district-months both methods estimate. */
-    shared,
-    /** The district-months with a value behind it. */
-    covered: sum(perMonth.map((p) => p.districts)),
-  };
-}
 
 /** A taxa metric per taxon, largest first: each district's months combined, then the districts. */
 function composition(input: Scope, metric: TaxaMetricKey) {
@@ -412,15 +266,7 @@ export const summariesRouter = createTRPCRouter({
       ...match({ districts }),
       ...(from ? { date: monthWindow(from) } : {}),
     };
-    const [docs, landingDocs] = await Promise.all([
-      MonthlySummaryDistrictModel.find({ ...filter, metric: { $in: withTwin(metric) } }).lean(),
-      DistrictSummaryModel.find({ ...filter, indicator: "n_submissions" }).lean(),
-    ]);
-    const cells = addCells(
-      addCells(new Map(), docs, (d) => d.metric),
-      landingDocs,
-      (d) => d.indicator,
-    );
+    const { docs, cells } = await monthlyCells(filter, withTwin(metric));
     const inWindow = (month: string) => !start || month >= monthKey(start);
     // Every month with a summary, valued or not: a month without a value draws a gap, not a zero.
     const all = [...new Set(docs.map((d) => monthKey(d.date)))].sort();

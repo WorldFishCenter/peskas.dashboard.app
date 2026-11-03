@@ -22,7 +22,7 @@ import {
 } from "@workspace/ui/components/chart";
 import { MessageFooter } from "@workspace/ui/components/message";
 import { Table, TableBody, TableCell, TableRow } from "@workspace/ui/components/table";
-import { METRICS, type MetricKey } from "@repo/domain/metrics";
+import { estimateMethod, type MetricKey } from "@repo/domain/metrics";
 import type { Answer } from "@/components/askfish/panel";
 import { ChartCard } from "@/components/charts/chart-card";
 import { CHART_HEIGHT, ChartState, RenderGuard } from "@/components/charts/chart-state";
@@ -53,16 +53,9 @@ const xValues = (series: Chart["series"]) =>
 const figure = (metric: MetricKey | null, value: number, lang: string) =>
   metric ? formatValue(metric, value, lang) : formatNumber(value, lang);
 
-// Memoized: each new question would otherwise redraw every earlier answer's charts.
 export const AnswerView = memo(function AnswerView({ answer }: { answer: Answer }) {
   const { t, lang } = useT();
-  // A species goes by its common name, as on the pages, with the scientific one beside it.
   const name = useSpeciesName();
-  // AskFish reads the GPS tracker method's estimates only; the pages show both methods'.
-  const caveats = [
-    ...(answer.estimated ? [t("text-askfish-tracker-only")] : []),
-    ...answer.caveats,
-  ];
 
   return (
     <>
@@ -98,9 +91,9 @@ export const AnswerView = memo(function AnswerView({ answer }: { answer: Answer 
       {answer.charts.map((chart, i) => (
         <AnswerChart key={i} chart={chart} />
       ))}
-      {caveats.length > 0 && (
+      {answer.caveats.length > 0 && (
         <ul className="flex list-disc flex-col gap-1 pl-4 text-xs text-muted-foreground">
-          {caveats.map((caveat, i) => (
+          {answer.caveats.map((caveat, i) => (
             <li key={i}>{caveat}</li>
           ))}
         </ul>
@@ -132,11 +125,10 @@ function AnswerChart({ chart }: { chart: Chart }) {
   const name = useSpeciesName();
   const marks = chart.series.filter((s) => !s.trend);
   if (!marks.some((s) => s.points.length)) return null;
-  const { x, y } = chart.metrics;
+  const { y } = chart.metrics;
   const format: Format = (value) => figure(y, value, lang);
-  // What is drawn from an estimate wears its method's colour, a recorded figure the dashboard's first.
-  const estimated = [x, y].some((m) => m && METRICS[m].estimated);
-  const color = estimated ? METHOD_COLOR.tracker : "var(--chart-1)";
+  const color = chart.method ? METHOD_COLOR[chart.method] : "var(--chart-1)";
+  const named = y ? estimateMethod(y) : chart.method;
   const drawn =
     chart.type === "line" ? (
       marks.length > 1 ? (
@@ -160,7 +152,7 @@ function AnswerChart({ chart }: { chart: Chart }) {
         color={color}
       />
     ) : chart.type === "stacked_bar" ? (
-      <Stacked chart={chart} />
+      <Stacked chart={chart} color={color} />
     ) : (
       <Points chart={chart} color={color} />
     );
@@ -171,9 +163,7 @@ function AnswerChart({ chart }: { chart: Chart }) {
       title={chart.title}
       info="info-askfish-chart"
       // The method goes beside the axis it describes: the subtitle names the y axis.
-      description={[chart.yLabel, y && METRICS[y].estimated && t("text-method-tracker")]
-        .filter(Boolean)
-        .join(" · ")}
+      description={[chart.yLabel, named && t(`text-method-${named}`)].filter(Boolean).join(" · ")}
       download={chart.series.flatMap((s) =>
         s.points.map((p) => ({ series: s.name, [chart.xLabel ?? "x"]: p.x, value: p.y })),
       )}
@@ -339,10 +329,9 @@ function Multiples({
 }
 
 /** Counts stacked per month: how many values AskFish found and how many are missing. */
-function Stacked({ chart }: { chart: Chart }) {
+function Stacked({ chart, color }: { chart: Chart; color: string }) {
   const { lang } = useT();
-  // What was found and what is missing: one bar in two shades of the recorded figures' colour.
-  const colors = ["var(--chart-1)", "color-mix(in oklab, var(--chart-1) 30%, transparent)"];
+  const colors = [color, `color-mix(in oklab, ${color} 30%, transparent)`];
   const rows = xValues(chart.series).map((month) => ({
     month,
     ...Object.fromEntries(

@@ -65,6 +65,10 @@ export const METHODS: readonly Method[] = ["tracker", "artfish"];
 export const methodOf = (metric: MetricKey): Method =>
   METRICS[metric].artfish ? "artfish" : "tracker";
 
+/** The method of an estimate; null for a recorded figure. */
+export const estimateMethod = (metric: MetricKey): Method | null =>
+  METRICS[metric].estimated ? methodOf(metric) : null;
+
 /** Each estimate both methods make as each method's key, built once so it is stable across calls. */
 const KEYS_BY_METRIC = Object.fromEntries(
   METRIC_KEYS.flatMap((m) => {

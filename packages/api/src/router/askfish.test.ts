@@ -106,10 +106,9 @@ test("AskFish gets the page as its contract words it, and the chat only what it 
   });
 
   expect(Object.keys(answer).sort()).toEqual(
-    ["caveats", "charts", "estimated", "headline", "narrative", "sources", "statistics"].sort(),
+    ["caveats", "charts", "headline", "narrative", "sources", "statistics"].sort(),
   );
   // An answer about an estimate: its figures are in that metric, so rounded; its counts are not.
-  expect(answer.estimated).toBe(true);
   expect(answer.statistics).toEqual([
     {
       label: "Wete",
@@ -202,6 +201,26 @@ test("an answer on two measures keeps each figure in its own metric", async () =
     { x: null, y: null },
   ]);
   expect(answer.charts[2]!.zero).toBe(true);
+  // The scatter draws the tracker estimate; the changes mix a recorded figure and an estimate.
+  expect(answer.charts.map((c) => c.method)).toEqual([null, "tracker", null]);
+});
+
+test("a chart of counts takes the method of an answer that reads only its estimates", async () => {
+  fetchMock.mockResolvedValueOnce(
+    reply({
+      ...REPLY,
+      charts: [
+        {
+          type: "stacked_bar",
+          title: "Months found",
+          series: [{ name: "Found", points: [{ x: "2026-04-01", y: 3 }] }],
+        },
+      ],
+      provenance: [{ ...REPLY.provenance[0], measure: "estimated_catch_tn_fao" }],
+    }),
+  );
+  const answer = await askfish.ask({ ...filters, question: "Which months have estimates?" });
+  expect(answer.charts[0]).toMatchObject({ metrics: { x: null, y: null }, method: "artfish" });
 });
 
 test("a suggestion runs AskFish's kept plan, and a failure is not hidden", async () => {
