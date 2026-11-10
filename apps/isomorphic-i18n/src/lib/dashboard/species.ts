@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import type { MaturityPosition } from "@repo/domain/sizes";
+import { useDistrictScope } from "@/store/filters";
 import { api } from "@/trpc/react";
 
 /**
@@ -14,6 +15,26 @@ export function useSpeciesName() {
       taxon ? data?.[taxon]?.replace(/ nei$/, "") ?? taxon : "",
     [data],
   );
+}
+
+/**
+ * The FAO ARTFISH species estimates of the district selection
+ * (`speciesEstimates`), with their coverage for `CoverageBadge`, null when
+ * every district-month selected has one, and whether loading them failed, so
+ * a card that falls back to the recorded catch can say why.
+ */
+export function useSpeciesEstimates() {
+  const scope = useDistrictScope();
+  const query = api.summaries.speciesEstimates.useQuery(scope.input, scope.options);
+  // `headline` counts the district-months selected, which the coverage is out of (the Catch and Revenue tiles' query).
+  const selected = api.summaries.headline.useQuery(scope.input, scope.options).data?.districtMonths;
+  const coveredShare = selected && query.data ? query.data.covered / selected : null;
+  return {
+    data: query.data,
+    failed: query.isError,
+    coverage:
+      coveredShare != null && coveredShare < 1 ? { least: coveredShare, most: coveredShare } : null,
+  };
 }
 
 /** Catch against the length at maturity: the length chart's bars, RangeBar and MaturityLegend. */

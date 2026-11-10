@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { memo, useId, useMemo, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -22,7 +22,7 @@ import {
 } from "@workspace/ui/components/chart";
 import { MessageFooter } from "@workspace/ui/components/message";
 import { Table, TableBody, TableCell, TableRow } from "@workspace/ui/components/table";
-import { METRICS, type MetricKey } from "@repo/domain/metrics";
+import { estimateMethod, type MetricKey } from "@repo/domain/metrics";
 import type { Answer } from "@/components/askfish/panel";
 import { ChartCard } from "@/components/charts/chart-card";
 import { CHART_HEIGHT, ChartState, RenderGuard } from "@/components/charts/chart-state";
@@ -43,27 +43,19 @@ import { useSpeciesName } from "@/lib/dashboard/species";
 type Chart = Answer["charts"][number];
 type Format = (value: number) => string;
 
-/** Every x value of some series (months, say), once each and in order. */
+const xAxis = (byMonth: boolean, lang: string) =>
+  byMonth ? monthAxis(lang) : { dataKey: "month", tickLine: false, axisLine: false, tickMargin: 8 };
+
 const xValues = (series: Chart["series"]) =>
   [...new Set(series.flatMap((s) => s.points.map((p) => String(p.x))))].sort();
 
-/**
- * A figure as the dashboard writes it everywhere: by its metric (an estimate
- * rounded, with ≈) when it is in one, else as recorded.
- */
+/** A figure by its metric (an estimate rounded, with ≈) when it is in one, else as recorded. */
 const figure = (metric: MetricKey | null, value: number, lang: string) =>
   metric ? formatValue(metric, value, lang) : formatNumber(value, lang);
 
-/** What AskFish found: its words, the figures behind them, its charts, what to keep in mind and the data it read. */
-export function AnswerView({ answer }: { answer: Answer }) {
+export const AnswerView = memo(function AnswerView({ answer }: { answer: Answer }) {
   const { t, lang } = useT();
-  // A species goes by its common name, as on the pages, with the scientific one beside it.
   const name = useSpeciesName();
-  // AskFish reads the GPS tracker method's estimates only; the pages show both methods'.
-  const caveats = [
-    ...(answer.estimated ? [t("text-askfish-tracker-only")] : []),
-    ...answer.caveats,
-  ];
 
   return (
     <>
@@ -99,9 +91,9 @@ export function AnswerView({ answer }: { answer: Answer }) {
       {answer.charts.map((chart, i) => (
         <AnswerChart key={i} chart={chart} />
       ))}
-      {caveats.length > 0 && (
+      {answer.caveats.length > 0 && (
         <ul className="flex list-disc flex-col gap-1 pl-4 text-xs text-muted-foreground">
-          {caveats.map((caveat, i) => (
+          {answer.caveats.map((caveat, i) => (
             <li key={i}>{caveat}</li>
           ))}
         </ul>
@@ -125,22 +117,21 @@ export function AnswerView({ answer }: { answer: Answer }) {
       )}
     </>
   );
-}
+});
 
 /** One of AskFish's charts in the dashboard's own card, with its rows to download. */
 function AnswerChart({ chart }: { chart: Chart }) {
   const { t, lang } = useT();
   const name = useSpeciesName();
-  const { x, y } = chart.metrics;
-  const format: Format = (value) => figure(y, value, lang);
-  // What is drawn from an estimate wears its method's colour, a recorded figure the dashboard's first.
-  const estimated = [x, y].some((m) => m && METRICS[m].estimated);
-  const color = estimated ? METHOD_COLOR.tracker : "var(--chart-1)";
   const marks = chart.series.filter((s) => !s.trend);
-  const draw = () => {
-    if (!marks.some((s) => s.points.length)) return null;
-    if (chart.type === "line") {
-      return marks.length > 1 ? (
+  if (!marks.some((s) => s.points.length)) return null;
+  const { y } = chart.metrics;
+  const format: Format = (value) => figure(y, value, lang);
+  const color = chart.method ? METHOD_COLOR[chart.method] : "var(--chart-1)";
+  const named = y ? estimateMethod(y) : chart.method;
+  const drawn =
+    chart.type === "line" ? (
+      marks.length > 1 ? (
         <Multiples
           series={marks.map((s) => ({ ...s, name: name(s.name) }))}
           byMonth={chart.byMonth}
@@ -148,31 +139,23 @@ function AnswerChart({ chart }: { chart: Chart }) {
           color={color}
         />
       ) : (
-        <Trend chart={chart} format={format} color={color} />
-      );
-    }
-    if (chart.type === "bar") {
-      return (
-        <RankedBars
-          rows={marks[0].points.map((p) => {
-            const label = name(String(p.x));
-            return { label, value: p.y, detail: label === p.x ? undefined : String(p.x) };
-          })}
-          name={marks[0].name}
-          format={format}
-          color={color}
-        />
-      );
-    }
-    if (chart.type === "stacked_bar") return <Stacked chart={chart} />;
-    if (chart.type === "scatter" || chart.type === "quadrant") {
-      return <Points chart={chart} color={color} />;
-    }
-    // A kind of chart AskFish added since: its figures are still in the answer.
-    return null;
-  };
-  const drawn = draw();
-  if (!drawn) return null;
+        <Trend series={marks[0]} byMonth={chart.byMonth} format={format} color={color} />
+      )
+    ) : chart.type === "bar" ? (
+      <RankedBars
+        rows={marks[0].points.map((p) => {
+          const label = name(String(p.x));
+          return { label, value: p.y, detail: label === p.x ? undefined : String(p.x) };
+        })}
+        name={marks[0].name}
+        format={format}
+        color={color}
+      />
+    ) : chart.type === "stacked_bar" ? (
+      <Stacked chart={chart} color={color} />
+    ) : (
+      <Points chart={chart} color={color} />
+    );
 
   return (
     <ChartCard
@@ -180,9 +163,7 @@ function AnswerChart({ chart }: { chart: Chart }) {
       title={chart.title}
       info="info-askfish-chart"
       // The method goes beside the axis it describes: the subtitle names the y axis.
-      description={[chart.yLabel, y && METRICS[y].estimated && t("text-method-tracker")]
-        .filter(Boolean)
-        .join(" · ")}
+      description={[chart.yLabel, named && t(`text-method-${named}`)].filter(Boolean).join(" · ")}
       download={chart.series.flatMap((s) =>
         s.points.map((p) => ({ series: s.name, [chart.xLabel ?? "x"]: p.x, value: p.y })),
       )}
@@ -194,10 +175,18 @@ function AnswerChart({ chart }: { chart: Chart }) {
   );
 }
 
-/** One series over the months, like the pages' trend. */
-function Trend({ chart, format, color }: { chart: Chart; format: Format; color: string }) {
+function Trend({
+  series,
+  byMonth,
+  format,
+  color,
+}: {
+  series: Chart["series"][number];
+  byMonth: boolean;
+  format: Format;
+  color: string;
+}) {
   const { lang } = useT();
-  const [series] = chart.series;
   const rows = series.points.map((p) => ({ month: String(p.x), value: p.y }));
   return (
     <ChartContainer
@@ -206,11 +195,7 @@ function Trend({ chart, format, color }: { chart: Chart; format: Format; color: 
     >
       <LineChart accessibilityLayer data={rows} margin={{ top: 8, right: 12 }}>
         <CartesianGrid vertical={false} />
-        {chart.byMonth ? (
-          <XAxis {...monthAxis(lang)} interval="preserveStartEnd" />
-        ) : (
-          <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
-        )}
+        <XAxis {...xAxis(byMonth, lang)} interval="preserveStartEnd" />
         <YAxis
           tickLine={false}
           axisLine={false}
@@ -222,7 +207,7 @@ function Trend({ chart, format, color }: { chart: Chart; format: Format; color: 
         <ChartTooltip
           content={
             <ChartTooltipContent
-              labelFormatter={chart.byMonth ? monthTooltipLabel(lang) : undefined}
+              labelFormatter={byMonth ? monthTooltipLabel(lang) : undefined}
               formatter={(value, _name, item) => (
                 <TooltipRow color={item.color} label={series.name} value={format(Number(value))} />
               )}
@@ -248,7 +233,7 @@ function Trend({ chart, format, color }: { chart: Chart; format: Format; color: 
  */
 function Multiples({
   series,
-  byMonth: monthly,
+  byMonth,
   format,
   color,
 }: {
@@ -259,6 +244,8 @@ function Multiples({
 }) {
   const { t, lang } = useT();
   const [active, setActive] = useState<number | null>(null);
+  // One cursor per answer: pointing at its panels moves no other answer's.
+  const syncId = useId();
   // Built once per answer, not per month pointed at: each panel keeps its data, so only
   // its cursor moves (as in the pages' DistrictMultiples).
   const { months, max, panels } = useMemo(() => {
@@ -281,10 +268,10 @@ function Multiples({
     <>
       <p aria-live="polite" className="min-h-5 text-sm text-muted-foreground">
         {active != null && months[active]
-          ? monthly
+          ? byMonth
             ? monthLabel(months[active], lang, "long")
             : months[active]
-          : monthly && months.length > 1
+          : byMonth && months.length > 1
             ? `${monthSpan(months[0], months.at(-1)!, lang)} · ${t("text-askfish-point")}`
             : t("text-askfish-point")}
       </p>
@@ -293,7 +280,6 @@ function Multiples({
         onMouseLeave={() => setActive(null)}
       >
         {panels.map((p) => {
-          // The month pointed at, else the latest with a value.
           const shown =
             active == null ? p.points.findLast((x) => x.value != null) : p.points[active];
           return (
@@ -313,7 +299,7 @@ function Multiples({
                 <LineChart
                   data={p.points}
                   margin={{ top: 4, right: 4, bottom: 4, left: 4 }}
-                  syncId="askfish-multiples"
+                  syncId={syncId}
                   onMouseMove={(state) => {
                     const index = state?.activeTooltipIndex;
                     setActive(index == null ? null : Number(index));
@@ -343,10 +329,9 @@ function Multiples({
 }
 
 /** Counts stacked per month: how many values AskFish found and how many are missing. */
-function Stacked({ chart }: { chart: Chart }) {
+function Stacked({ chart, color }: { chart: Chart; color: string }) {
   const { lang } = useT();
-  // What was found and what is missing: one bar in two shades of the recorded figures' colour.
-  const colors = ["var(--chart-1)", "color-mix(in oklab, var(--chart-1) 30%, transparent)"];
+  const colors = [color, `color-mix(in oklab, ${color} 30%, transparent)`];
   const rows = xValues(chart.series).map((month) => ({
     month,
     ...Object.fromEntries(
@@ -360,16 +345,25 @@ function Stacked({ chart }: { chart: Chart }) {
     >
       <BarChart accessibilityLayer data={rows} margin={{ top: 8, right: 12 }}>
         <CartesianGrid vertical={false} />
-        {chart.byMonth ? (
-          <XAxis {...monthAxis(lang)} />
-        ) : (
-          <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
-        )}
-        <YAxis tickLine={false} axisLine={false} width="auto" allowDecimals={false} />
+        <XAxis {...xAxis(chart.byMonth, lang)} />
+        <YAxis
+          tickLine={false}
+          axisLine={false}
+          width="auto"
+          allowDecimals={false}
+          tickFormatter={(v: number) => formatTick(v, lang)}
+        />
         <ChartTooltip
           content={
             <ChartTooltipContent
               labelFormatter={chart.byMonth ? monthTooltipLabel(lang) : undefined}
+              formatter={(value, name, item) => (
+                <TooltipRow
+                  color={item.color}
+                  label={name}
+                  value={formatNumber(Number(value), lang)}
+                />
+              )}
             />
           }
         />
@@ -378,6 +372,7 @@ function Stacked({ chart }: { chart: Chart }) {
           <Bar
             key={s.name}
             dataKey={`s${i}`}
+            name={s.name}
             stackId="all"
             fill={colors[i % colors.length]}
             maxBarSize={32}

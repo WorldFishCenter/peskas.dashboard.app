@@ -31,6 +31,7 @@
     "jotai": "2.8.2",
     "lucide-react": "^1.48.0",
     "mapbox-gl": "^3.5.2",
+    "posthog-js": "^1.438.13",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "react-i18next": "^14.1.1",

@@ -3,9 +3,11 @@ interface ImportMetaEnv {
   /** TZ, KE or MZ; picks the entry of COUNTRY_REGISTRY (default TZ). */
   readonly VITE_COUNTRY_CODE?: string;
   readonly VITE_MAPBOX_TOKEN?: string;
+  /** PostHog project API key (phc_…); unset turns PostHog off. */
+  readonly VITE_POSTHOG_KEY?: string;
 }
 
-/** Whether this deployment has AskFish: the server's `ASKFISH_URL` is set (`vite.config.ts`). */
+/** Whether this deployment has AskFish: the server's `ASKFISH_URL` and `ASKFISH_SHARED_TOKEN` are both set (`vite.config.ts`). */
 declare const __ASKFISH__: boolean;
 
 interface ImportMeta {

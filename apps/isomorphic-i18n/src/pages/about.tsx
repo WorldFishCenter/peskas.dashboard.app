@@ -98,7 +98,7 @@ function Section({ id, children }: { id: keyof typeof CONTENTS; children: React.
   const { t } = useT();
   const [title, Icon] = CONTENTS[id];
   return (
-    <Card size="sm" id={id} className="scroll-mt-16">
+    <Card size="sm" id={id}>
       <CardHeader className="border-b print:break-after-avoid">
         <CardTitle className="flex items-center gap-2">
           <Icon aria-hidden className="size-4 text-primary" />
@@ -115,7 +115,12 @@ function Section({ id, children }: { id: keyof typeof CONTENTS; children: React.
 function MethodCard({ method, children }: { method: Method; children: React.ReactNode }) {
   const { t } = useT();
   return (
-    <Card size="sm" className="border-t-4" style={{ borderTopColor: METHOD_COLOR[method] }}>
+    <Card
+      id={`method-${method}`}
+      size="sm"
+      className="border-t-4"
+      style={{ borderTopColor: METHOD_COLOR[method] }}
+    >
       <CardHeader>
         <CardTitle>{t(`text-method-${method}`)}</CardTitle>
         <CardDescription>{t(`methods-${method}-summary`)}</CardDescription>
@@ -220,7 +225,7 @@ export default function AboutPage() {
         </dl>
       </Section>
 
-      <div id="coverage" className="scroll-mt-16">
+      <div id="coverage">
         <CoverageMatrix />
       </div>
 
@@ -239,9 +244,26 @@ export default function AboutPage() {
             <EstimateFormula method="artfish" />
             <Prose>
               {/* The reference below links the toolkit: the body names it without a second link. */}
-              <p>{t("methods-artfish-body")}</p>
+              <p>
+                <Linked text={t("methods-artfish-body")} methodLinks={false} />
+              </p>
               <p>{t(`methods-artfish-days-${code}`)}</p>
-              <p>{t("methods-artfish-precision")}</p>
+              {/* The species charts' explanations stay short and send the reader here. */}
+              <p>
+                {[
+                  t("methods-artfish-species"),
+                  t("methods-artfish-species-few"),
+                  survey.speciesFromSample && t("methods-artfish-species-sample"),
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+              </p>
+              <p>
+                {t("methods-artfish-species-ranking")} {t("methods-artfish-species-total")}
+              </p>
+              <p>
+                <Linked text={t("methods-artfish-precision")} methodLinks={false} />
+              </p>
               <p className="text-sm text-muted-foreground">
                 {t("methods-artfish-reference")}{" "}
                 <ExternalLink href={ARTFISH_TOOLKIT}>
@@ -258,10 +280,12 @@ export default function AboutPage() {
               ["totals", ScaleIcon],
             ] as const
           ).map(([key, Icon]) => (
-            <Alert key={key}>
+            <Alert key={key} id={`compare-${key}`}>
               <Icon />
               <AlertTitle>{t(`methods-compare-${key}-title`)}</AlertTitle>
-              <AlertDescription>{t(`methods-compare-${key}`)}</AlertDescription>
+              <AlertDescription>
+                <Linked text={t(`methods-compare-${key}`)} />
+              </AlertDescription>
             </Alert>
           ))}
         </div>
@@ -330,7 +354,7 @@ export default function AboutPage() {
           <p>{t("methods-reading-combined")}</p>
           <p>
             {survey.speciesFromSample && `${t("methods-reading-sample")} `}
-            {t("methods-reading-limits")}
+            <Linked text={t("methods-reading-limits")} />
           </p>
         </div>
       </Section>
@@ -339,7 +363,9 @@ export default function AboutPage() {
         <dl className="grid gap-x-10 gap-y-4 md:grid-cols-2 xl:grid-cols-3">
           {GLOSSARY.map((term) => (
             <div key={term}>
-              <dt className="text-sm font-medium">{t(`methods-glossary-${term}-term`)}</dt>
+              <dt className="text-sm font-medium">
+                <Linked text={t(`methods-glossary-${term}-term`)} />
+              </dt>
               <dd className="text-sm text-muted-foreground">
                 <Linked text={t(`methods-glossary-${term}`)} />
               </dd>

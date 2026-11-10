@@ -19,6 +19,7 @@ import {
   type MetricKey,
 } from "@repo/domain/metrics";
 import { ChartState } from "@/components/charts/chart-state";
+import { Linked } from "@/components/linked-text";
 import { WarningIcon } from "@/components/charts/warning-icon";
 import { StatTile } from "@/components/dashboard/stat-tile";
 import { pages, type PageMetric } from "@/config/routes";
@@ -83,6 +84,7 @@ function tileProps(t: Translate, lang: string, data: Headline, metric: MetricKey
  * Estimated totals that leave part of the selection out, flagged like the
  * confidence of the estimates: the share of its districts and months they add
  * up (a range where they differ), of its months alone for one district (`single`).
+ * It links to where Data and methods explains it.
  */
 export function CoverageBadge({
   coverage,
@@ -92,8 +94,9 @@ export function CoverageBadge({
   single?: boolean;
 }) {
   const { t, lang } = useT();
+  const scoped = useScopedHref();
   return (
-    <Badge variant="outline">
+    <Badge variant="outline" render={<Link to={`${scoped(pages.about.path)}#compare-totals`} />}>
       <WarningIcon />
       {t(single ? "text-coverage-share-months" : "text-coverage-share", {
         pct: shareRange(t, lang, coverage),
@@ -156,7 +159,9 @@ export function EstimatesCard({ data }: { data: Headline }) {
         <CardTitle>{t("title-estimates")}</CardTitle>
         {/* The link beside the title only, so the description keeps the card's width on a phone. */}
         {artfish && (
-          <CardDescription className="col-span-2">{t("text-estimates-two")}</CardDescription>
+          <CardDescription className="col-span-2">
+            <Linked text={t("text-estimates-two")} />
+          </CardDescription>
         )}
         <CardAction className="row-span-1">
           <Link to={`${scoped(pages.about.path)}#estimates`} className="link text-sm">
@@ -187,7 +192,11 @@ export function EstimatesCard({ data }: { data: Headline }) {
               </span>
             </>
           )}
-          {note && <span>{note}</span>}
+          {note && (
+            <span>
+              <Linked text={note} />
+            </span>
+          )}
         </CardFooter>
       )}
     </Card>

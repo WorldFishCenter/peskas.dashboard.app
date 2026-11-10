@@ -1,3 +1,47 @@
+# peskas.dashboard 2.5.0
+
+## AskFish
+
+- A button in the top bar opens AskFish, an assistant that answers questions about the country's data in a side panel: its words, the figures behind them, its charts drawn like the dashboard's own, and the data it read. It offers a few questions to start from. The conversation stays open while the reader moves between pages.
+- Every question may use all of the country's data. The districts and months picked on screen go along, and AskFish uses them when a question asks about the selection.
+- Figures are rounded and coloured as on the pages. AskFish knows the estimates of both methods, GPS tracker and FAO ARTFISH, and a chart of one wears that method's colour and name. Its words are in English whatever the page language.
+- What AskFish knows about the data, each measure's meaning, unit and how it adds up, comes from the Peskas data dictionary, the one description of the data the pages are checked against, instead of a list written once by hand. When AskFish needs a figure across months, districts, gears or species, the dashboard works it out with the pages' own code (averages weighted by the landings behind each figure, estimates added up over the district-months both methods estimate), so an answer gives the page's number.
+- AskFish is a separate service. The dashboard asks it from its server, never from the browser, and AskFish reads the data back through the dashboard, with one secret shared both ways. It is on only where `ASKFISH_URL` and `ASKFISH_SHARED_TOKEN` are set; elsewhere nothing changes and the chat isn't built.
+
+## Changes
+
+- On a phone, the flag next to the country name is hidden, to leave room in the top bar.
+# peskas.dashboard 2.4.2
+
+## Changes
+
+- Mozambique: the district filter, the region groups and the coverage table now include Maganja Da Costa (Central) and Mossuril (North), where DINAPA enumerators collect data since October 2026. Namacurra and Nacala stay, with the data collected there before.
+
+# peskas.dashboard 2.4.1
+
+## Changes
+
+- A deployment can also send its visits, clicks and the dashboard's own events to PostHog (EU cloud), beside Google Analytics, with session replays if they are turned on in PostHog. A page or chart that crashes is reported to PostHog's error tracking. It is on only where `VITE_POSTHOG_KEY` is set, first on Zanzibar as a trial, and the other deployments don't download it. ANALYTICS.md has the details.
+
+# peskas.dashboard 2.4.0
+
+## How much of each species all boats land
+
+- On Species and sizes, the chart of the species that make up the catch now shows two bars for each species group: its share of the recorded catch, and, in the ARTFISH gold, its share of the catch all the boats land, as the FAO ARTFISH method estimates it, with the tonnes. Where the two differ shows at a glance. The groups shown are the 15 largest by either measure.
+- The two can rank a species differently: the estimate counts each district and kind of boat and gear by its boats, not by how much catch was recorded there. The chart's explanation says so in a few lines; Data and methods has the rest under the FAO ARTFISH method, with why the estimate's total can be higher than the ARTFISH catch on the Catch page, which adds up only the districts and months both methods estimate. Under the chart, a warning says what share of the districts and months the estimate covers, and how much of the recorded catch those hold.
+- The table of species by district can switch from the recorded catch to the same estimate, in tonnes and in gold. It says how many districts have no estimate in the months selected, and that a dash means none for that species there.
+- Data and methods describes it under the FAO ARTFISH method.
+- Until the next data update publishes these estimates, the chart shows the recorded catch alone and the table has no switch. If the estimates can't be loaded, both say so and show the recorded catch.
+
+## The two methods by their colours, wherever they are named
+
+- In explanations and notes, the GPS tracker method is named in wine-red and the FAO ARTFISH method in gold, as in the charts, each a link to how it works on Data and methods. The gold and the wine are shaded a little where needed, so the words are as easy to read as the text around them.
+- The warning that estimates cover only part of the districts and months is a link to where Data and methods explains it.
+
+## Changes
+
+- A link to a section of Data and methods now lands with its title in view; before, the top bar covered it.
+
 # peskas.dashboard 2.3.3
 
 ## The Peskas logo

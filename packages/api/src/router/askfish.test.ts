@@ -1,17 +1,11 @@
 import { beforeEach, expect, test, vi } from "vitest";
+import { activeCountry } from "../lib/country";
 import { createCallerFactory } from "../trpc";
 import { askfishRouter } from "./askfish";
 
 const askfish = createCallerFactory(askfishRouter)({});
 
-const scope = {
-  page: "catch_trends" as const,
-  metric: "estimated_catch_tn",
-  districts: ["Wete"],
-  months: 6,
-  lang: "sw",
-  restrict: true,
-};
+const filters = { districts: ["Wete"], months: 6, lang: "sw" };
 
 /** AskFish's reply to a question, as `ask_data` builds it, with the parts the chat never sees. */
 const REPLY = {
@@ -75,50 +69,46 @@ const calls = () =>
 beforeEach(() => {
   process.env.VITE_COUNTRY_CODE = "TZ";
   process.env.ASKFISH_URL = "http://askfish.test/";
-  process.env.ASKFISH_SERVICE_TOKEN = "secret";
-  // ASKFISH MULTI-COUNTRY: Prevent a developer's real per-country Token B
-  // from changing test expectations or appearing in intercepted requests.
-  delete process.env.ASKFISH_BACKEND_TOKEN;
-  delete process.env.ASKFISH_SHARED_TOKEN;
+  // Never a developer's real token in an intercepted request.
+  process.env.ASKFISH_SHARED_TOKEN = "test-shared-token";
   fetchMock.mockReset();
   vi.stubGlobal("fetch", fetchMock);
 });
 
 test("AskFish gets the page as its contract words it, and the chat only what it draws", async () => {
   fetchMock.mockResolvedValueOnce(reply(REPLY));
-  const answer = await askfish.ask({ ...scope, question: "  How has the catch changed?  " });
+  const answer = await askfish.ask({ ...filters, question: "  How has the catch changed?  " });
 
   const [call] = calls();
   expect(call!.path).toBe("ask");
-  // AskFish doesn't check a secret yet, so none is sent.
-  expect(call!.headers.authorization).toBeUndefined();
+  expect(call!.headers.authorization).toBe("Bearer test-shared-token");
   expect(call!.body).toEqual({
     question: "How has the catch changed?",
-    restrictToCurrentPageAndFilters: true,
+    // One chat for the whole dashboard: every question may use all the country's data.
+    restrictToCurrentPageAndFilters: false,
     context: {
       type: "PESKAS_PAGE_CONTEXT",
       version: "1.0",
       payload: {
-        page: { id: "catch_trends", route: "/catch_trends", title: "catch_trends" },
+        page: { id: "catch_trends", route: "/", title: "Peskas dashboard" },
         // The server's country, whatever the browser says.
         country: { code: "TZ", name: "Zanzibar" },
         locale: "sw",
         filters: {
           districts: ["Wete"],
-          metric: "estimated_catch_tn",
+          metric: "mean_cpue",
           months: 6,
           timeRangeLabel: "Last 6 months",
         },
-        requestedOperation: "catch_trends.monthly_time_series.v1",
+        requestedOperation: "dashboard.semantic_context.v1",
       },
     },
   });
 
   expect(Object.keys(answer).sort()).toEqual(
-    ["caveats", "charts", "estimated", "headline", "narrative", "sources", "statistics"].sort(),
+    ["caveats", "charts", "headline", "narrative", "sources", "statistics"].sort(),
   );
   // An answer about an estimate: its figures are in that metric, so rounded; its counts are not.
-  expect(answer.estimated).toBe(true);
   expect(answer.statistics).toEqual([
     {
       label: "Wete",
@@ -141,17 +131,18 @@ test("AskFish gets the page as its contract words it, and the chat only what it 
   ]);
 });
 
-test("another country's district or a metric AskFish lacks never reaches AskFish", async () => {
-  const question = "How much?";
-  await expect(askfish.ask({ ...scope, districts: ["Mombasa"], question })).rejects.toMatchObject({
-    code: "BAD_REQUEST",
-  });
-  // ASKFISH INTEGRATION: mean_catch_kg is a valid new Catch metric, so
-  // ensure an unrelated district-only measure still fails before network IO.
-  await expect(askfish.ask({ ...scope, metric: "n_fishers", question })).rejects.toMatchObject({
-    code: "BAD_REQUEST",
-  });
+test("another country's district or language never reaches AskFish, and no district stands for all", async () => {
+  await expect(
+    askfish.ask({ ...filters, districts: ["Mombasa"], question: "How much?" }),
+  ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+  await expect(
+    askfish.ask({ ...filters, lang: "fr", question: "How much?" }),
+  ).rejects.toMatchObject({ code: "BAD_REQUEST" });
   expect(fetchMock).not.toHaveBeenCalled();
+
+  fetchMock.mockResolvedValueOnce(reply(REPLY));
+  await askfish.ask({ ...filters, districts: [], question: "How much?" });
+  expect(calls()[0]!.body.context.payload.filters.districts).toEqual(activeCountry().districts);
 });
 
 test("an answer on two measures keeps each figure in its own metric", async () => {
@@ -186,7 +177,10 @@ test("an answer on two measures keeps each figure in its own metric", async () =
           title: "Change in Estimated catch vs Catch rate",
           xLabel: "Estimated catch change (%)",
           yLabel: "Catch rate change (%)",
-          referenceLines: [{ axis: "x", value: 0 }],
+          referenceLines: [
+            { axis: "x", value: 0, label: "No change" },
+            { axis: "y", value: 0, label: "No change" },
+          ],
           series: [{ name: "District", points: [{ x: 12, y: -3, label: "Kati" }] }],
         },
       ],
@@ -196,7 +190,7 @@ test("an answer on two measures keeps each figure in its own metric", async () =
       ],
     }),
   );
-  const answer = await askfish.ask({ ...scope, restrict: false, question: "Rate against catch?" });
+  const answer = await askfish.ask({ ...filters, question: "Rate against catch?" });
 
   expect(answer.statistics.map((s) => s.metric)).toEqual(["estimated_catch_tn", "mean_cpue", null]);
   expect(answer.charts.map((c) => c.metrics)).toEqual([
@@ -207,6 +201,26 @@ test("an answer on two measures keeps each figure in its own metric", async () =
     { x: null, y: null },
   ]);
   expect(answer.charts[2]!.zero).toBe(true);
+  // The scatter draws the tracker estimate; the changes mix a recorded figure and an estimate.
+  expect(answer.charts.map((c) => c.method)).toEqual([null, "tracker", null]);
+});
+
+test("a chart of counts takes the method of an answer that reads only its estimates", async () => {
+  fetchMock.mockResolvedValueOnce(
+    reply({
+      ...REPLY,
+      charts: [
+        {
+          type: "stacked_bar",
+          title: "Months found",
+          series: [{ name: "Found", points: [{ x: "2026-04-01", y: 3 }] }],
+        },
+      ],
+      provenance: [{ ...REPLY.provenance[0], measure: "estimated_catch_tn_fao" }],
+    }),
+  );
+  const answer = await askfish.ask({ ...filters, question: "Which months have estimates?" });
+  expect(answer.charts[0]).toMatchObject({ metrics: { x: null, y: null }, method: "artfish" });
 });
 
 test("a suggestion runs AskFish's kept plan, and a failure is not hidden", async () => {
@@ -215,13 +229,13 @@ test("a suggestion runs AskFish's kept plan, and a failure is not hidden", async
       suggestions: [{ id: "suggestion-1", question: "Which month peaked?", category: "x" }],
     }),
   );
-  expect(await askfish.suggestions(scope)).toEqual([
+  expect(await askfish.suggestions(filters)).toEqual([
     { id: "suggestion-1", question: "Which month peaked?" },
   ]);
 
   fetchMock.mockReset();
   fetchMock.mockResolvedValueOnce(reply(REPLY));
-  const picked = { ...scope, question: "Which month peaked?", suggestionId: "suggestion-1" };
+  const picked = { ...filters, question: "Which month peaked?", suggestionId: "suggestion-1" };
   expect((await askfish.ask(picked)).headline).toBe("Estimated catch rose");
   expect(calls().map((c) => [c.path, c.body.suggestionId])).toEqual([
     ["suggestions/ask", "suggestion-1"],
@@ -235,65 +249,29 @@ test("a suggestion runs AskFish's kept plan, and a failure is not hidden", async
   expect(fetchMock).toHaveBeenCalledTimes(1);
 });
 
-
-// ASKFISH INTEGRATION: The new Peskas page metric pickers must remain
-// compatible with AskFish's strict context contract and the legacy Catch mode.
-test.each([
-  ["catch_trends", "mean_catch_kg", "dashboard.semantic_context.v1"],
-  ["catch_trends", "estimated_fishing_trips", "dashboard.semantic_context.v1"],
-  ["revenue", "mean_catch_price", "dashboard.semantic_context.v1"],
-  ["revenue", "mean_price_kg", "dashboard.semantic_context.v1"],
-] as const)("new %s metric %s uses %s", async (page, metric, operation) => {
-  fetchMock.mockResolvedValueOnce(reply(REPLY));
-  await askfish.ask({ ...scope, page, metric, question: "How did this metric change?" });
-  expect(calls()[0]!.body.context.payload.filters.metric).toBe(metric);
-  expect(calls()[0]!.body.context.payload.requestedOperation).toBe(operation);
+test("without the shared token nothing is sent to AskFish", async () => {
+  delete process.env.ASKFISH_SHARED_TOKEN;
+  await expect(askfish.ask({ ...filters, question: "How much?" })).rejects.toThrow();
+  expect(fetchMock).not.toHaveBeenCalled();
 });
 
-// ASKFISH INTEGRATION: The browser never gets this secret; it is only attached
-// by the Peskas server to the server-to-server AskFish request.
-test("outbound AskFish token is sent only from the Peskas server", async () => {
-  process.env.ASKFISH_BACKEND_TOKEN = "private-test-token";
-  try {
-    fetchMock.mockResolvedValueOnce(reply(REPLY));
-    await askfish.ask({ ...scope, question: "How did catch change?" });
-    expect(calls()[0]!.headers.authorization).toBe("Bearer private-test-token");
-  } finally {
-    delete process.env.ASKFISH_BACKEND_TOKEN;
-  }
+test("a kind of chart the chat can't draw is left out", async () => {
+  fetchMock.mockResolvedValueOnce(
+    reply({ ...REPLY, charts: [{ ...REPLY.charts[0], type: "heatmap" }, REPLY.charts[0]] }),
+  );
+  const answer = await askfish.ask({ ...filters, question: "How much?" });
+  expect(answer.charts.map((c) => c.type)).toEqual(["line"]);
 });
 
-// ASKFISH SHARED TOKEN: All dashboards use one server-only credential.
-// The Peskas server still stamps the correct country into the request.
 test.each([
   ["KE", "Kenya", "Kilifi North"],
   ["TZ", "Zanzibar", "Wete"],
   ["MZ", "Mozambique", "Moma"],
 ] as const)("server-derived %s context uses common bearer token", async (code, name, district) => {
   process.env.VITE_COUNTRY_CODE = code;
-  process.env.ASKFISH_SHARED_TOKEN = "same-shared-secret-for-every-deployment";
-  try {
-    fetchMock.mockResolvedValueOnce(reply(REPLY));
-    await askfish.ask({ ...scope, districts: [district], question: "How has catch changed?" });
-    const [call] = calls();
-    expect(call!.body.context.payload.country).toEqual({ code, name });
-    expect(call!.headers.authorization).toBe("Bearer same-shared-secret-for-every-deployment");
-    expect(call!.path).toBe("ask");
-  } finally {
-    delete process.env.ASKFISH_SHARED_TOKEN;
-  }
-});
-
-// New common token overrides an obsolete legacy outbound credential.
-test("shared token takes precedence over ASKFISH_BACKEND_TOKEN", async () => {
-  process.env.ASKFISH_SHARED_TOKEN = "shared-secret-for-both-directions";
-  process.env.ASKFISH_BACKEND_TOKEN = "obsolete-legacy-token";
-  try {
-    fetchMock.mockResolvedValueOnce(reply(REPLY));
-    await askfish.ask({ ...scope, question: "How did catch change?" });
-    expect(calls()[0]!.headers.authorization).toBe("Bearer shared-secret-for-both-directions");
-  } finally {
-    delete process.env.ASKFISH_SHARED_TOKEN;
-    delete process.env.ASKFISH_BACKEND_TOKEN;
-  }
+  fetchMock.mockResolvedValueOnce(reply(REPLY));
+  await askfish.ask({ ...filters, districts: [district], question: "How has catch changed?" });
+  const [call] = calls();
+  expect(call!.body.context.payload.country).toEqual({ code, name });
+  expect(call!.headers.authorization).toBe("Bearer test-shared-token");
 });

@@ -7,8 +7,6 @@
       "outputs": ["dist/**", ".output/**", ".vercel/output/**"],
       "env": [
         "ASKFISH_SHARED_TOKEN",
-        "ASKFISH_SERVICE_TOKEN",
-        "ASKFISH_BACKEND_TOKEN",
         "ASKFISH_URL",
         "MONGODB_URI",
         "MONGODB_URI_COASTS",
@@ -16,7 +14,8 @@
         "VITE_COUNTRY_CODE",
         "VITE_GA_MEASUREMENT_ID",
         "VITE_GA_ROLLUP_ID",
-        "VITE_MAPBOX_TOKEN"
+        "VITE_MAPBOX_TOKEN",
+        "VITE_POSTHOG_KEY"
       ]
     },
     "lint": {},
@@ -32,8 +31,6 @@
   "ui": "stream",
   "globalEnv": [
     "ASKFISH_SHARED_TOKEN",
-    "ASKFISH_SERVICE_TOKEN",
-    "ASKFISH_BACKEND_TOKEN",
     "ASKFISH_URL",
     "MONGODB_URI",
     "MONGODB_URI_COASTS",
@@ -41,6 +38,7 @@
     "VITE_COUNTRY_CODE",
     "VITE_GA_MEASUREMENT_ID",
     "VITE_GA_ROLLUP_ID",
-    "VITE_MAPBOX_TOKEN"
+    "VITE_MAPBOX_TOKEN",
+    "VITE_POSTHOG_KEY"
   ]
 }
