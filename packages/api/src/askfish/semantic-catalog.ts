@@ -3,6 +3,7 @@
 import { z } from "zod";
 
 import catalogDocument from "./semantic-catalog.json";
+import { scientificRegistry, isAskFishV2GearTaxaEnabled, isAskFishV2WeightedMeanEnabled, validateRegistrySemantics } from "./scientific-registry";
 
 // STAGE 2 STEP 2.2: Validate unit provenance explicitly so AskFish can distinguish
 // confirmed dashboard units from inferred or still-unverified units.
@@ -130,6 +131,29 @@ const scopeModeSchema = z.object({
 
 // ASKFISH GEO CAPABILITIES: An explicit, country-scoped *analytical* substitute.
 // This never creates a BMU-to-district row mapping or authorizes additional metrics.
+const analysisCapabilitySchema = z.object({
+  operation: z.literal("composition"),
+  dataset: z.string().min(1), measure: z.string().min(1),
+  groupBy: z.string().min(1), partitionBy: z.string().min(1),
+  allowedPartitionDimensions: z.array(z.string().min(1)).min(1).max(4).optional(),
+  maxPartitionDimensions: z.number().int().min(1).max(3).optional(),
+  maxPartitions: z.number().int().min(1).max(500).optional(),
+  positiveOnly: z.literal(true), maxTopN: z.number().int().min(1).max(20),
+  denominator: z.literal("sum_all_matching_positive_values_per_partition_before_top_n"),
+  note: z.string().min(1),
+});
+
+const weightedMeanCapabilitySchema = z.object({
+  operation: z.literal("weighted_mean"),
+  valueDataset: z.string().min(1), valueMeasure: z.string().min(1),
+  weightDataset: z.string().min(1), weightMeasure: z.string().min(1),
+  joinDimensions: z.array(z.string().min(1)).min(2),
+  allowedGroupBy: z.array(z.string().min(1)).min(1),
+  weightUnit: z.string().min(1),
+  denominatorPolicy: z.literal("positive_matched_weights_only_complete_pairs"),
+  status: z.literal("provisional_descriptive"), note: z.string().min(1),
+});
+
 const geographicAlternativeSchema = z.object({
   requestedLevel: z.string().min(1),
   replacementLevel: z.string().min(1),
@@ -163,12 +187,26 @@ const semanticCatalogSchema = z.object({
   pageScopes: z.record(pageScopeSchema),
   datasets: z.record(datasetSchema),
   discoveredSources: z.array(discoveredSourceSchema),
+  analysisCapabilities: z.record(analysisCapabilitySchema),
+  weightedMeanCapabilities: z.record(weightedMeanCapabilitySchema).default({}),
   geographicAlternatives: z.record(z.array(geographicAlternativeSchema)),
 });
 
 // STAGE 2 STEP 2.2: Parse and freeze the catalog contract before exposing helper
 // functions. The JSON remains easy to inspect/diff while Zod supplies runtime safety.
-export const semanticCatalog = semanticCatalogSchema.parse(catalogDocument);
+// STAGE 4.2.A: The old v1 definitions stay in their existing JSON file. A small,
+// curated scientific overlay is compiled under the SAME schema, with approval
+// and scientific constraints validated separately. Feature-flagged datasets
+// are filtered out of the deployment catalog unless opted in explicitly.
+export const semanticCatalog = semanticCatalogSchema.parse({
+  ...catalogDocument,
+  datasets: { ...catalogDocument.datasets, ...scientificRegistry.datasets },
+  analysisCapabilities: scientificRegistry.analysisCapabilities,
+  // Internal reviewed metadata is always parsed, while the deployment view
+  // gates query authorization dynamically under local-only feature controls.
+  weightedMeanCapabilities: scientificRegistry.weightedMeanCapabilities,
+});
+validateRegistrySemantics(semanticCatalog.datasets);
 
 // STAGE 2 STEP 2.2: Validate cross-references that a shape schema alone cannot check:
 // page scopes must reference real datasets and every dataset page tag must exist.
@@ -218,13 +256,22 @@ export function semanticCatalogForCountry(countryCode: string) {
 
   const datasets = Object.fromEntries(
     Object.entries(semanticCatalog.datasets)
-      .filter(([, dataset]) => dataset.bindings[countryCode]?.status === "available")
+      .filter(([datasetId, dataset]) =>
+        dataset.bindings[countryCode]?.status === "available" &&
+        (datasetId !== "gear_taxa_summaries" || isAskFishV2GearTaxaEnabled()),
+      )
       .map(([datasetId, dataset]) => {
         const { bindings, ...semanticDataset } = dataset;
         return [
           datasetId,
           {
             ...semanticDataset,
+            // Hide the provisional mean measure when its derived capability is off;
+            // the governed query path uses this exact deployment catalog too.
+            measures: datasetId === "district_summary" && !isAskFishV2WeightedMeanEnabled()
+              ? Object.fromEntries(Object.entries(semanticDataset.measures)
+                .filter(([key]) => key !== "mean_catch_kg"))
+              : semanticDataset.measures,
             binding: bindings[countryCode],
           },
         ];
@@ -244,6 +291,18 @@ export function semanticCatalogForCountry(countryCode: string) {
     pageScopes: semanticCatalog.pageScopes,
     datasets,
     geographicAlternatives: semanticCatalog.geographicAlternatives[countryCode] ?? [],
+    // Never advertise a capability whose dataset is not enabled in this deployment.
+    analysisCapabilities: Object.fromEntries(
+      Object.entries(semanticCatalog.analysisCapabilities).filter(([, capability]) =>
+        Object.prototype.hasOwnProperty.call(datasets, capability.dataset)),
+    ),
+    weightedMeanCapabilities: Object.fromEntries(
+      Object.entries(semanticCatalog.weightedMeanCapabilities).filter(([, cap]) =>
+        isAskFishV2WeightedMeanEnabled() &&
+        Boolean(datasets[cap.valueDataset] && datasets[cap.weightDataset]) &&
+        Boolean(datasets[cap.valueDataset].measures[cap.valueMeasure]) &&
+        Boolean(datasets[cap.weightDataset].measures[cap.weightMeasure])),
+    ),
     discoveredSources: semanticCatalog.discoveredSources.filter(
       (source) => source.countryCode === countryCode,
     ),

@@ -1,0 +1,211 @@
+{
+  "registryVersion": "0.1.0-local",
+  "featureFlag": "ASKFISH_V2_ENABLE_GEAR_TAXA",
+  "status": "local_testing_only",
+  "sourceEvidence": [
+    "peskas.coasts/R/summarize-data.R",
+    "peskas dashboard/packages/api/src/router/summaries.ts:gearComposition",
+    "MongoDB schema inventory 2026-10-22"
+  ],
+  "scienceRules": {
+    "gear_taxa_summaries": {
+      "grain": [
+        "district",
+        "month",
+        "gear",
+        "taxon"
+      ],
+      "population": "Recorded catch with non-null fishing gear, taxon, district and dated monthly summary",
+      "additiveMeasures": [
+        "catch_kg"
+      ],
+      "blockedMeasures": {
+        "n_trips": "Repeated across taxa within a trip; cannot sum to obtain unique fishing trips"
+      },
+      "positiveCatchOnlyForComposition": true,
+      "shareDenominator": "all_matching_positive_catch_before_top_n",
+      "provenance": "recorded_catch_not_fleet_estimate",
+      "requiredCoverage": "all_matching_source_rows_no_truncation",
+      "permission": "local_opt_in_only"
+    }
+  },
+  "datasets": {
+    "gear_taxa_summaries": {
+      "queryable": true,
+      "lineage": "district",
+      "collection": "gear_taxa_summaries",
+      "grain": [
+        "district",
+        "month",
+        "gear",
+        "taxon"
+      ],
+      "layout": "wide",
+      "timeField": "date",
+      "geographyKey": "gaul_2_name",
+      "pageScopes": [],
+      "access": {
+        "applicationRoute": "public",
+        "dataClassification": "aggregate_non_personal",
+        "classificationStatus": "provisional_local_only"
+      },
+      "derivationStatus": "coasts_geartaxa_sum_reviewed_in_source",
+      "dimensions": {
+        "district": {
+          "field": "gaul_2_name",
+          "aliases": [
+            "district",
+            "county",
+            "area"
+          ]
+        },
+        "month": {
+          "field": "date",
+          "aliases": [
+            "month",
+            "date",
+            "period"
+          ]
+        },
+        "gear": {
+          "field": "gear",
+          "aliases": [
+            "gear",
+            "fishing gear",
+            "fishing method"
+          ]
+        },
+        "taxon": {
+          "field": "catch_taxon",
+          "aliases": [
+            "species",
+            "taxon",
+            "fish species",
+            "species group"
+          ]
+        }
+      },
+      "measures": {
+        "catch_kg": {
+          "label": "Recorded catch by gear and taxon",
+          "aliases": [
+            "recorded catch by fishing gear",
+            "gear species composition",
+            "catch kg by gear",
+            "taxon catch by gear"
+          ],
+          "kind": "total",
+          "unit": {
+            "value": "kg",
+            "status": "repo_confirmed"
+          },
+          "nativeGrain": [
+            "district",
+            "month",
+            "gear",
+            "taxon"
+          ],
+          "derivationStatus": "coasts_source_verified",
+          "rollups": {
+            "acrossDistrict": {
+              "status": "allowed",
+              "method": "sum"
+            },
+            "acrossTime": {
+              "status": "allowed",
+              "method": "sum"
+            },
+            "acrossGear": {
+              "status": "allowed",
+              "method": "sum"
+            },
+            "acrossTaxon": {
+              "status": "allowed",
+              "method": "sum"
+            }
+          }
+        }
+      },
+      "bindings": {
+        "KE": {
+          "database": "portal-prod",
+          "collection": "gear_taxa_summaries",
+          "status": "available",
+          "observedDocuments": 9277
+        },
+        "TZ": {
+          "database": "portal-prod",
+          "collection": "gear_taxa_summaries",
+          "status": "available",
+          "observedDocuments": 3216
+        },
+        "MZ": {
+          "database": "portal-prod",
+          "collection": "gear_taxa_summaries",
+          "status": "available",
+          "observedDocuments": 975
+        }
+      },
+      "queryPolicy": {
+        "maxRows": 20000,
+        "timeFilterStatus": "supported",
+        "canonicalKey": [
+          "district",
+          "month",
+          "gear",
+          "taxon"
+        ],
+        "duplicateResolution": "newest_timestamp_then_objectid"
+      },
+      "caveats": [
+        "Recorded sampled catch is not a full-fleet estimate; Kenya KEFS taxa represent a sample of the catch.",
+        "Only named-gear and named-taxon observations with complete district/month/gear/taxon keys enter this first semantic source. Catch with missing gear is excluded. Do not call its sum total fishery catch.",
+        "n_trips is repeated for gear-taxon combinations and must NOT be summed across taxa; it is intentionally not exposed as a measure.",
+        "Catch composition percentages must divide by the sum of ALL matching positive catch rows for the selected named gear, districts and time, before applying top N; cannot calculate shares from truncated frames.",
+        "The source is defined by peskas.coasts (>=4.15.0) and Peskas summaries.gearComposition; deployments and production numerical parity are not yet verified.",
+        "Stage 4.2.A local feature flag only; not authorized for deployment or implicit inclusion in Catch page restricted scope."
+      ]
+    }
+  },
+  "analysisCapabilities": {
+    "recorded_catch_composition_v1": {
+      "operation": "composition",
+      "dataset": "gear_taxa_summaries",
+      "measure": "catch_kg",
+      "groupBy": "taxon",
+      "partitionBy": "gear",
+      "positiveOnly": true,
+      "maxTopN": 20,
+      "denominator": "sum_all_matching_positive_values_per_partition_before_top_n",
+      "note": "Recorded catch share per approved gear, district, month or combined partition; not fleet-wide estimated catch.",
+      "allowedPartitionDimensions": [
+        "gear",
+        "district",
+        "month"
+      ],
+      "maxPartitionDimensions": 2,
+      "maxPartitions": 96
+    }
+  },
+  "weightedMeanCapabilities": {
+    "recorded_catch_submission_weighted_v1": {
+      "operation": "weighted_mean",
+      "valueDataset": "district_summary",
+      "valueMeasure": "mean_catch_kg",
+      "weightDataset": "district_summary",
+      "weightMeasure": "n_submissions",
+      "joinDimensions": [
+        "district",
+        "date"
+      ],
+      "allowedGroupBy": [
+        "date",
+        "district"
+      ],
+      "weightUnit": "submissions",
+      "denominatorPolicy": "positive_matched_weights_only_complete_pairs",
+      "status": "provisional_descriptive",
+      "note": "Submission-weighted descriptive mean of published district trip means, NOT independently verified as an exact pooled trip mean. Missing-catch eligibility might differ from submission counts."
+    }
+  }
+}

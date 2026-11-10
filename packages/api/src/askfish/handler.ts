@@ -5,6 +5,8 @@ import { METRICS } from "@repo/domain/metrics";
 import { activeCountry } from "../lib/country";
 import { AskFishQueryError, executeAskFishQuery } from "./query";
 import { semanticCatalogForCountry } from "./semantic-catalog";
+import { isAskFishV2GearTaxaEnabled } from "./scientific-registry";
+import { summarizeGearTaxaComposition } from "./gear-composition";
 
 /*
  * The endpoints the AskFish service calls, server to server, under
@@ -92,6 +94,52 @@ async function catchTrends(req: Request) {
   });
 }
 
+// Stage 4.2.A preview: a fixed, scientifically bounded composition operator.
+// This is disabled by default and cannot be turned on in production. It uses
+// ONLY the existing governed Mongo query transport; no Peskas API data calls.
+const gearCompositionRequest = z.object({
+  contractVersion: z.literal("2.0-preview"),
+  countryCode: z.enum(["KE", "TZ", "MZ"]),
+  gears: z.array(z.string().min(1).max(200)).min(1).max(10),
+  districts: z.array(z.string().min(1).max(150)).max(100).optional(),
+  timeRange: z.object({
+    startDate: z.string().datetime({ offset: true }).optional(),
+    endDate: z.string().datetime({ offset: true }).optional(),
+    lastMonths: z.number().int().min(1).max(72).optional(),
+  }).nullable().optional(),
+  topN: z.number().int().min(1).max(20).default(10),
+}).strict();
+
+async function gearCompositionPreview(req: Request) {
+  if (!isAskFishV2GearTaxaEnabled()) {
+    throw new AskFishQueryError("Gear/taxa preview is disabled.", 404);
+  }
+  const parsed = gearCompositionRequest.safeParse(await req.json().catch(() => null));
+  if (!parsed.success) throw new AskFishQueryError(`Invalid gear composition request: ${parsed.error.message}`);
+  const { countryCode, gears, districts, timeRange, topN } = parsed.data;
+  // v1 query applies country binding, safe gear resolution, timestamps, dedup,
+  // source grain, hard row ceiling and explicit date checks before aggregation.
+  const frame = await executeAskFishQuery({
+    contractVersion: "1.0", countryCode, dataset: "gear_taxa_summaries", measure: "catch_kg",
+    filters: { gear: gears, ...(districts ? { district: districts } : {}) },
+    timeRange: timeRange ?? null,
+    limit: 20000,
+    scope: { mode: "unrestricted", pageId: null, dashboardFilters: null },
+  });
+  return json({
+    contractVersion: "2.0-preview",
+    catalogVersion: frame.catalogVersion,
+    dataset: frame.dataset,
+    scope: frame.scope,
+    source: frame.source,
+    dataVersion: frame.dataVersion,
+    rawRecordCount: frame.rawRecordCount,
+    duplicateRecordCount: frame.duplicateRecordCount,
+    matchedCanonicalRecordCount: frame.matchedCanonicalRecordCount,
+    ...summarizeGearTaxaComposition(frame, topN),
+  });
+}
+
 const ROUTES: Record<
   string,
   { method: string; run: (req: Request) => Response | Promise<Response> }
@@ -99,6 +147,7 @@ const ROUTES: Record<
   catalog: { method: "GET", run: catalog },
   "catch-trends": { method: "POST", run: catchTrends },
   query: { method: "POST", run: query },
+  "gear-composition": { method: "POST", run: gearCompositionPreview },
 };
 
 /** Answer a request under `/api/askfish`; every route needs the service token. */

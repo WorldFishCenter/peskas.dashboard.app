@@ -48,28 +48,63 @@
   },
   "pageScopes": {
     "catch": {
-      "datasets": ["monthly_district_summary", "gear_summary_district"],
-      "contextFilters": ["country", "districts", "time_range"],
+      "datasets": [
+        "monthly_district_summary",
+        "gear_summary_district"
+      ],
+      "contextFilters": [
+        "country",
+        "districts",
+        "time_range"
+      ],
       "description": "Catch rate, estimated catch, and catch-by-gear analytics. Current selected metric is only a hint; all approved Catch-page metrics remain available under the selected district/time filters."
     },
     "revenue": {
-      "datasets": ["monthly_district_summary", "gear_summary_district"],
-      "contextFilters": ["country", "districts", "time_range"],
+      "datasets": [
+        "monthly_district_summary",
+        "gear_summary_district"
+      ],
+      "contextFilters": [
+        "country",
+        "districts",
+        "time_range"
+      ],
       "description": "Revenue per unit effort, estimated revenue, and revenue-by-gear analytics. Current selected metric is only a hint; all approved Revenue-page metrics remain available under the selected district/time filters."
     },
     "catch_composition": {
-      "datasets": ["taxa_summary_district"],
-      "contextFilters": ["country", "districts", "time_range", "metric"],
+      "datasets": [
+        "taxa_summary_district"
+      ],
+      "contextFilters": [
+        "country",
+        "districts",
+        "time_range",
+        "metric"
+      ],
       "description": "Species/taxa composition and district-species analytics with production-verified monthly time filtering."
     },
     "map": {
-      "datasets": ["grid_summary", "district_summary"],
-      "contextFilters": ["country", "time_range", "metric"],
+      "datasets": [
+        "grid_summary",
+        "district_summary"
+      ],
+      "contextFilters": [
+        "country",
+        "time_range",
+        "metric"
+      ],
       "description": "Spatial grid activity plus district-level indicator context."
     },
     "home": {
-      "datasets": ["district_summary", "grid_summary"],
-      "contextFilters": ["country", "time_range", "metric"],
+      "datasets": [
+        "district_summary",
+        "grid_summary"
+      ],
+      "contextFilters": [
+        "country",
+        "time_range",
+        "metric"
+      ],
       "description": "Homepage indicator cards, district summaries, and map context."
     }
   },
@@ -78,11 +113,18 @@
       "queryable": true,
       "lineage": "district",
       "collection": "monthly_summaries",
-      "grain": ["district", "month", "metric"],
+      "grain": [
+        "district",
+        "month",
+        "metric"
+      ],
       "layout": "long",
       "timeField": "date",
       "geographyKey": "gaul_2_name",
-      "pageScopes": ["catch", "revenue"],
+      "pageScopes": [
+        "catch",
+        "revenue"
+      ],
       "access": {
         "applicationRoute": "public",
         "dataClassification": "aggregate_non_personal",
@@ -92,27 +134,47 @@
       "dimensions": {
         "district": {
           "field": "gaul_2_name",
-          "aliases": ["district", "county", "area"]
+          "aliases": [
+            "district",
+            "county",
+            "area"
+          ]
         },
         "month": {
           "field": "date",
-          "aliases": ["month", "date", "period"]
+          "aliases": [
+            "month",
+            "date",
+            "period"
+          ]
         },
         "metric": {
           "field": "metric",
-          "aliases": ["measure", "indicator", "metric"]
+          "aliases": [
+            "measure",
+            "indicator",
+            "metric"
+          ]
         }
       },
       "measures": {
         "mean_cpue": {
           "label": "Catch rate",
-          "aliases": ["cpue", "catch rate", "catch per unit effort", "fishing productivity"],
+          "aliases": [
+            "cpue",
+            "catch rate",
+            "catch per unit effort",
+            "fishing productivity"
+          ],
           "kind": "rate",
           "unit": {
             "value": "kg/fisher/hour",
             "status": "repo_confirmed"
           },
-          "nativeGrain": ["district", "month"],
+          "nativeGrain": [
+            "district",
+            "month"
+          ],
           "derivationStatus": "upstream_unverified",
           "rollups": {
             "acrossDistrict": {
@@ -133,13 +195,20 @@
         },
         "mean_rpue": {
           "label": "Revenue per unit effort",
-          "aliases": ["rpue", "revenue per unit effort", "fisher revenue rate"],
+          "aliases": [
+            "rpue",
+            "revenue per unit effort",
+            "fisher revenue rate"
+          ],
           "kind": "rate",
           "unit": {
             "value": "{currency}/fisher/hour",
             "status": "repo_confirmed"
           },
-          "nativeGrain": ["district", "month"],
+          "nativeGrain": [
+            "district",
+            "month"
+          ],
           "derivationStatus": "upstream_unverified",
           "rollups": {
             "acrossDistrict": {
@@ -160,13 +229,20 @@
         },
         "mean_price_kg": {
           "label": "Price per kilogram",
-          "aliases": ["price", "price per kg", "fish price"],
+          "aliases": [
+            "price",
+            "price per kg",
+            "fish price"
+          ],
           "kind": "rate",
           "unit": {
             "value": "{currency}/kg",
             "status": "repo_confirmed"
           },
-          "nativeGrain": ["district", "month"],
+          "nativeGrain": [
+            "district",
+            "month"
+          ],
           "derivationStatus": "upstream_unverified",
           "rollups": {
             "acrossDistrict": {
@@ -186,13 +262,20 @@
         },
         "mean_catch_kg": {
           "label": "Mean catch",
-          "aliases": ["mean catch", "average catch", "catch per trip"],
+          "aliases": [
+            "mean catch",
+            "average catch",
+            "catch per trip"
+          ],
           "kind": "rate",
           "unit": {
             "value": "kg",
             "status": "repo_field_only"
           },
-          "nativeGrain": ["district", "month"],
+          "nativeGrain": [
+            "district",
+            "month"
+          ],
           "derivationStatus": "upstream_unverified",
           "rollups": {
             "acrossDistrict": {
@@ -208,13 +291,19 @@
         },
         "mean_catch_price": {
           "label": "Mean catch value",
-          "aliases": ["mean catch price", "average catch value"],
+          "aliases": [
+            "mean catch price",
+            "average catch value"
+          ],
           "kind": "rate",
           "unit": {
             "value": "{currency}",
             "status": "inferred_from_name"
           },
-          "nativeGrain": ["district", "month"],
+          "nativeGrain": [
+            "district",
+            "month"
+          ],
           "derivationStatus": "upstream_unverified",
           "rollups": {
             "acrossDistrict": {
@@ -230,13 +319,20 @@
         },
         "estimated_fishing_trips": {
           "label": "Estimated fishing trips",
-          "aliases": ["fishing trips", "estimated trips", "trip effort"],
+          "aliases": [
+            "fishing trips",
+            "estimated trips",
+            "trip effort"
+          ],
           "kind": "count",
           "unit": {
             "value": "trips",
             "status": "repo_confirmed"
           },
-          "nativeGrain": ["district", "month"],
+          "nativeGrain": [
+            "district",
+            "month"
+          ],
           "derivationStatus": "upstream_unverified",
           "rollups": {
             "acrossDistrict": {
@@ -251,13 +347,21 @@
         },
         "estimated_catch_tn": {
           "label": "Estimated catch",
-          "aliases": ["estimated catch", "total catch", "landings", "catch tonnes"],
+          "aliases": [
+            "estimated catch",
+            "total catch",
+            "landings",
+            "catch tonnes"
+          ],
           "kind": "total",
           "unit": {
             "value": "tonnes",
             "status": "repo_confirmed"
           },
-          "nativeGrain": ["district", "month"],
+          "nativeGrain": [
+            "district",
+            "month"
+          ],
           "derivationStatus": "upstream_unverified",
           "rollups": {
             "acrossDistrict": {
@@ -274,13 +378,21 @@
         },
         "estimated_revenue": {
           "label": "Estimated revenue",
-          "aliases": ["revenue", "estimated revenue", "earnings", "income"],
+          "aliases": [
+            "revenue",
+            "estimated revenue",
+            "earnings",
+            "income"
+          ],
           "kind": "total",
           "unit": {
             "value": "{currency}",
             "status": "repo_confirmed"
           },
-          "nativeGrain": ["district", "month"],
+          "nativeGrain": [
+            "district",
+            "month"
+          ],
           "derivationStatus": "upstream_unverified",
           "rollups": {
             "acrossDistrict": {
@@ -319,7 +431,11 @@
       "queryPolicy": {
         "maxRows": 10000,
         "timeFilterStatus": "supported",
-        "canonicalKey": ["district", "month", "metric"],
+        "canonicalKey": [
+          "district",
+          "month",
+          "metric"
+        ],
         "duplicateResolution": "newest_timestamp_then_objectid"
       },
       "caveats": [
@@ -335,11 +451,18 @@
       "queryable": true,
       "lineage": "district",
       "collection": "districts_summaries",
-      "grain": ["district", "indicator", "date"],
+      "grain": [
+        "district",
+        "indicator",
+        "date"
+      ],
       "layout": "long",
       "timeField": "date",
       "geographyKey": "gaul_2_name",
-      "pageScopes": ["home", "map"],
+      "pageScopes": [
+        "home",
+        "map"
+      ],
       "access": {
         "applicationRoute": "public",
         "dataClassification": "aggregate_non_personal",
@@ -349,31 +472,53 @@
       "dimensions": {
         "district": {
           "field": "gaul_2_name",
-          "aliases": ["district", "county", "area"]
+          "aliases": [
+            "district",
+            "county",
+            "area"
+          ]
         },
         "date": {
           "field": "date",
-          "aliases": ["date", "period", "month"]
+          "aliases": [
+            "date",
+            "period",
+            "month"
+          ]
         },
         "indicator": {
           "field": "indicator",
-          "aliases": ["indicator", "measure", "metric"]
+          "aliases": [
+            "indicator",
+            "measure",
+            "metric"
+          ]
         },
         "period": {
           "field": "metadata.period",
-          "aliases": ["period grain", "frequency"]
+          "aliases": [
+            "period grain",
+            "frequency"
+          ]
         }
       },
       "measures": {
         "n_submissions": {
           "label": "Submissions",
-          "aliases": ["submissions", "records", "survey submissions"],
+          "aliases": [
+            "submissions",
+            "records",
+            "survey submissions"
+          ],
           "kind": "count",
           "unit": {
             "value": "submissions",
             "status": "repo_confirmed"
           },
-          "nativeGrain": ["district", "date"],
+          "nativeGrain": [
+            "district",
+            "date"
+          ],
           "derivationStatus": "upstream_unverified",
           "rollups": {
             "acrossDistrict": {
@@ -387,35 +532,55 @@
           }
         },
         "n_fishers": {
-          "label": "Fishers",
-          "aliases": ["fishers", "number of fishers", "fisher count"],
+          "label": "Mean crew size per recorded trip",
+          "aliases": [
+            "mean fishers per trip",
+            "average crew size",
+            "mean crew size",
+            "average number of fishers per trip"
+          ],
           "kind": "count",
           "unit": {
-            "value": "fishers",
+            "value": "fishers/trip",
             "status": "repo_confirmed"
           },
-          "nativeGrain": ["district", "date"],
+          "nativeGrain": [
+            "district",
+            "date"
+          ],
           "derivationStatus": "upstream_unverified",
           "rollups": {
             "acrossDistrict": {
-              "status": "blocked_pending_identity_semantics",
-              "note": "The same fisher may be represented in more than one district."
+              "status": "forbidden",
+              "note": "Mean crew size is not a distinct-fisher count; the eligible trip weights for pooled means are unavailable."
             },
             "acrossTime": {
               "status": "forbidden",
-              "note": "Summing repeated period counts would double-count fishers."
+              "note": "Do not sum or unweighted-average stored mean crew sizes; this is not a unique-fisher count."
+            },
+            "sum": {
+              "status": "forbidden",
+              "note": "Mean crew size cannot be summed into a headcount."
             }
           }
         },
         "trip_duration_hrs": {
-          "label": "Trip duration",
-          "aliases": ["trip duration hours", "trip hours", "fishing duration"],
+          "label": "Mean duration per recorded trip",
+          "aliases": [
+            "average trip duration",
+            "mean trip duration",
+            "mean trip hours",
+            "average fishing trip duration"
+          ],
           "kind": "rate",
           "unit": {
             "value": "hours",
             "status": "repo_confirmed"
           },
-          "nativeGrain": ["district", "date"],
+          "nativeGrain": [
+            "district",
+            "date"
+          ],
           "derivationStatus": "upstream_unverified",
           "rollups": {
             "acrossDistrict": {
@@ -433,13 +598,20 @@
         },
         "mean_cpue": {
           "label": "Catch rate",
-          "aliases": ["cpue", "catch rate", "catch per unit effort"],
+          "aliases": [
+            "cpue",
+            "catch rate",
+            "catch per unit effort"
+          ],
           "kind": "rate",
           "unit": {
             "value": "kg/fisher/hour",
             "status": "repo_confirmed"
           },
-          "nativeGrain": ["district", "date"],
+          "nativeGrain": [
+            "district",
+            "date"
+          ],
           "derivationStatus": "upstream_unverified",
           "rollups": {
             "acrossDistrict": {
@@ -457,13 +629,19 @@
         },
         "mean_rpue": {
           "label": "Revenue per unit effort",
-          "aliases": ["rpue", "revenue per unit effort"],
+          "aliases": [
+            "rpue",
+            "revenue per unit effort"
+          ],
           "kind": "rate",
           "unit": {
             "value": "{currency}/fisher/hour",
             "status": "repo_confirmed"
           },
-          "nativeGrain": ["district", "date"],
+          "nativeGrain": [
+            "district",
+            "date"
+          ],
           "derivationStatus": "upstream_unverified",
           "rollups": {
             "acrossDistrict": {
@@ -481,13 +659,19 @@
         },
         "mean_price_kg": {
           "label": "Price per kilogram",
-          "aliases": ["price per kg", "fish price"],
+          "aliases": [
+            "price per kg",
+            "fish price"
+          ],
           "kind": "rate",
           "unit": {
             "value": "{currency}/kg",
             "status": "repo_confirmed"
           },
-          "nativeGrain": ["district", "date"],
+          "nativeGrain": [
+            "district",
+            "date"
+          ],
           "derivationStatus": "upstream_unverified",
           "rollups": {
             "acrossDistrict": {
@@ -505,13 +689,20 @@
         },
         "estimated_revenue": {
           "label": "Estimated revenue",
-          "aliases": ["revenue", "estimated revenue", "earnings"],
+          "aliases": [
+            "revenue",
+            "estimated revenue",
+            "earnings"
+          ],
           "kind": "total",
           "unit": {
             "value": "{currency}",
             "status": "repo_confirmed"
           },
-          "nativeGrain": ["district", "date"],
+          "nativeGrain": [
+            "district",
+            "date"
+          ],
           "derivationStatus": "upstream_unverified",
           "rollups": {
             "acrossDistrict": {
@@ -526,13 +717,20 @@
         },
         "estimated_catch_tn": {
           "label": "Estimated catch",
-          "aliases": ["estimated catch", "landings", "catch tonnes"],
+          "aliases": [
+            "estimated catch",
+            "landings",
+            "catch tonnes"
+          ],
           "kind": "total",
           "unit": {
             "value": "tonnes",
             "status": "repo_confirmed"
           },
-          "nativeGrain": ["district", "date"],
+          "nativeGrain": [
+            "district",
+            "date"
+          ],
           "derivationStatus": "upstream_unverified",
           "rollups": {
             "acrossDistrict": {
@@ -542,6 +740,35 @@
             "acrossTime": {
               "status": "allowed",
               "method": "sum"
+            }
+          }
+        },
+        "mean_catch_kg": {
+          "label": "Mean recorded catch per fishing trip",
+          "aliases": [
+            "average catch per trip",
+            "mean catch kg per trip",
+            "recorded catch per trip"
+          ],
+          "kind": "rate",
+          "unit": {
+            "value": "kg/trip",
+            "status": "coasts_summary_verified"
+          },
+          "nativeGrain": [
+            "district",
+            "date"
+          ],
+          "derivationStatus": "coasts_trip_summary_reviewed",
+          "rollups": {
+            "acrossDistrict": {
+              "status": "blocked_pending_derivation"
+            },
+            "acrossTime": {
+              "status": "blocked_pending_derivation"
+            },
+            "sum": {
+              "status": "forbidden"
             }
           }
         }
@@ -569,7 +796,11 @@
       "queryPolicy": {
         "maxRows": 10000,
         "timeFilterStatus": "supported",
-        "canonicalKey": ["district", "indicator", "date"],
+        "canonicalKey": [
+          "district",
+          "indicator",
+          "date"
+        ],
         "duplicateResolution": "newest_timestamp_then_objectid"
       },
       "caveats": [
@@ -577,18 +808,27 @@
         "Stage 2.7 verification observed versioned duplicates at the declared district-date-indicator grain in Mozambique (46 duplicate groups, up to 4 records per group) and Kenya (71 duplicate groups, up to 2); Zanzibar had zero duplicate groups. Canonicalize before any analysis and never sum versions.",
         "Only rows with the complete canonical grain and a numeric requested value are analytical; null/incomplete observations and the collection metadata/schema record are excluded.",
         "Counts and rates have different legal rollups; do not apply a single aggregation rule to all indicators.",
-        "n_fishers must not be summed across time."
+        "n_fishers is mean crew size per recorded trip, NOT number of unique fishers. The legacy kind=count is retained for v1 wire compatibility; always use the mean-specific label and rollup prohibitions.",
+        "trip_duration_hrs is mean trip duration, NOT total trip hours."
       ]
     },
     "gear_summary_district": {
       "queryable": true,
       "lineage": "district",
       "collection": "gear_summaries",
-      "grain": ["district", "month", "gear", "indicator"],
+      "grain": [
+        "district",
+        "month",
+        "gear",
+        "indicator"
+      ],
       "layout": "long",
       "timeField": "date",
       "geographyKey": "gaul_2_name",
-      "pageScopes": ["catch", "revenue"],
+      "pageScopes": [
+        "catch",
+        "revenue"
+      ],
       "access": {
         "applicationRoute": "public",
         "dataClassification": "aggregate_non_personal",
@@ -598,31 +838,54 @@
       "dimensions": {
         "district": {
           "field": "gaul_2_name",
-          "aliases": ["district", "county", "area"]
+          "aliases": [
+            "district",
+            "county",
+            "area"
+          ]
         },
         "month": {
           "field": "date",
-          "aliases": ["month", "date", "period"]
+          "aliases": [
+            "month",
+            "date",
+            "period"
+          ]
         },
         "gear": {
           "field": "gear",
-          "aliases": ["gear", "fishing gear", "gear type"]
+          "aliases": [
+            "gear",
+            "fishing gear",
+            "gear type"
+          ]
         },
         "indicator": {
           "field": "indicator",
-          "aliases": ["indicator", "measure", "metric"]
+          "aliases": [
+            "indicator",
+            "measure",
+            "metric"
+          ]
         }
       },
       "measures": {
         "n_submissions": {
           "label": "Submissions",
-          "aliases": ["submissions", "records"],
+          "aliases": [
+            "submissions",
+            "records"
+          ],
           "kind": "count",
           "unit": {
             "value": "submissions",
             "status": "repo_confirmed"
           },
-          "nativeGrain": ["district", "month", "gear"],
+          "nativeGrain": [
+            "district",
+            "month",
+            "gear"
+          ],
           "derivationStatus": "upstream_unverified",
           "rollups": {
             "acrossDistrict": {
@@ -641,13 +904,21 @@
         },
         "cpue": {
           "label": "Catch rate by gear",
-          "aliases": ["cpue by gear", "gear catch rate", "catch rate by gear"],
+          "aliases": [
+            "cpue by gear",
+            "gear catch rate",
+            "catch rate by gear"
+          ],
           "kind": "rate",
           "unit": {
             "value": "kg/fisher/hour",
             "status": "repo_semantic_match"
           },
-          "nativeGrain": ["district", "month", "gear"],
+          "nativeGrain": [
+            "district",
+            "month",
+            "gear"
+          ],
           "derivationStatus": "upstream_unverified",
           "rollups": {
             "acrossDistrict": {
@@ -670,13 +941,21 @@
         },
         "rpue": {
           "label": "Revenue rate by gear",
-          "aliases": ["rpue by gear", "gear revenue rate", "revenue per effort by gear"],
+          "aliases": [
+            "rpue by gear",
+            "gear revenue rate",
+            "revenue per effort by gear"
+          ],
           "kind": "rate",
           "unit": {
             "value": "{currency}/fisher/hour",
             "status": "repo_semantic_match"
           },
-          "nativeGrain": ["district", "month", "gear"],
+          "nativeGrain": [
+            "district",
+            "month",
+            "gear"
+          ],
           "derivationStatus": "upstream_unverified",
           "rollups": {
             "acrossDistrict": {
@@ -721,7 +1000,12 @@
       "queryPolicy": {
         "maxRows": 20000,
         "timeFilterStatus": "supported",
-        "canonicalKey": ["district", "month", "gear", "indicator"],
+        "canonicalKey": [
+          "district",
+          "month",
+          "gear",
+          "indicator"
+        ],
         "duplicateResolution": "newest_timestamp_then_objectid"
       },
       "caveats": [
@@ -736,11 +1020,18 @@
       "queryable": true,
       "lineage": "district",
       "collection": "taxa_summaries",
-      "grain": ["district", "month", "taxon", "metric"],
+      "grain": [
+        "district",
+        "month",
+        "taxon",
+        "metric"
+      ],
       "layout": "long",
       "timeField": "date",
       "geographyKey": "gaul_2_name",
-      "pageScopes": ["catch_composition"],
+      "pageScopes": [
+        "catch_composition"
+      ],
       "access": {
         "applicationRoute": "public",
         "dataClassification": "aggregate_non_personal",
@@ -750,31 +1041,56 @@
       "dimensions": {
         "district": {
           "field": "gaul_2_name",
-          "aliases": ["district", "county", "area"]
+          "aliases": [
+            "district",
+            "county",
+            "area"
+          ]
         },
         "month": {
           "field": "date",
-          "aliases": ["month", "date", "period"]
+          "aliases": [
+            "month",
+            "date",
+            "period"
+          ]
         },
         "taxon": {
           "field": "catch_taxon",
-          "aliases": ["species", "taxon", "fish", "species group"]
+          "aliases": [
+            "species",
+            "taxon",
+            "fish",
+            "species group"
+          ]
         },
         "metric": {
           "field": "metric",
-          "aliases": ["metric", "measure", "indicator"]
+          "aliases": [
+            "metric",
+            "measure",
+            "indicator"
+          ]
         }
       },
       "measures": {
         "catch_kg": {
           "label": "Catch by taxon",
-          "aliases": ["species catch", "catch composition", "catch kg"],
+          "aliases": [
+            "species catch",
+            "catch composition",
+            "catch kg"
+          ],
           "kind": "total",
           "unit": {
             "value": "kg",
             "status": "repo_confirmed"
           },
-          "nativeGrain": ["district", "month", "taxon"],
+          "nativeGrain": [
+            "district",
+            "month",
+            "taxon"
+          ],
           "derivationStatus": "upstream_unverified",
           "rollups": {
             "acrossDistrict": {
@@ -793,13 +1109,21 @@
         },
         "mean_length": {
           "label": "Mean length",
-          "aliases": ["mean length", "average fish length", "fish length"],
+          "aliases": [
+            "mean length",
+            "average fish length",
+            "fish length"
+          ],
           "kind": "rate",
           "unit": {
             "value": "unknown",
             "status": "unverified"
           },
-          "nativeGrain": ["district", "month", "taxon"],
+          "nativeGrain": [
+            "district",
+            "month",
+            "taxon"
+          ],
           "derivationStatus": "upstream_unverified",
           "rollups": {
             "acrossDistrict": {
@@ -819,13 +1143,21 @@
         },
         "price_kg": {
           "label": "Taxon price per kilogram",
-          "aliases": ["species price", "price per kg", "taxon price"],
+          "aliases": [
+            "species price",
+            "price per kg",
+            "taxon price"
+          ],
           "kind": "rate",
           "unit": {
             "value": "{currency}/kg",
             "status": "repo_semantic_match"
           },
-          "nativeGrain": ["district", "month", "taxon"],
+          "nativeGrain": [
+            "district",
+            "month",
+            "taxon"
+          ],
           "derivationStatus": "upstream_unverified",
           "rollups": {
             "acrossDistrict": {
@@ -867,7 +1199,12 @@
       "queryPolicy": {
         "maxRows": 25000,
         "timeFilterStatus": "supported",
-        "canonicalKey": ["district", "month", "taxon", "metric"],
+        "canonicalKey": [
+          "district",
+          "month",
+          "taxon",
+          "metric"
+        ],
         "duplicateResolution": "newest_timestamp_then_objectid"
       },
       "caveats": [
@@ -882,11 +1219,17 @@
       "queryable": true,
       "lineage": "spatial_grid",
       "collection": "grid_summaries",
-      "grain": ["lat_grid_1km", "lng_grid_1km"],
+      "grain": [
+        "lat_grid_1km",
+        "lng_grid_1km"
+      ],
       "layout": "wide",
       "timeField": null,
       "geographyKey": null,
-      "pageScopes": ["map", "home"],
+      "pageScopes": [
+        "map",
+        "home"
+      ],
       "access": {
         "applicationRoute": "public",
         "dataClassification": "aggregate_spatial",
@@ -896,23 +1239,34 @@
       "dimensions": {
         "lat_grid_1km": {
           "field": "lat_grid_1km",
-          "aliases": ["latitude grid", "grid latitude"]
+          "aliases": [
+            "latitude grid",
+            "grid latitude"
+          ]
         },
         "lng_grid_1km": {
           "field": "lng_grid_1km",
-          "aliases": ["longitude grid", "grid longitude"]
+          "aliases": [
+            "longitude grid",
+            "grid longitude"
+          ]
         }
       },
       "measures": {
         "avg_speed": {
           "label": "Average speed",
-          "aliases": ["speed", "average speed"],
+          "aliases": [
+            "speed",
+            "average speed"
+          ],
           "kind": "rate",
           "unit": {
             "value": "unknown",
             "status": "unverified"
           },
-          "nativeGrain": ["grid_cell"],
+          "nativeGrain": [
+            "grid_cell"
+          ],
           "derivationStatus": "upstream_unverified",
           "rollups": {
             "acrossGrid": {
@@ -925,13 +1279,18 @@
         },
         "avg_range": {
           "label": "Average range",
-          "aliases": ["range", "average range"],
+          "aliases": [
+            "range",
+            "average range"
+          ],
           "kind": "rate",
           "unit": {
             "value": "unknown",
             "status": "unverified"
           },
-          "nativeGrain": ["grid_cell"],
+          "nativeGrain": [
+            "grid_cell"
+          ],
           "derivationStatus": "upstream_unverified",
           "rollups": {
             "acrossGrid": {
@@ -944,13 +1303,18 @@
         },
         "total_visits": {
           "label": "Total visits",
-          "aliases": ["visits", "grid visits"],
+          "aliases": [
+            "visits",
+            "grid visits"
+          ],
           "kind": "count",
           "unit": {
             "value": "visits",
             "status": "repo_confirmed"
           },
-          "nativeGrain": ["grid_cell"],
+          "nativeGrain": [
+            "grid_cell"
+          ],
           "derivationStatus": "upstream_unverified",
           "rollups": {
             "acrossGrid": {
@@ -961,13 +1325,18 @@
         },
         "original_cells": {
           "label": "Original cells",
-          "aliases": ["original cells", "source cells"],
+          "aliases": [
+            "original cells",
+            "source cells"
+          ],
           "kind": "count",
           "unit": {
             "value": "cells",
             "status": "repo_confirmed"
           },
-          "nativeGrain": ["grid_cell"],
+          "nativeGrain": [
+            "grid_cell"
+          ],
           "derivationStatus": "upstream_unverified",
           "rollups": {
             "acrossGrid": {
@@ -978,13 +1347,18 @@
         },
         "total_points": {
           "label": "Total points",
-          "aliases": ["points", "tracking points"],
+          "aliases": [
+            "points",
+            "tracking points"
+          ],
           "kind": "count",
           "unit": {
             "value": "points",
             "status": "repo_confirmed"
           },
-          "nativeGrain": ["grid_cell"],
+          "nativeGrain": [
+            "grid_cell"
+          ],
           "derivationStatus": "upstream_unverified",
           "rollups": {
             "acrossGrid": {
@@ -995,13 +1369,19 @@
         },
         "avg_time_hours": {
           "label": "Average time",
-          "aliases": ["time", "average time", "time hours"],
+          "aliases": [
+            "time",
+            "average time",
+            "time hours"
+          ],
           "kind": "rate",
           "unit": {
             "value": "hours",
             "status": "repo_confirmed"
           },
-          "nativeGrain": ["grid_cell"],
+          "nativeGrain": [
+            "grid_cell"
+          ],
           "derivationStatus": "upstream_unverified",
           "rollups": {
             "acrossGrid": {
@@ -1036,7 +1416,10 @@
       "queryPolicy": {
         "maxRows": 10000,
         "timeFilterStatus": "unsupported",
-        "canonicalKey": ["lat_grid_1km", "lng_grid_1km"],
+        "canonicalKey": [
+          "lat_grid_1km",
+          "lng_grid_1km"
+        ],
         "duplicateResolution": "newest_timestamp_then_objectid"
       },
       "caveats": [
@@ -1051,7 +1434,10 @@
       "queryable": true,
       "lineage": "kenya_bmu",
       "collection": "catch_monthly",
-      "grain": ["bmu", "month"],
+      "grain": [
+        "bmu",
+        "month"
+      ],
       "layout": "wide",
       "timeField": "date",
       "geographyKey": "BMU",
@@ -1071,23 +1457,38 @@
       "dimensions": {
         "bmu": {
           "field": "BMU",
-          "aliases": ["bmu", "beach management unit", "management unit"]
+          "aliases": [
+            "bmu",
+            "beach management unit",
+            "management unit"
+          ]
         },
         "month": {
           "field": "date",
-          "aliases": ["month", "date", "period"]
+          "aliases": [
+            "month",
+            "date",
+            "period"
+          ]
         }
       },
       "measures": {
         "mean_effort": {
           "label": "Mean effort",
-          "aliases": ["mean effort", "effort", "fishing effort"],
+          "aliases": [
+            "mean effort",
+            "effort",
+            "fishing effort"
+          ],
           "kind": "rate",
           "unit": {
             "value": "source effort units",
             "status": "stage31b_field_confirmed_unit_unverified"
           },
-          "nativeGrain": ["bmu", "month"],
+          "nativeGrain": [
+            "bmu",
+            "month"
+          ],
           "derivationStatus": "upstream_unverified_source_grain_only",
           "rollups": {
             "acrossBmu": {
@@ -1106,13 +1507,21 @@
         },
         "mean_cpue": {
           "label": "Mean CPUE",
-          "aliases": ["mean cpue", "cpue", "catch rate", "catch per unit effort"],
+          "aliases": [
+            "mean cpue",
+            "cpue",
+            "catch rate",
+            "catch per unit effort"
+          ],
           "kind": "rate",
           "unit": {
             "value": "source CPUE units",
             "status": "stage31b_field_confirmed_unit_unverified"
           },
-          "nativeGrain": ["bmu", "month"],
+          "nativeGrain": [
+            "bmu",
+            "month"
+          ],
           "derivationStatus": "upstream_unverified_source_grain_only",
           "rollups": {
             "acrossBmu": {
@@ -1131,13 +1540,20 @@
         },
         "mean_cpua": {
           "label": "Mean CPUA",
-          "aliases": ["mean cpua", "cpua", "catch per unit area"],
+          "aliases": [
+            "mean cpua",
+            "cpua",
+            "catch per unit area"
+          ],
           "kind": "rate",
           "unit": {
             "value": "source CPUA units",
             "status": "stage31b_field_confirmed_unit_unverified"
           },
-          "nativeGrain": ["bmu", "month"],
+          "nativeGrain": [
+            "bmu",
+            "month"
+          ],
           "derivationStatus": "upstream_unverified_source_grain_only",
           "rollups": {
             "acrossBmu": {
@@ -1156,13 +1572,21 @@
         },
         "mean_rpue": {
           "label": "Mean RPUE",
-          "aliases": ["mean rpue", "rpue", "revenue rate", "revenue per unit effort"],
+          "aliases": [
+            "mean rpue",
+            "rpue",
+            "revenue rate",
+            "revenue per unit effort"
+          ],
           "kind": "rate",
           "unit": {
             "value": "source RPUE units ({currency})",
             "status": "stage31b_field_confirmed_unit_unverified"
           },
-          "nativeGrain": ["bmu", "month"],
+          "nativeGrain": [
+            "bmu",
+            "month"
+          ],
           "derivationStatus": "upstream_unverified_source_grain_only",
           "rollups": {
             "acrossBmu": {
@@ -1181,13 +1605,20 @@
         },
         "mean_rpua": {
           "label": "Mean RPUA",
-          "aliases": ["mean rpua", "rpua", "revenue per unit area"],
+          "aliases": [
+            "mean rpua",
+            "rpua",
+            "revenue per unit area"
+          ],
           "kind": "rate",
           "unit": {
             "value": "source RPUA units ({currency})",
             "status": "stage31b_field_confirmed_unit_unverified"
           },
-          "nativeGrain": ["bmu", "month"],
+          "nativeGrain": [
+            "bmu",
+            "month"
+          ],
           "derivationStatus": "upstream_unverified_source_grain_only",
           "rollups": {
             "acrossBmu": {
@@ -1216,7 +1647,10 @@
       "queryPolicy": {
         "maxRows": 5000,
         "timeFilterStatus": "supported",
-        "canonicalKey": ["bmu", "month"],
+        "canonicalKey": [
+          "bmu",
+          "month"
+        ],
         "duplicateResolution": "verified_unique_source_grain"
       },
       "caveats": [
@@ -1231,7 +1665,11 @@
       "queryable": true,
       "lineage": "kenya_bmu",
       "collection": "gear_summaries",
-      "grain": ["bmu", "month", "gear"],
+      "grain": [
+        "bmu",
+        "month",
+        "gear"
+      ],
       "layout": "wide",
       "timeField": "date",
       "geographyKey": "BMU",
@@ -1251,27 +1689,47 @@
       "dimensions": {
         "bmu": {
           "field": "BMU",
-          "aliases": ["bmu", "beach management unit", "management unit"]
+          "aliases": [
+            "bmu",
+            "beach management unit",
+            "management unit"
+          ]
         },
         "month": {
           "field": "date",
-          "aliases": ["month", "date", "period"]
+          "aliases": [
+            "month",
+            "date",
+            "period"
+          ]
         },
         "gear": {
           "field": "gear",
-          "aliases": ["gear", "fishing gear", "gear type"]
+          "aliases": [
+            "gear",
+            "fishing gear",
+            "gear type"
+          ]
         }
       },
       "measures": {
         "mean_effort": {
           "label": "Mean effort",
-          "aliases": ["mean effort", "effort", "fishing effort"],
+          "aliases": [
+            "mean effort",
+            "effort",
+            "fishing effort"
+          ],
           "kind": "rate",
           "unit": {
             "value": "source effort units",
             "status": "stage31b_field_confirmed_unit_unverified"
           },
-          "nativeGrain": ["bmu", "month", "gear"],
+          "nativeGrain": [
+            "bmu",
+            "month",
+            "gear"
+          ],
           "derivationStatus": "upstream_unverified_source_grain_only",
           "rollups": {
             "acrossBmu": {
@@ -1294,13 +1752,22 @@
         },
         "mean_cpue": {
           "label": "Mean CPUE",
-          "aliases": ["mean cpue", "cpue", "catch rate", "catch per unit effort"],
+          "aliases": [
+            "mean cpue",
+            "cpue",
+            "catch rate",
+            "catch per unit effort"
+          ],
           "kind": "rate",
           "unit": {
             "value": "source CPUE units",
             "status": "stage31b_field_confirmed_unit_unverified"
           },
-          "nativeGrain": ["bmu", "month", "gear"],
+          "nativeGrain": [
+            "bmu",
+            "month",
+            "gear"
+          ],
           "derivationStatus": "upstream_unverified_source_grain_only",
           "rollups": {
             "acrossBmu": {
@@ -1323,13 +1790,21 @@
         },
         "mean_cpua": {
           "label": "Mean CPUA",
-          "aliases": ["mean cpua", "cpua", "catch per unit area"],
+          "aliases": [
+            "mean cpua",
+            "cpua",
+            "catch per unit area"
+          ],
           "kind": "rate",
           "unit": {
             "value": "source CPUA units",
             "status": "stage31b_field_confirmed_unit_unverified"
           },
-          "nativeGrain": ["bmu", "month", "gear"],
+          "nativeGrain": [
+            "bmu",
+            "month",
+            "gear"
+          ],
           "derivationStatus": "upstream_unverified_source_grain_only",
           "rollups": {
             "acrossBmu": {
@@ -1352,13 +1827,22 @@
         },
         "mean_rpue": {
           "label": "Mean RPUE",
-          "aliases": ["mean rpue", "rpue", "revenue rate", "revenue per unit effort"],
+          "aliases": [
+            "mean rpue",
+            "rpue",
+            "revenue rate",
+            "revenue per unit effort"
+          ],
           "kind": "rate",
           "unit": {
             "value": "source RPUE units ({currency})",
             "status": "stage31b_field_confirmed_unit_unverified"
           },
-          "nativeGrain": ["bmu", "month", "gear"],
+          "nativeGrain": [
+            "bmu",
+            "month",
+            "gear"
+          ],
           "derivationStatus": "upstream_unverified_source_grain_only",
           "rollups": {
             "acrossBmu": {
@@ -1381,13 +1865,21 @@
         },
         "mean_rpua": {
           "label": "Mean RPUA",
-          "aliases": ["mean rpua", "rpua", "revenue per unit area"],
+          "aliases": [
+            "mean rpua",
+            "rpua",
+            "revenue per unit area"
+          ],
           "kind": "rate",
           "unit": {
             "value": "source RPUA units ({currency})",
             "status": "stage31b_field_confirmed_unit_unverified"
           },
-          "nativeGrain": ["bmu", "month", "gear"],
+          "nativeGrain": [
+            "bmu",
+            "month",
+            "gear"
+          ],
           "derivationStatus": "upstream_unverified_source_grain_only",
           "rollups": {
             "acrossBmu": {
@@ -1420,7 +1912,11 @@
       "queryPolicy": {
         "maxRows": 15000,
         "timeFilterStatus": "supported",
-        "canonicalKey": ["bmu", "month", "gear"],
+        "canonicalKey": [
+          "bmu",
+          "month",
+          "gear"
+        ],
         "duplicateResolution": "verified_unique_source_grain"
       },
       "caveats": [

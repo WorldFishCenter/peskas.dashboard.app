@@ -279,3 +279,51 @@ test("country-scoped alternatives never invent BMU joins or cross-country source
   expect(Object.keys(semanticCatalogForCountry("TZ").datasets)).not.toContain("kenya_bmu_monthly");
   expect(Object.keys(semanticCatalogForCountry("KE").datasets)).toContain("kenya_bmu_monthly");
 });
+
+// STAGE 4.2.A: preview endpoint uses the existing governed v1 source reader.
+test("gear/taxon composition preview is opt-in and respects canonicalized catch", async () => {
+  const request = {
+    contractVersion: "2.0-preview", countryCode: "TZ", gears: ["Gill Net"], topN: 1,
+    timeRange: { lastMonths: 3 },
+  };
+  delete process.env.ASKFISH_V2_ENABLE_GEAR_TAXA;
+  expect((await call("gear-composition", request)).status).toBe(404);
+  process.env.ASKFISH_V2_ENABLE_GEAR_TAXA = "1";
+  const earlierNodeEnv = process.env.NODE_ENV;
+  process.env.NODE_ENV = "test";
+  try {
+    const collection = (await getDb()).connection.collection("gear_taxa_summaries");
+    await collection.insertMany([
+      { gaul_2_name: "Wete", date: month(0), gear: "Gill Net", catch_taxon: "Taxon A", catch_kg: 10, n_trips: 3, timestamp: new Date("2026-09-01") },
+      { gaul_2_name: "Wete", date: month(0), gear: "Gill Net", catch_taxon: "Taxon A", catch_kg: 30, n_trips: 3, timestamp: new Date("2026-09-02") },
+      { gaul_2_name: "Wete", date: month(0), gear: "Gill Net", catch_taxon: "Taxon B", catch_kg: 20, n_trips: 2, timestamp: new Date("2026-09-02") },
+      { gaul_2_name: "Wete", date: month(0), gear: "Hand Line", catch_taxon: "Taxon C", catch_kg: 40, n_trips: 5, timestamp: new Date("2026-09-02") },
+      { gaul_2_name: "Wete", date: month(0), catch_taxon: "Unknown gear", catch_kg: 100, n_trips: 6, timestamp: new Date("2026-09-02") },
+    ]);
+    const response = await call("gear-composition", request);
+    expect(response.status).toBe(200);
+    const result = await response.json();
+    expect(result.rawRecordCount).toBe(3);
+    expect(result.duplicateRecordCount).toBe(1);
+    expect(result.gears).toHaveLength(1);
+    expect(result.gears[0]).toMatchObject({
+      gear: "Gill Net", totalCatchKg: 50, taxonCount: 2,
+      taxa: [{ taxon: "Taxon A", catchKg: 30, sharePercent: 60 }],
+    });
+    expect(result.caveats).toEqual(expect.arrayContaining([expect.stringMatching(/trip counts/i)]));
+    expect((await call("gear-composition", { ...request, countryCode: "KE" })).status).toBe(400);
+    expect((await call("gear-composition", { ...request, topN: 0 })).status).toBe(400);
+    expect((await call("query", {
+      contractVersion: "1.0", countryCode: "TZ", dataset: "gear_taxa_summaries", measure: "n_trips",
+      scope: { mode: "unrestricted", pageId: null, dashboardFilters: null },
+    })).status).toBe(400);
+    expect((await call("query", {
+      contractVersion: "1.0", countryCode: "TZ", dataset: "gear_taxa_summaries", measure: "catch_kg",
+      scope: { mode: "restricted", pageId: "catch", dashboardFilters: { months: 3 } },
+    })).status).toBe(400);
+  } finally {
+    delete process.env.ASKFISH_V2_ENABLE_GEAR_TAXA;
+    if (earlierNodeEnv === undefined) delete process.env.NODE_ENV;
+    else process.env.NODE_ENV = earlierNodeEnv;
+  }
+});
