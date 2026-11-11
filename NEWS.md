@@ -1,3 +1,9 @@
+# peskas.dashboard 2.4.3
+
+## Changes
+
+- Kenya: the size charts and the methods page no longer warn that Kenya's lengths are averages. The Kenya pipeline now publishes each measured fish with its own length, so the charts show the real spread of sizes.
+
 # peskas.dashboard 2.4.2
 
 ## Changes

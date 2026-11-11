@@ -59,8 +59,6 @@ export interface CountryConfig {
     speciesFromSample?: true;
     /** Each species in a catch has its own price; otherwise one value covers the whole trip. */
     pricedBySpecies?: true;
-    /** A catch row carries the mean length of the fish measured, not a length class; the size views say so. */
-    meanLengths?: true;
   };
   features: {
     /** Regions in display order (district picker, district table); must name exactly the regions of districtToRegion. */
@@ -193,9 +191,8 @@ const kenyaConfig: CountryConfig = {
     pitch: 0,
     bearing: 0,
   },
-  // KEFS weighs the whole catch, prices and identifies a sample of it, and
-  // records the mean length of the fish it measures.
-  survey: { speciesFromSample: true, pricedBySpecies: true, meanLengths: true },
+  // KEFS weighs the whole catch, and prices and identifies a sample of it.
+  survey: { speciesFromSample: true, pricedBySpecies: true },
   features: {
     regionBreakdown: {
       regions: ["Central", "North", "South"],

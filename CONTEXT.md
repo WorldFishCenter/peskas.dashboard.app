@@ -85,7 +85,7 @@ What FishBase and SeaLifeBase say about a taxon code (`taxa_traits`): vulnerabil
 _Avoid_: species info, metadata
 
 **Length class**:
-The size band a catch row is recorded in (`length_min` to `length_max`, cm). Countries store a class by its midpoint, so the summaries re-bin every value into one shared set of classes. In Kenya a catch row carries the average length of the fish measured on that landing (`survey.meanLengths`), so its classes hold landings' averages and the size views say so.
+The size band a catch row is recorded in (`length_min` to `length_max`, cm). Countries store a class by its midpoint, so the summaries re-bin every value into one shared set of classes.
 _Avoid_: length bin, size
 
 **Length at maturity**:

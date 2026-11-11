@@ -49,3 +49,4 @@ CLAUDE.local.md
 !.env.example
 # Local-only documentation
 docs/
+.TODO.md

@@ -91,7 +91,6 @@ export function GearProfile() {
       footer={
         <>
           {rows.some((r) => r.immature) && <MaturityLegend />}
-          {activeCountry.survey.meanLengths && <p>{t("text-lengths-means-note")}</p>}
         </>
       }
     >
