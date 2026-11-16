@@ -172,3 +172,55 @@ test("a taxon's price is the species price, weighted by its catch", async () => 
   }
   expect(valueOf(prices, "taxon", "Sardinella")).toBeCloseTo((100 * 10 + 200 * 30) / 40);
 });
+
+// STAGE 4.3.C.4: Physical versions are not independent landings.
+// Insert the newer record FIRST and an older record LAST, to detect any
+// accidental last-row-wins behavior in either the dashboard or AskFish.
+test("newest duplicated district and monthly records preserve dashboard/AskFish parity", async () => {
+  const latest = new Date("2100-01-02T00:00:00.000Z");
+  const older = new Date("2100-01-01T00:00:00.000Z");
+  await DistrictSummaryModel.insertMany([
+    { gaul_2_name: "Wete", date: month(0), indicator: "mean_cpue", value: 9, timestamp: latest },
+    { gaul_2_name: "Wete", date: month(0), indicator: "mean_cpue", value: 99, timestamp: older },
+  ]);
+  await MonthlySummaryDistrictModel.insertMany([
+    { gaul_2_name: "Wete", date: month(0), metric: "mean_cpue", value: 8, timestamp: latest },
+    { gaul_2_name: "Wete", date: month(0), metric: "mean_cpue", value: 88, timestamp: older },
+  ]);
+  const byDistrict = await summaries.byDistrict({ months: 2 });
+  const districtFigures = await COMBINED.district_summary!("mean_cpue", ["district"], scope);
+  const wete = byDistrict.find((row) => row.district === "Wete")!;
+  expect(wete.mean_cpue).toBeCloseTo((9 * 10 + 3 * 20) / 30);
+  expect(valueOf(districtFigures, "district", "Wete")).toBeCloseTo(wete.mean_cpue!);
+
+  const monthly = await summaries.monthly({ metric: "mean_cpue", months: 2 });
+  const monthlyFigures = await COMBINED.monthly_district_summary!("mean_cpue", ["month"], scope);
+  const lastMonth = `${monthKey(month(0))}-01`;
+  const latestPoint = monthly.overall.find((p) => `${p.month}-01` === lastMonth)!;
+  expect(latestPoint.value).toBeCloseTo((8 * 10 + 5 * 30) / 40);
+  expect(valueOf(monthlyFigures, "month", lastMonth)).toBeCloseTo(latestPoint.value!);
+});
+
+test("newest duplicated gear and taxa records are not combined twice", async () => {
+  const latest = new Date("2100-01-02T00:00:00.000Z");
+  const older = new Date("2100-01-01T00:00:00.000Z");
+  await GearSummaryDistrictModel.insertMany([
+    { gaul_2_name: "Wete", date: month(0), gear: "Gill Net", indicator: "cpue", value: 8, timestamp: latest },
+    { gaul_2_name: "Wete", date: month(0), gear: "Gill Net", indicator: "cpue", value: 88, timestamp: older },
+  ]);
+  await TaxaSummaryDistrictModel.insertMany([
+    { gaul_2_name: "Wete", date: month(0), catch_taxon: "Sardinella", metric: "price_kg", value: 400, timestamp: latest },
+    { gaul_2_name: "Wete", date: month(0), catch_taxon: "Sardinella", metric: "price_kg", value: 4, timestamp: older },
+  ]);
+  const gearDashboard = await summaries.byGear({ months: 2 });
+  const gearAskFish = await COMBINED.gear_summary_district!("cpue", ["gear"], scope);
+  const gill = gearDashboard.find((row) => row.gear === "Gill Net")!;
+  expect(gill.cpue).toBeCloseTo((8 * 4 + 4 * 1 + 1 * 5) / 10);
+  expect(valueOf(gearAskFish, "gear", "Gill Net")).toBeCloseTo(gill.cpue!);
+
+  const speciesDashboard = await summaries.speciesPrice({ months: 2 });
+  const speciesAskFish = await COMBINED.taxa_summary_district!("price_kg", ["taxon"], scope);
+  const sard = speciesDashboard.rows.find((row) => row.taxon === "Sardinella")!;
+  expect(sard.price_kg).toBeCloseTo((400 * 10 + 200 * 30) / 40);
+  expect(valueOf(speciesAskFish, "taxon", "Sardinella")).toBeCloseTo(sard.price_kg);
+});

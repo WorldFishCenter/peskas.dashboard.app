@@ -1,6 +1,10 @@
-// STAGE 2 STEP 2.7.1: Keep version selection in a dependency-free helper so the
-// production duplicate behavior can be regression-tested without booting Next.js,
-// MongoDB, or the semantic catalog. The helper only selects records; it never sums.
+
+// Backwards-compatible import for the AskFish query executor and its tests.
+// The dashboard and AskFish now share the same source-version selector.
+export { canonicalizeNewestByKey, recordVersionTimestamp } from "../lib/canonicalization";
+
+
+/** 
 export function recordVersionTimestamp(record: Record<string, unknown>): number {
   const timestamp = record.timestamp;
   if (timestamp instanceof Date) return timestamp.getTime();
@@ -30,3 +34,4 @@ export function canonicalizeNewestByKey<T extends Record<string, unknown>>(
 
   return Array.from(canonical.values());
 }
+*/

@@ -66,13 +66,40 @@ export function isAskFishV2WeightedMeanEnabled() {
     process.env.ASKFISH_V2_ENABLE_WEIGHTED_MEAN === "1";
 }
 
+/**
+ * Optional weighted calculations must use actual semantic keys exposed by BOTH
+ * source measures. A physical field named `date` does not make `date` a semantic
+ * dimension when the generated dictionary advertises `month` instead.
+ * This check is structural only; scientific denominator compatibility is separate.
+ */
+export function weightedMeanSourceCompatible(
+  datasets: Record<string, {
+    grain: string[];
+    measures: Record<string, { nativeGrain: string[] }>;
+  }>,
+  capability: (typeof scientificRegistry.weightedMeanCapabilities)[string],
+): boolean {
+  const valueSource = datasets[capability.valueDataset];
+  const weightSource = datasets[capability.weightDataset];
+  const value = valueSource?.measures[capability.valueMeasure];
+  const weight = weightSource?.measures[capability.weightMeasure];
+  if (!valueSource || !weightSource || !value || !weight) return false;
+  // A cross-dataset relationship needs additional explicit scientific approval.
+  if (capability.valueDataset !== capability.weightDataset) return false;
+  if (capability.allowedGroupBy.some((dim) => !capability.joinDimensions.includes(dim))) return false;
+  return capability.joinDimensions.every((dim) =>
+    valueSource.grain.includes(dim) && weightSource.grain.includes(dim) &&
+    value.nativeGrain.includes(dim) && weight.nativeGrain.includes(dim));
+}
+
 /** Fail closed when a registry entry disagrees with its own science constraints. */
 export function validateRegistrySemantics(
   datasets: Record<string, {
     grain: string[];
-    measures: Record<string, { unit: { value: string }; rollups: Record<string, { status: string; method?: string }> }>;
+    measures: Record<string, { nativeGrain: string[]; unit: { value: string }; rollups: Record<string, { status: string; method?: string }> }>;
     pageScopes: string[];
   }>,
+  options: { validateWeightedMean?: boolean } = {},
 ) {
   for (const [capabilityId, capability] of Object.entries(scientificRegistry.analysisCapabilities)) {
     const dataset = datasets[capability.dataset];
@@ -93,18 +120,13 @@ export function validateRegistrySemantics(
       throw new Error(`Missing scientific approval for ${capabilityId}`);
     }
   }
-  for (const [capabilityId, capability] of Object.entries(scientificRegistry.weightedMeanCapabilities)) {
-      const valueSource = datasets[capability.valueDataset];
-      const weightSource = datasets[capability.weightDataset];
-      const value = valueSource?.measures[capability.valueMeasure];
-      const weight = weightSource?.measures[capability.weightMeasure];
-      if (!value || !weight ||
-        capability.joinDimensions.some((d) => !valueSource?.grain.includes(d) || !weightSource?.grain.includes(d)) ||
-        capability.allowedGroupBy.some((d) => !capability.joinDimensions.includes(d)) ||
-        capability.valueDataset !== capability.weightDataset) {
+  if (options.validateWeightedMean === true) {
+    for (const [capabilityId, capability] of Object.entries(scientificRegistry.weightedMeanCapabilities)) {
+      if (!weightedMeanSourceCompatible(datasets, capability)) {
         throw new Error(`Invalid weighted mean source contract ${capabilityId}`);
       }
     }
+  }
   for (const [datasetId, rules] of Object.entries(scientificRegistry.scienceRules)) {
     const dataset = datasets[datasetId];
     if (!dataset) throw new Error(`Scientific registry has no catalog dataset ${datasetId}`);

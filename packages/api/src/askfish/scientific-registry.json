@@ -196,10 +196,10 @@
       "weightMeasure": "n_submissions",
       "joinDimensions": [
         "district",
-        "date"
+        "month"
       ],
       "allowedGroupBy": [
-        "date",
+        "month",
         "district"
       ],
       "weightUnit": "submissions",

@@ -20,6 +20,7 @@ import {
   withTwin,
 } from "../lib/cells";
 import { scopeDistricts } from "../lib/country";
+import { canonicalizeNewestByKey } from "../lib/canonicalization";
 
 /** The districts (all of them when left out) and months a figure covers, and any gear or taxon picked. */
 export type Selection = {
@@ -118,7 +119,10 @@ const gears: Combined = async (measure, keep, sel) => {
     ...(sel.gear ? { gear: { $in: sel.gear } } : {}),
     indicator: { $in: [measure, "n_submissions"] },
   }).lean();
-  const rows = docs.flatMap((d) =>
+  const newest = canonicalizeNewestByKey(docs, (d) =>
+    JSON.stringify([d.gaul_2_name, d.date?.toISOString() ?? null, d.gear, d.indicator]),
+  );
+  const rows = newest.flatMap((d) =>
     d.date
       ? [
           {
@@ -143,7 +147,10 @@ const taxa: Combined = async (measure, keep, sel) => {
     ...(sel.taxon ? { catch_taxon: { $in: sel.taxon } } : {}),
     metric: { $in: [measure, "catch_kg"] },
   }).lean();
-  const rows = docs.flatMap((d) =>
+  const newest = canonicalizeNewestByKey(docs, (d) =>
+    JSON.stringify([d.gaul_2_name, d.date?.toISOString() ?? null, d.catch_taxon, d.metric]),
+  );
+  const rows = newest.flatMap((d) =>
     d.date
       ? [
           {

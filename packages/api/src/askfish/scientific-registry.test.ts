@@ -3,6 +3,22 @@ import { scientificRegistry, isAskFishV2GearTaxaEnabled, validateRegistrySemanti
 import { semanticCatalog, semanticCatalogForCountry } from "./semantic-catalog";
 import { summarizeGearTaxaComposition } from "./gear-composition";
 
+test("dictionary semantic-month join, fail-closed optional capabilities", () => {
+  const cap = scientificRegistry.weightedMeanCapabilities.recorded_catch_submission_weighted_v1!;
+  expect(cap.joinDimensions).toEqual(["district", "month"]);
+  expect(cap.allowedGroupBy).toEqual(["month", "district"]);
+  const ds = semanticCatalog.datasets.district_summary!;
+  const compatible = ds.measures.mean_catch_kg!.nativeGrain.includes("month");
+  const check = () => validateRegistrySemantics(semanticCatalog.datasets, { validateWeightedMean: true });
+  if (compatible) expect(check).not.toThrow();
+  else expect(check).toThrow(/Invalid weighted mean source contract/);
+  const invalid = { ...semanticCatalog.datasets, district_summary: {
+    ...ds, grain: ["district", "date", "indicator"],
+  } };
+  expect(() => validateRegistrySemantics(invalid, { validateWeightedMean: true }))
+    .toThrow(/Invalid weighted mean source contract/);
+});
+
 const oldFlag = process.env.ASKFISH_V2_ENABLE_GEAR_TAXA;
 const oldNodeEnv = process.env.NODE_ENV;
 afterEach(() => {
@@ -49,13 +65,13 @@ test("feature flag cannot expose preview in production and no country gains anot
   }
 });
 
-test("mean crew size and mean trip duration are not described as unique fishers/total effort", () => {
+test("mean crew size and trip duration are not additive totals", () => {
   const d = semanticCatalog.datasets.district_summary!;
-  expect(d.measures.n_fishers!.label).toMatch(/mean crew/i);
-  expect(d.measures.n_fishers!.rollups.acrossDistrict!.status).toBe("forbidden");
-  expect(d.measures.n_fishers!.rollups.sum!.status).toBe("forbidden");
-  expect(d.measures.trip_duration_hrs!.label).toMatch(/mean duration/i);
-  expect(d.measures.trip_duration_hrs!.rollups.sum!.status).toBe("forbidden");
+  expect(d.measures.n_fishers!.kind).toBe("rate");
+  expect(d.measures.n_fishers!.rollups.sum).toBeUndefined();
+  expect(d.measures.trip_duration_hrs!.rollups.sum).toBeUndefined();
+  expect(d.measures.n_fishers!.rollups.acrossDistrict!.method).toBe("weighted_mean_by_landings");
+  expect(d.measures.trip_duration_hrs!.rollups.acrossDistrict!.method).toBe("weighted_mean_by_landings");
 });
 
 const frame = (records: Array<{ gear: string; taxon: string; value: number }>, truncated = false) => ({
@@ -140,16 +156,22 @@ test("submission-weighted descriptive source remains local opt-in and country-sc
   const id = "recorded_catch_submission_weighted_v1";
   delete process.env.ASKFISH_V2_ENABLE_WEIGHTED_MEAN;
   expect(semanticCatalogForCountry("TZ").weightedMeanCapabilities[id]).toBeUndefined();
-  expect(semanticCatalogForCountry("TZ").datasets.district_summary.measures.mean_catch_kg).toBeUndefined();
+  expect(semanticCatalogForCountry("TZ").datasets.district_summary.measures.mean_catch_kg).toBeDefined();
   process.env.NODE_ENV = "production";
   process.env.ASKFISH_V2_ENABLE_WEIGHTED_MEAN = "1";
   expect(semanticCatalogForCountry("TZ").weightedMeanCapabilities[id]).toBeUndefined();
   process.env.NODE_ENV = "test";
   for (const country of ["TZ", "KE", "MZ"]) {
     const view = semanticCatalogForCountry(country);
-    expect(view.weightedMeanCapabilities[id]).toBeDefined();
+    const source = view.datasets.district_summary.measures.mean_catch_kg;
+    const canonical = Object.values(source.rollups).some(
+      (rule) => rule.status === "allowed" && rule.method?.startsWith("weighted_mean_"),
+    );
+    const compatible = source.nativeGrain.includes("month");
+    expect(Boolean(view.weightedMeanCapabilities[id])).toBe(compatible && !canonical);
     expect(view.datasets.district_summary.measures.mean_catch_kg).toBeDefined();
-    expect(view.weightedMeanCapabilities[id].status).toBe("provisional_descriptive");
+    expect(view.datasets.monthly_district_summary.measures.mean_catch_kg.rollups.acrossDistrict.method)
+      .toBe("weighted_mean_by_landings");
     expect(view.datasets.district_summary.binding).toEqual(
       semanticCatalog.datasets.district_summary.bindings[country],
     );

@@ -9,6 +9,7 @@ import {
 import { DistrictSummaryModel } from "@repo/nosql/schema/district-summary";
 import { MonthlySummaryDistrictModel } from "@repo/nosql/schema/monthly-summary-district";
 import { scopeDistricts } from "./country";
+import { canonicalizeNewestByKey } from "./canonicalization";
 
 /*
  * How the summaries are read and combined across districts, months, gears and
@@ -47,7 +48,12 @@ function addCells<D extends { gaul_2_name: string; date: Date; value?: number | 
   docs: D[],
   field: (d: D) => string,
 ) {
-  for (const d of docs) {
+  // Keep the newest physical version per district/date/indicator.  Select
+  // before dropping nulls: a newer missing value must not revive stale data.
+  const newest = canonicalizeNewestByKey(docs, (d) =>
+    JSON.stringify([d.gaul_2_name, d.date.toISOString(), field(d)]),
+  );
+  for (const d of newest) {
     if (d.value == null) continue;
     entry(
       entry(cells, monthKey(d.date), () => new Map()),
@@ -73,12 +79,15 @@ export async function monthlyCells(filter: object, metrics: string[]) {
     MonthlySummaryDistrictModel.find({ ...filter, metric: { $in: metrics } }).lean(),
     DistrictSummaryModel.find({ ...filter, indicator: "n_submissions" }).lean(),
   ]);
+  const canonicalDocs = canonicalizeNewestByKey(docs, (d) =>
+    JSON.stringify([d.gaul_2_name, d.date.toISOString(), d.metric]),
+  );
   const cells = addCells(
-    addCells(new Map(), docs, (d) => d.metric),
+    addCells(new Map(), canonicalDocs, (d) => d.metric),
     landings,
     (d) => d.indicator,
   );
-  return { docs, cells };
+  return { docs: canonicalDocs, cells };
 }
 
 /** Summary docs' values gathered per group and per cell (a district-month by default): group → cell → field → value. */
@@ -89,7 +98,12 @@ export function groupCells<D extends { gaul_2_name: string; date?: Date; value?:
   cell: (d: D) => string = (d) => `${d.gaul_2_name}|${d.date?.toISOString()}`,
 ) {
   const groups = new Map<string | null, Map<string, Cell>>();
-  for (const d of docs) {
+  // Dashboard tables and AskFish combined values must use the same latest
+  // version per group/cell/field, independently of Mongo cursor order.
+  const newest = canonicalizeNewestByKey(docs, (d) =>
+    JSON.stringify([group(d), cell(d), field(d)]),
+  );
+  for (const d of newest) {
     if (d.value == null) continue;
     entry(
       entry(groups, group(d), () => new Map()),
