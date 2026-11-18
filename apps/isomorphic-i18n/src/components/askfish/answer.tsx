@@ -1,4 +1,4 @@
-import { memo, useId, useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -9,10 +9,15 @@ import {
   LineChart,
   ReferenceLine,
   Scatter,
+  ScatterChart,
+  ZAxis,
   XAxis,
   YAxis,
 } from "recharts";
 import { Bubble, BubbleContent } from "@workspace/ui/components/bubble";
+import { Button } from "@workspace/ui/components/button";
+import { CopyIcon, DownloadIcon } from "lucide-react";
+import { answerText, downloadAnswerCsv } from "./answer-export";
 import {
   ChartContainer,
   ChartLegend,
@@ -22,7 +27,7 @@ import {
 } from "@workspace/ui/components/chart";
 import { MessageFooter } from "@workspace/ui/components/message";
 import { Table, TableBody, TableCell, TableRow } from "@workspace/ui/components/table";
-import { estimateMethod, type MetricKey } from "@repo/domain/metrics";
+import { METRICS, type MetricKey } from "@repo/domain/metrics";
 import type { Answer } from "@/components/askfish/panel";
 import { ChartCard } from "@/components/charts/chart-card";
 import { CHART_HEIGHT, ChartState, RenderGuard } from "@/components/charts/chart-state";
@@ -39,23 +44,41 @@ import {
 } from "@/lib/dashboard/format";
 import { formatValue, METHOD_COLOR } from "@/lib/dashboard/metrics";
 import { useSpeciesName } from "@/lib/dashboard/species";
+import { groupedBarRows, pairedEndpointSeries, valueAxisDomain, heatmapGrid, type ChartBarSeries } from "./askfish-chart-data";
 
 type Chart = Answer["charts"][number];
 type Format = (value: number) => string;
 
-const xAxis = (byMonth: boolean, lang: string) =>
-  byMonth ? monthAxis(lang) : { dataKey: "month", tickLine: false, axisLine: false, tickMargin: 8 };
-
+/** Every x value of some series (months, say), once each and in order. */
 const xValues = (series: Chart["series"]) =>
   [...new Set(series.flatMap((s) => s.points.map((p) => String(p.x))))].sort();
 
-/** A figure by its metric (an estimate rounded, with ≈) when it is in one, else as recorded. */
+/**
+ * A figure as the dashboard writes it everywhere: by its metric (an estimate
+ * rounded, with ≈) when it is in one, else as recorded.
+ */
 const figure = (metric: MetricKey | null, value: number, lang: string) =>
   metric ? formatValue(metric, value, lang) : formatNumber(value, lang);
 
-export const AnswerView = memo(function AnswerView({ answer }: { answer: Answer }) {
+/** What AskFish found: its words, the figures behind them, its charts, what to keep in mind and the data it read. */
+export function AnswerView({ answer }: { answer: Answer }) {
   const { t, lang } = useT();
+  const [copied, setCopied] = useState(false);
+  const copyAnswer = async () => {
+    try {
+      await navigator.clipboard.writeText(answerText(answer));
+      setCopied(true);
+    } catch {
+      setCopied(false);
+    }
+  };
+  // A species goes by its common name, as on the pages, with the scientific one beside it.
   const name = useSpeciesName();
+  // AskFish reads the GPS tracker method's estimates only; the pages show both methods'.
+  const caveats = [
+    ...(answer.estimated ? [t("text-askfish-tracker-only")] : []),
+    ...answer.caveats,
+  ];
 
   return (
     <>
@@ -65,6 +88,16 @@ export const AnswerView = memo(function AnswerView({ answer }: { answer: Answer 
           <p className="whitespace-pre-line">{answer.narrative}</p>
         </BubbleContent>
       </Bubble>
+      <div className="flex flex-wrap gap-2 px-4 pb-2">
+        <Button type="button" size="sm" variant="outline" onClick={() => void copyAnswer()}>
+          <CopyIcon className="size-3.5" />
+          {copied ? t("text-askfish-copied") : t("text-askfish-copy-answer")}
+        </Button>
+        <Button type="button" size="sm" variant="outline" onClick={() => downloadAnswerCsv(answer)}>
+          <DownloadIcon className="size-3.5" />
+          {t("text-askfish-export-csv")}
+        </Button>
+      </div>
       {answer.statistics.length > 0 && (
         <Table>
           <TableBody>
@@ -91,9 +124,9 @@ export const AnswerView = memo(function AnswerView({ answer }: { answer: Answer 
       {answer.charts.map((chart, i) => (
         <AnswerChart key={i} chart={chart} />
       ))}
-      {answer.caveats.length > 0 && (
+      {caveats.length > 0 && (
         <ul className="flex list-disc flex-col gap-1 pl-4 text-xs text-muted-foreground">
-          {answer.caveats.map((caveat, i) => (
+          {caveats.map((caveat, i) => (
             <li key={i}>{caveat}</li>
           ))}
         </ul>
@@ -117,21 +150,22 @@ export const AnswerView = memo(function AnswerView({ answer }: { answer: Answer 
       )}
     </>
   );
-});
+}
 
 /** One of AskFish's charts in the dashboard's own card, with its rows to download. */
 function AnswerChart({ chart }: { chart: Chart }) {
   const { t, lang } = useT();
   const name = useSpeciesName();
-  const marks = chart.series.filter((s) => !s.trend);
-  if (!marks.some((s) => s.points.length)) return null;
-  const { y } = chart.metrics;
+  const { x, y } = chart.metrics;
   const format: Format = (value) => figure(y, value, lang);
-  const color = chart.method ? METHOD_COLOR[chart.method] : "var(--chart-1)";
-  const named = y ? estimateMethod(y) : chart.method;
-  const drawn =
-    chart.type === "line" ? (
-      marks.length > 1 ? (
+  // What is drawn from an estimate wears its method's colour, a recorded figure the dashboard's first.
+  const estimated = [x, y].some((m) => m && METRICS[m].estimated);
+  const color = estimated ? METHOD_COLOR.tracker : "var(--chart-1)";
+  const marks = chart.series.filter((s) => !s.trend);
+  const draw = () => {
+    if (!marks.some((s) => s.points.length)) return null;
+    if (chart.type === "line") {
+      return marks.length > 1 ? (
         <Multiples
           series={marks.map((s) => ({ ...s, name: name(s.name) }))}
           byMonth={chart.byMonth}
@@ -139,23 +173,46 @@ function AnswerChart({ chart }: { chart: Chart }) {
           color={color}
         />
       ) : (
-        <Trend series={marks[0]} byMonth={chart.byMonth} format={format} color={color} />
-      )
-    ) : chart.type === "bar" ? (
-      <RankedBars
-        rows={marks[0].points.map((p) => {
-          const label = name(String(p.x));
-          return { label, value: p.y, detail: label === p.x ? undefined : String(p.x) };
-        })}
-        name={marks[0].name}
-        format={format}
-        color={color}
-      />
-    ) : chart.type === "stacked_bar" ? (
-      <Stacked chart={chart} color={color} />
-    ) : (
-      <Points chart={chart} color={color} />
-    );
+        <Trend chart={chart} format={format} color={color} />
+      );
+    }
+    if (chart.type === "bar") {
+      // Keep each observed series; the earlier renderer silently dropped all
+      // but marks[0]. Pair matching temporal endpoints side by side instead
+      // of showing alternating district/date labels as unrelated categories.
+      const endpointSeries = marks.length === 1 ? pairedEndpointSeries(marks[0]) : null;
+      if (marks.length > 1 || endpointSeries) {
+        return (
+          <GroupedBars
+            series={(endpointSeries ?? marks).map((s) => ({ ...s, name: name(s.name) }))}
+            byMonth={chart.byMonth && !endpointSeries}
+            format={format}
+          />
+        );
+      }
+      return (
+        <RankedBars
+          rows={marks[0].points.map((p) => {
+            const label = name(String(p.x));
+            return { label, value: p.y, detail: label === p.x ? undefined : String(p.x) };
+          })}
+          name={marks[0].name}
+          format={format}
+          color={color}
+        />
+      );
+    }
+    if (chart.type === "heatmap") return <Heatmap chart={chart} format={format} />;
+    if (chart.type === "stacked_bar") return <Stacked chart={chart} />;
+    if (chart.type === "bubble") return <BubblePoints chart={chart} />;
+    if (chart.type === "scatter" || chart.type === "quadrant") {
+      return <Points chart={chart} color={color} />;
+    }
+    // A kind of chart AskFish added since: its figures are still in the answer.
+    return null;
+  };
+  const drawn = draw();
+  if (!drawn) return null;
 
   return (
     <ChartCard
@@ -163,9 +220,12 @@ function AnswerChart({ chart }: { chart: Chart }) {
       title={chart.title}
       info="info-askfish-chart"
       // The method goes beside the axis it describes: the subtitle names the y axis.
-      description={[chart.yLabel, named && t(`text-method-${named}`)].filter(Boolean).join(" · ")}
+      description={[chart.yLabel, y && METRICS[y].estimated && t("text-method-tracker")]
+        .filter(Boolean)
+        .join(" · ")}
       download={chart.series.flatMap((s) =>
-        s.points.map((p) => ({ series: s.name, [chart.xLabel ?? "x"]: p.x, value: p.y })),
+        s.points.map((p) => ({ series: s.name, [chart.xLabel ?? "x"]: p.x, value: p.y,
+          ...(p.z != null ? { [chart.sizeLabel ?? "size"]: p.z } : {}) })),
       )}
       footer={chart.note}
     >
@@ -175,18 +235,10 @@ function AnswerChart({ chart }: { chart: Chart }) {
   );
 }
 
-function Trend({
-  series,
-  byMonth,
-  format,
-  color,
-}: {
-  series: Chart["series"][number];
-  byMonth: boolean;
-  format: Format;
-  color: string;
-}) {
+/** One series over the months, like the pages' trend. */
+function Trend({ chart, format, color }: { chart: Chart; format: Format; color: string }) {
   const { lang } = useT();
+  const [series] = chart.series;
   const rows = series.points.map((p) => ({ month: String(p.x), value: p.y }));
   return (
     <ChartContainer
@@ -195,19 +247,23 @@ function Trend({
     >
       <LineChart accessibilityLayer data={rows} margin={{ top: 8, right: 12 }}>
         <CartesianGrid vertical={false} />
-        <XAxis {...xAxis(byMonth, lang)} interval="preserveStartEnd" />
+        {chart.byMonth ? (
+          <XAxis {...monthAxis(lang)} interval="preserveStartEnd" />
+        ) : (
+          <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
+        )}
         <YAxis
           tickLine={false}
           axisLine={false}
           width="auto"
           niceTicks="snap125"
-          domain={[0, "dataMax"]}
+          domain={valueAxisDomain(rows.map((row) => row.value))}
           tickFormatter={(v: number) => formatTick(v, lang)}
         />
         <ChartTooltip
           content={
             <ChartTooltipContent
-              labelFormatter={byMonth ? monthTooltipLabel(lang) : undefined}
+              labelFormatter={chart.byMonth ? monthTooltipLabel(lang) : undefined}
               formatter={(value, _name, item) => (
                 <TooltipRow color={item.color} label={series.name} value={format(Number(value))} />
               )}
@@ -227,13 +283,94 @@ function Trend({
 }
 
 /**
+ * Compare multiple observed bar series without dropping series or substituting
+ * zeros for missing values. Endpoint comparison uses this same renderer after
+ * the two dates are split into separate, side-by-side series.
+ */
+function GroupedBars({
+  series,
+  byMonth,
+  format,
+}: {
+  series: ChartBarSeries[];
+  byMonth: boolean;
+  format: Format;
+}) {
+  const { lang } = useT();
+  const rows = useMemo(() => groupedBarRows(series), [series]);
+  if (!rows?.length) return <ChartState status="error" />;
+  const values = rows.flatMap((row) =>
+    series.flatMap((_s, i) => (typeof row[`s${i}`] === "number" ? [row[`s${i}`] as number] : [])),
+  );
+  const domain = valueAxisDomain(values);
+  const config = Object.fromEntries(
+    series.map((s, i) => [`s${i}`, { label: s.name, color: `var(--chart-${i % 5 + 1})` }]),
+  );
+  return (
+    <div className="w-full overflow-x-auto">
+      <ChartContainer
+        config={config}
+        className={`aspect-auto ${CHART_HEIGHT} ${rows.length > 8 ? "min-w-[720px]" : "w-full"}`}
+      >
+        <BarChart accessibilityLayer data={rows} margin={{ top: 8, right: 12, bottom: 16 }}>
+          <CartesianGrid vertical={false} />
+          <XAxis
+            dataKey="category"
+            tickLine={false}
+            axisLine={false}
+            tickMargin={8}
+            interval="preserveStartEnd"
+            tickFormatter={(label: string) =>
+              byMonth ? monthLabel(label, lang, "short") : label
+            }
+          />
+          <YAxis
+            domain={domain}
+            tickLine={false}
+            axisLine={false}
+            width="auto"
+            tickFormatter={(value: number) => formatTick(value, lang)}
+          />
+          {(domain[0] < 0 || domain[1] === 0) &&
+            <ReferenceLine y={0} stroke="var(--border)" />}
+          <ChartTooltip
+            content={
+              <ChartTooltipContent
+                labelFormatter={byMonth ? monthTooltipLabel(lang) : undefined}
+                formatter={(value, _name, item) => (
+                  <TooltipRow
+                    color={item.color}
+                    label={series[Number(String(item.dataKey).slice(1))]?.name ?? ""}
+                    value={format(Number(value))}
+                  />
+                )}
+              />
+            }
+          />
+          <ChartLegend content={<ChartLegendContent />} />
+          {series.map((s, i) => (
+            <Bar
+              key={`${s.name}-${i}`}
+              name={s.name}
+              dataKey={`s${i}`}
+              fill={`var(--chart-${i % 5 + 1})`}
+              maxBarSize={36}
+            />
+          ))}
+        </BarChart>
+      </ChartContainer>
+    </div>
+  );
+}
+
+/**
  * Several series over the months as one small chart each on a shared axis,
  * the way the pages draw districts: no colour per district, no crossing
  * lines. Pointing at a month reads its value beside every name.
  */
 function Multiples({
   series,
-  byMonth,
+  byMonth: monthly,
   format,
   color,
 }: {
@@ -244,16 +381,15 @@ function Multiples({
 }) {
   const { t, lang } = useT();
   const [active, setActive] = useState<number | null>(null);
-  // One cursor per answer: pointing at its panels moves no other answer's.
-  const syncId = useId();
+  const syncId = useId(); // Do not synchronize cursors across separate AskFish answers.
   // Built once per answer, not per month pointed at: each panel keeps its data, so only
   // its cursor moves (as in the pages' DistrictMultiples).
-  const { months, max, panels } = useMemo(() => {
+  const { months, domain, panels } = useMemo(() => {
     // Every panel spans the same months, with a gap where a series has none.
     const months = xValues(series);
     return {
       months,
-      max: Math.max(0, ...series.flatMap((s) => s.points.map((p) => p.y))),
+      domain: valueAxisDomain(series.flatMap((s) => s.points.map((p) => p.y))),
       panels: series.map((s) => {
         const values = new Map(s.points.map((p) => [String(p.x), p.y]));
         return {
@@ -268,10 +404,10 @@ function Multiples({
     <>
       <p aria-live="polite" className="min-h-5 text-sm text-muted-foreground">
         {active != null && months[active]
-          ? byMonth
+          ? monthly
             ? monthLabel(months[active], lang, "long")
             : months[active]
-          : byMonth && months.length > 1
+          : monthly && months.length > 1
             ? `${monthSpan(months[0], months.at(-1)!, lang)} · ${t("text-askfish-point")}`
             : t("text-askfish-point")}
       </p>
@@ -280,6 +416,7 @@ function Multiples({
         onMouseLeave={() => setActive(null)}
       >
         {panels.map((p) => {
+          // The month pointed at, else the latest with a value.
           const shown =
             active == null ? p.points.findLast((x) => x.value != null) : p.points[active];
           return (
@@ -305,7 +442,7 @@ function Multiples({
                     setActive(index == null ? null : Number(index));
                   }}
                 >
-                  <YAxis hide domain={[0, max || 1]} />
+                  <YAxis hide domain={domain} />
                   {/* The cursor only: the values are beside the names. */}
                   <ChartTooltip
                     cursor={{ stroke: "var(--muted-foreground)" }}
@@ -328,10 +465,57 @@ function Multiples({
   );
 }
 
+/** Governed district×month heatmap. Null means no observation, NOT zero catch. */
+function Heatmap({ chart, format }: { chart: Chart; format: Format }) {
+  const grid = heatmapGrid(chart.series);
+  if (!grid) return <ChartState status="error" />;
+  const span = grid.max - grid.min;
+  const width = `minmax(8rem, 1.5fr) repeat(${grid.periods.length}, minmax(3.5rem, 1fr))`;
+  return (
+    <div className="w-full overflow-x-auto" role="table" aria-label={chart.title}>
+      <div className="grid gap-1 text-xs" style={{ gridTemplateColumns: width,
+        minWidth: `${Math.max(350, 125 + grid.periods.length * 58)}px` }}>
+        <div className="sticky left-0 z-10 bg-background p-1 font-medium" role="columnheader">
+          District / month
+        </div>
+        {grid.periods.map((period) => (
+          <div key={period} className="p-1 text-center text-muted-foreground" role="columnheader">
+            {period.slice(0, 7)}
+          </div>
+        ))}
+        {grid.rows.map((row) => (
+          <div key={row.name} role="row" className="contents">
+            <div role="rowheader" className="sticky left-0 z-10 truncate bg-background p-1 font-medium"
+                 title={row.name}>{row.name}</div>
+            {row.values.map((value, index) => {
+              const fraction = value === null ? 0 : span === 0 ? 0.5 : (value - grid.min) / span;
+              const title = `${row.name} · ${grid.periods[index]}: ${value === null ? "Not observed" : format(value)}`;
+              return (
+                <div key={grid.periods[index]} role="cell" title={title}
+                     aria-label={title}
+                     className="flex min-h-8 items-center justify-center rounded-sm border border-border/40 px-1 text-center tabular-nums"
+                     style={value === null
+                       ? { backgroundColor: "var(--muted)" }
+                       : { backgroundColor: `color-mix(in oklab, var(--chart-1) ${Math.round(15 + fraction * 65)}%, transparent)` }}>
+                  {value === null ? "–" : format(value)}
+                </div>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+      <p className="mt-2 text-xs text-muted-foreground">
+        Darker cells indicate higher values within this chart. – means no matched observation, not zero.
+      </p>
+    </div>
+  );
+}
+
 /** Counts stacked per month: how many values AskFish found and how many are missing. */
-function Stacked({ chart, color }: { chart: Chart; color: string }) {
+function Stacked({ chart }: { chart: Chart }) {
   const { lang } = useT();
-  const colors = [color, `color-mix(in oklab, ${color} 30%, transparent)`];
+  // What was found and what is missing: one bar in two shades of the recorded figures' colour.
+  const colors = ["var(--chart-1)", "color-mix(in oklab, var(--chart-1) 30%, transparent)"];
   const rows = xValues(chart.series).map((month) => ({
     month,
     ...Object.fromEntries(
@@ -345,25 +529,16 @@ function Stacked({ chart, color }: { chart: Chart; color: string }) {
     >
       <BarChart accessibilityLayer data={rows} margin={{ top: 8, right: 12 }}>
         <CartesianGrid vertical={false} />
-        <XAxis {...xAxis(chart.byMonth, lang)} />
-        <YAxis
-          tickLine={false}
-          axisLine={false}
-          width="auto"
-          allowDecimals={false}
-          tickFormatter={(v: number) => formatTick(v, lang)}
-        />
+        {chart.byMonth ? (
+          <XAxis {...monthAxis(lang)} />
+        ) : (
+          <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
+        )}
+        <YAxis tickLine={false} axisLine={false} width="auto" allowDecimals={false} />
         <ChartTooltip
           content={
             <ChartTooltipContent
               labelFormatter={chart.byMonth ? monthTooltipLabel(lang) : undefined}
-              formatter={(value, name, item) => (
-                <TooltipRow
-                  color={item.color}
-                  label={name}
-                  value={formatNumber(Number(value), lang)}
-                />
-              )}
             />
           }
         />
@@ -372,7 +547,6 @@ function Stacked({ chart, color }: { chart: Chart; color: string }) {
           <Bar
             key={s.name}
             dataKey={`s${i}`}
-            name={s.name}
             stackId="all"
             fill={colors[i % colors.length]}
             maxBarSize={32}
@@ -459,6 +633,59 @@ function Points({ chart, color }: { chart: Chart; color: string }) {
           )}
         </Scatter>
       </ComposedChart>
+    </ChartContainer>
+  );
+}
+
+
+/** Three approved measures: X, Y and circle area (Z), joined on exact source keys. */
+function BubblePoints({ chart }: { chart: Chart }) {
+  const { lang } = useT();
+  const series = chart.series.map((s) => ({
+    name: s.name,
+    rows: s.points.filter((p) => p.z != null && p.z > 0).map((p) => ({
+      x: Number(p.x), y: p.y, z: p.z!, name: p.label ?? s.name,
+    })),
+  }));
+  return (
+    <ChartContainer
+      config={Object.fromEntries(series.map((s, i) => [
+        `bubble${i}`, { label: s.name, color: `var(--chart-${i % 5 + 1})` },
+      ]))}
+      className={`aspect-auto w-full ${CHART_HEIGHT}`}
+    >
+      <ScatterChart accessibilityLayer margin={{ top: 16, right: 20, bottom: 28, left: 8 }}>
+        <CartesianGrid />
+        <XAxis type="number" dataKey="x" domain={["auto", "auto"]}
+          tickFormatter={(value: number) => formatTick(value, lang)}
+          label={{ value: chart.xLabel ?? "", position: "insideBottom", offset: -15 }} />
+        <YAxis type="number" dataKey="y" domain={["auto", "auto"]}
+          tickFormatter={(value: number) => formatTick(value, lang)} width="auto" />
+        <ZAxis type="number" dataKey="z" range={[64, 900]}
+          name={chart.sizeLabel ?? "Bubble size"} unit={chart.sizeUnit ?? ""} />
+        <ChartTooltip
+          cursor={false}
+          content={({ active, payload }) => {
+            const item = payload?.[0]?.payload as
+              | { x: number; y: number; z: number; name: string }
+              | undefined;
+            if (!active || !item) return null;
+            return (
+              <div className="rounded-md border bg-background px-3 py-2 text-xs shadow-md">
+                <p className="font-medium">{item.name}</p>
+                <p>{chart.xLabel}: {formatNumber(item.x, lang)}</p>
+                <p>{chart.yLabel}: {formatNumber(item.y, lang)}</p>
+                <p>{chart.sizeLabel}: {formatNumber(item.z, lang)} {chart.sizeUnit ?? ""}</p>
+              </div>
+            );
+          }}
+        />
+        {series.map((s, i) => (
+          <Scatter key={s.name} name={s.name} data={s.rows}
+            fill={`var(--chart-${i % 5 + 1})`} isAnimationActive={false} />
+        ))}
+        <ChartLegend content={<ChartLegendContent />} />
+      </ScatterChart>
     </ChartContainer>
   );
 }

@@ -40,8 +40,7 @@ export default function Chat({
   onAsk: (ask: Ask) => void;
 }) {
   const { t } = useT();
-  // AskFish writes these with one AI call, then keeps them: asked once per set of filters,
-  // and only while they show, before the first question.
+  // Dashboard-wide queries use districts/months/locale as context, not page-specific scope.
   const suggestions = api.askfish.suggestions.useQuery(filters, {
     enabled: !turns.length,
     staleTime: Infinity,
@@ -68,28 +67,39 @@ export default function Chat({
                     </MessageContent>
                   </Message>
                 </MessageScrollerItem>,
+                // Questions AskFish has checked it can answer, offered as replies to pick
+                // (shadcn's button bubbles).
                 <MessageScrollerItem key="suggestions" messageId="suggestions">
                   <Message align="end">
                     <MessageContent>
                       <BubbleGroup>
                         {suggestions.isPending &&
                           [0, 1, 2].map((i) => <Skeleton key={i} className="h-9 w-3/5 self-end" />)}
+                        {suggestions.isError && (
+                          <Bubble variant="muted">
+                            <BubbleContent>
+                              Suggested questions are unavailable. You can still ask your own question.
+                            </BubbleContent>
+                          </Bubble>
+                        )}
                         {suggestions.data?.map((s) => (
                           <Bubble key={s.id} variant="tinted">
                             <BubbleContent
                               render={
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    onAsk({ question: s.question, suggestionId: s.id })
-                                  }
-                                />
+                                <button type="button" onClick={() => onAsk({ question: s.question, suggestionId: s.id })} />
                               }
                             >
                               {s.question}
                             </BubbleContent>
                           </Bubble>
                         ))}
+                        {!suggestions.isPending && (
+                          <Button type="button" size="sm" variant="outline"
+                            disabled={suggestions.isFetching}
+                            onClick={() => void suggestions.refetch()}>
+                            {t("text-askfish-refresh-suggestions")}
+                          </Button>
+                        )}
                       </BubbleGroup>
                     </MessageContent>
                   </Message>
@@ -114,7 +124,7 @@ export default function Chat({
                       ) : turn.failed ? (
                         <>
                           <Bubble variant="destructive">
-                            <BubbleContent>{t("text-askfish-failed")}</BubbleContent>
+                            <BubbleContent>{"failureMessage" in turn && typeof turn.failureMessage === "string" ? turn.failureMessage : t("text-askfish-failed")}</BubbleContent>
                           </Bubble>
                           <Button
                             variant="outline"
@@ -151,10 +161,16 @@ export default function Chat({
 }
 
 /**
- * The box to ask the next question. It alone holds the draft, so typing
- * redraws neither the conversation nor its charts.
+ * The box to ask the next question and what its answer may draw on. It alone
+ * holds the draft, so typing redraws neither the conversation nor its charts.
  */
-function Composer({ busy, onAsk }: { busy: boolean; onAsk: (ask: Ask) => void }) {
+function Composer({
+  busy,
+  onAsk,
+}: {
+  busy: boolean;
+  onAsk: (ask: Ask) => void;
+}) {
   const { t } = useT();
   const [draft, setDraft] = useState("");
   const question = draft.trim();

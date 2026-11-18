@@ -106,7 +106,7 @@ test("AskFish gets the page as its contract words it, and the chat only what it 
   });
 
   expect(Object.keys(answer).sort()).toEqual(
-    ["caveats", "charts", "headline", "narrative", "sources", "statistics"].sort(),
+    ["caveats", "charts", "estimated", "headline", "narrative", "sources", "statistics"].sort(),
   );
   // An answer about an estimate: its figures are in that metric, so rounded; its counts are not.
   expect(answer.statistics).toEqual([
@@ -125,7 +125,7 @@ test("AskFish gets the page as its contract words it, and the chat only what it 
     byMonth: true,
     metrics: { x: null, y: "estimated_catch_tn" },
   });
-  expect(answer.charts[0]!.series[0]!.points).toEqual([{ x: "2026-04", y: 10, label: null }]);
+  expect(answer.charts[0]!.series[0]!.points).toEqual([{ x: "2026-04", y: 10, label: null, z: null }]);
   expect(answer.sources).toEqual([
     { label: "Estimated catch", records: 6, from: "2026-04", through: "2026-09" },
   ]);
@@ -260,7 +260,7 @@ test("a kind of chart the chat can't draw is left out", async () => {
     reply({ ...REPLY, charts: [{ ...REPLY.charts[0], type: "heatmap" }, REPLY.charts[0]] }),
   );
   const answer = await askfish.ask({ ...filters, question: "How much?" });
-  expect(answer.charts.map((c) => c.type)).toEqual(["line"]);
+  expect(answer.charts.map((c) => c.type)).toEqual(["heatmap", "line"]);
 });
 
 test.each([
