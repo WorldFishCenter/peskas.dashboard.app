@@ -1,3 +1,9 @@
+# peskas.dashboard 2.4.4
+
+## Changes
+
+- The FAO ARTFISH estimate no longer says it leaves out fishing on foot: it counts fishers on foot wherever the census lists them. Only the GPS tracker method counts boats alone.
+
 # peskas.dashboard 2.4.3
 
 ## Changes
