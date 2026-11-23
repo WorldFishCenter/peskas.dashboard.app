@@ -82,7 +82,6 @@ export function SpeciesSizes() {
         footer={
           <>
             {selected && <span>{t("text-measured-trips", { count: selected.trips })}</span>}
-            {activeCountry.survey.meanLengths && <span>{t("text-lengths-means-note")}</span>}
           </>
         }
         action={

@@ -85,7 +85,7 @@ What FishBase and SeaLifeBase say about a taxon code (`taxa_traits`): vulnerabil
 _Avoid_: species info, metadata
 
 **Length class**:
-The size band a catch row is recorded in (`length_min` to `length_max`, cm). Countries store a class by its midpoint, so the summaries re-bin every value into one shared set of classes. In Kenya a catch row carries the average length of the fish measured on that landing (`survey.meanLengths`), so its classes hold landings' averages and the size views say so.
+The size band a catch row is recorded in (`length_min` to `length_max`, cm). Countries store a class by its midpoint, so the summaries re-bin every value into one shared set of classes.
 _Avoid_: length bin, size
 
 **Length at maturity**:
@@ -93,7 +93,7 @@ The total length at which a species first reproduces (FishBase `maturity`, resta
 _Avoid_: Lm (in screens), minimum size
 
 **Optimum length**:
-The total length at which a year-class of a species reaches its greatest total weight, from its asymptotic length in FishBase (Froese & Binohlan 2000). Within 10% of it a fish is at optimum length; beyond, a large spawner. Kept only when at or above the length at maturity: below it, FishBase's growth and maturity studies disagree.
+The total length at which a year-class of a species reaches its greatest total weight: 3 × asymptotic length / (3 + M/K), with the asymptotic length and growth rate K from FishBase and natural mortality M from Then et al. (2015), the same formula as the stock assessment. Within 10% of it a fish is at optimum length; beyond, a large spawner. Kept only when at or above the length at maturity: below it, FishBase's growth and maturity studies disagree.
 _Avoid_: Lopt (in screens)
 
 **Size band share**:

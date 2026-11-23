@@ -11,6 +11,19 @@
 ## Changes
 
 - On a phone, the flag next to the country name is hidden, to leave room in the top bar.
+
+# peskas.dashboard 2.4.4
+
+## Changes
+
+- The FAO ARTFISH estimate no longer says it leaves out fishing on foot: it counts fishers on foot wherever the census lists them. Only the GPS tracker method counts boats alone.
+
+# peskas.dashboard 2.4.3
+
+## Changes
+
+- Kenya: the size charts and the methods page no longer warn that Kenya's lengths are averages. The Kenya pipeline now publishes each measured fish with its own length, so the charts show the real spread of sizes.
+
 # peskas.dashboard 2.4.2
 
 ## Changes
