@@ -106,7 +106,7 @@ test("AskFish gets the page as its contract words it, and the chat only what it 
   });
 
   expect(Object.keys(answer).sort()).toEqual(
-    ["caveats", "charts", "estimated", "headline", "narrative", "sources", "statistics"].sort(),
+    ["caveats", "charts", "headline", "narrative", "sources", "statistics"].sort(),
   );
   // An answer about an estimate: its figures are in that metric, so rounded; its counts are not.
   expect(answer.statistics).toEqual([

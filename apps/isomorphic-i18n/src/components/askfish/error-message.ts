@@ -1,11 +1,4 @@
-/** Show only messages explicitly classified as safe by the server router.
- * Other tRPC/client exceptions remain generic (no stack traces or secrets).
- */
-export function safeAskFishMessage(error: unknown): string | null {
-  if (!(error instanceof Error)) return null;
-  const prefix = "AskFish: ";
-  const message = error.message;
-  if (!message.startsWith(prefix)) return null;
-  const text = message.slice(prefix.length).trim();
-  return text && text.length <= 300 ? text : null;
+/** The reason the server gave for a failed question (`askfish:<reason>`), which the chat translates. */
+export function askFishReason(error: unknown): string | undefined {
+  return error instanceof Error ? /^askfish:([a-z-]+)$/.exec(error.message)?.[1] : undefined;
 }

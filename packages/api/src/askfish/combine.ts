@@ -7,6 +7,7 @@ import {
   type Combine,
 } from "@repo/domain/metrics";
 import { GearSummaryDistrictModel } from "@repo/nosql/schema/gear-summary-district";
+import { GearTaxaSummaryModel } from "@repo/nosql/schema/gear-taxa-summary";
 import { TaxaSummaryDistrictModel } from "@repo/nosql/schema/taxa-summary-district";
 import {
   type Cells,
@@ -171,6 +172,28 @@ const taxa: Combined = async (measure, keep, sel) => {
 };
 
 /** The portal datasets AskFish may combine, by catalog id, each by the pages' rules over every dimension but `keep`. */
+// Recorded catch by gear and taxon, added up from the catches above zero, as the gear page does.
+const gearTaxa: Combined = async (measure, keep, sel) => {
+  const docs = await GearTaxaSummaryModel.find({
+    ...scopeMatch(sel.districts, sel.date),
+    ...(sel.gear ? { gear: { $in: sel.gear } } : {}),
+    ...(sel.taxon ? { catch_taxon: { $in: sel.taxon } } : {}),
+    catch_kg: { $gt: 0 },
+  }).lean();
+  const rows = docs.map((d) => ({
+    gaul_2_name: d.gaul_2_name,
+    dims: {
+      district: d.gaul_2_name,
+      month: monthDay(monthKey(d.date)),
+      gear: d.gear ?? null,
+      taxon: d.catch_taxon,
+    },
+    field: measure,
+    value: d.catch_kg,
+  }));
+  return groupFigures(rows, keep, measure, TAXA_METRICS.catch_kg.overMonths);
+};
+
 export const COMBINED: Record<string, Combined | undefined> = {
   district_summary: district((filter, keys) => districtCells(filter, [...keys, "n_submissions"])),
   monthly_district_summary: district(
@@ -178,4 +201,5 @@ export const COMBINED: Record<string, Combined | undefined> = {
   ),
   gear_summary_district: gears,
   taxa_summary_district: taxa,
+  gear_taxa_summaries: gearTaxa,
 };

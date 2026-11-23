@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "0.7.0",
+  "catalogVersion": "0.8.0",
   "contractVersion": "1.0",
   "status": "generated_from_peskas_data_dictionary",
   "sourceEvidence": {
@@ -165,7 +165,9 @@
           "aliases": [
             "catch per trip",
             "mean catch",
-            "average catch"
+            "average catch",
+            "average catch per trip",
+            "recorded catch per trip"
           ],
           "kind": "rate",
           "unit": {
@@ -181,12 +183,12 @@
             "acrossDistrict": {
               "status": "allowed",
               "method": "weighted_mean_by_landings",
-              "note": "Weighted by the landings behind each value: n_submissions of district_summary at the same district and month."
+              "note": "Weighted by the landings behind each value: n_submissions of district_summary at the same district and month. Landings count every surveyed trip, while an average may leave out the trips missing its value, so the combined figure is close to, not exactly, the average over all trips."
             },
             "acrossTime": {
               "status": "allowed",
               "method": "weighted_mean_by_landings",
-              "note": "Weighted by the landings behind each value: n_submissions of district_summary at the same district and month."
+              "note": "Weighted by the landings behind each value: n_submissions of district_summary at the same district and month. Landings count every surveyed trip, while an average may leave out the trips missing its value, so the combined figure is close to, not exactly, the average over all trips."
             }
           }
         },
@@ -212,12 +214,12 @@
             "acrossDistrict": {
               "status": "allowed",
               "method": "weighted_mean_by_landings",
-              "note": "Weighted by the landings behind each value: n_submissions of district_summary at the same district and month."
+              "note": "Weighted by the landings behind each value: n_submissions of district_summary at the same district and month. Landings count every surveyed trip, while an average may leave out the trips missing its value, so the combined figure is close to, not exactly, the average over all trips."
             },
             "acrossTime": {
               "status": "allowed",
               "method": "weighted_mean_by_landings",
-              "note": "Weighted by the landings behind each value: n_submissions of district_summary at the same district and month."
+              "note": "Weighted by the landings behind each value: n_submissions of district_summary at the same district and month. Landings count every surveyed trip, while an average may leave out the trips missing its value, so the combined figure is close to, not exactly, the average over all trips."
             }
           }
         },
@@ -243,12 +245,12 @@
             "acrossDistrict": {
               "status": "allowed",
               "method": "weighted_mean_by_landings",
-              "note": "Weighted by the landings behind each value: n_submissions of district_summary at the same district and month."
+              "note": "Weighted by the landings behind each value: n_submissions of district_summary at the same district and month. Landings count every surveyed trip, while an average may leave out the trips missing its value, so the combined figure is close to, not exactly, the average over all trips."
             },
             "acrossTime": {
               "status": "allowed",
               "method": "weighted_mean_by_landings",
-              "note": "Weighted by the landings behind each value: n_submissions of district_summary at the same district and month."
+              "note": "Weighted by the landings behind each value: n_submissions of district_summary at the same district and month. Landings count every surveyed trip, while an average may leave out the trips missing its value, so the combined figure is close to, not exactly, the average over all trips."
             }
           }
         },
@@ -274,12 +276,12 @@
             "acrossDistrict": {
               "status": "allowed",
               "method": "weighted_mean_by_landings",
-              "note": "Weighted by the landings behind each value: n_submissions of district_summary at the same district and month."
+              "note": "Weighted by the landings behind each value: n_submissions of district_summary at the same district and month. Landings count every surveyed trip, while an average may leave out the trips missing its value, so the combined figure is close to, not exactly, the average over all trips."
             },
             "acrossTime": {
               "status": "allowed",
               "method": "weighted_mean_by_landings",
-              "note": "Weighted by the landings behind each value: n_submissions of district_summary at the same district and month."
+              "note": "Weighted by the landings behind each value: n_submissions of district_summary at the same district and month. Landings count every surveyed trip, while an average may leave out the trips missing its value, so the combined figure is close to, not exactly, the average over all trips."
             }
           }
         },
@@ -304,12 +306,12 @@
             "acrossDistrict": {
               "status": "allowed",
               "method": "weighted_mean_by_landings",
-              "note": "Weighted by the landings behind each value: n_submissions of district_summary at the same district and month."
+              "note": "Weighted by the landings behind each value: n_submissions of district_summary at the same district and month. Landings count every surveyed trip, while an average may leave out the trips missing its value, so the combined figure is close to, not exactly, the average over all trips."
             },
             "acrossTime": {
               "status": "allowed",
               "method": "weighted_mean_by_landings",
-              "note": "Weighted by the landings behind each value: n_submissions of district_summary at the same district and month."
+              "note": "Weighted by the landings behind each value: n_submissions of district_summary at the same district and month. Landings count every surveyed trip, while an average may leave out the trips missing its value, so the combined figure is close to, not exactly, the average over all trips."
             }
           }
         },
@@ -660,12 +662,12 @@
             "acrossDistrict": {
               "status": "allowed",
               "method": "weighted_mean_by_landings",
-              "note": "Weighted by the landings behind each value: n_submissions of district_summary at the same district and month."
+              "note": "Weighted by the landings behind each value: n_submissions of district_summary at the same district and month. Landings count every surveyed trip, while an average may leave out the trips missing its value, so the combined figure is close to, not exactly, the average over all trips."
             },
             "acrossTime": {
               "status": "allowed",
               "method": "weighted_mean_by_landings",
-              "note": "Weighted by the landings behind each value: n_submissions of district_summary at the same district and month."
+              "note": "Weighted by the landings behind each value: n_submissions of district_summary at the same district and month. Landings count every surveyed trip, while an average may leave out the trips missing its value, so the combined figure is close to, not exactly, the average over all trips."
             }
           }
         },
@@ -690,41 +692,44 @@
             "acrossDistrict": {
               "status": "allowed",
               "method": "weighted_mean_by_landings",
-              "note": "Weighted by the landings behind each value: n_submissions of district_summary at the same district and month."
+              "note": "Weighted by the landings behind each value: n_submissions of district_summary at the same district and month. Landings count every surveyed trip, while an average may leave out the trips missing its value, so the combined figure is close to, not exactly, the average over all trips."
             },
             "acrossTime": {
               "status": "allowed",
               "method": "weighted_mean_by_landings",
-              "note": "Weighted by the landings behind each value: n_submissions of district_summary at the same district and month."
+              "note": "Weighted by the landings behind each value: n_submissions of district_summary at the same district and month. Landings count every surveyed trip, while an average may leave out the trips missing its value, so the combined figure is close to, not exactly, the average over all trips."
             }
           }
         },
         "mean_catch_kg": {
-          "label": "Mean recorded catch per fishing trip",
+          "label": "Catch per trip",
           "aliases": [
+            "catch per trip",
+            "mean catch",
+            "average catch",
             "average catch per trip",
-            "mean catch kg per trip",
             "recorded catch per trip"
           ],
           "kind": "rate",
           "unit": {
-            "value": "kg/trip",
-            "status": "coasts_summary_verified"
+            "value": "kg",
+            "status": "dictionary"
           },
           "nativeGrain": [
             "district",
-            "date"
+            "month"
           ],
-          "derivationStatus": "coasts_trip_summary_reviewed",
+          "derivationStatus": "recorded",
           "rollups": {
             "acrossDistrict": {
-              "status": "blocked_pending_derivation"
+              "status": "allowed",
+              "method": "weighted_mean_by_landings",
+              "note": "Weighted by the landings behind each value: n_submissions of district_summary at the same district and month. Landings count every surveyed trip, while an average may leave out the trips missing its value, so the combined figure is close to, not exactly, the average over all trips."
             },
             "acrossTime": {
-              "status": "blocked_pending_derivation"
-            },
-            "sum": {
-              "status": "forbidden"
+              "status": "allowed",
+              "method": "weighted_mean_by_landings",
+              "note": "Weighted by the landings behind each value: n_submissions of district_summary at the same district and month. Landings count every surveyed trip, while an average may leave out the trips missing its value, so the combined figure is close to, not exactly, the average over all trips."
             }
           }
         },
@@ -750,12 +755,12 @@
             "acrossDistrict": {
               "status": "allowed",
               "method": "weighted_mean_by_landings",
-              "note": "Weighted by the landings behind each value: n_submissions of district_summary at the same district and month."
+              "note": "Weighted by the landings behind each value: n_submissions of district_summary at the same district and month. Landings count every surveyed trip, while an average may leave out the trips missing its value, so the combined figure is close to, not exactly, the average over all trips."
             },
             "acrossTime": {
               "status": "allowed",
               "method": "weighted_mean_by_landings",
-              "note": "Weighted by the landings behind each value: n_submissions of district_summary at the same district and month."
+              "note": "Weighted by the landings behind each value: n_submissions of district_summary at the same district and month. Landings count every surveyed trip, while an average may leave out the trips missing its value, so the combined figure is close to, not exactly, the average over all trips."
             }
           }
         },
@@ -781,12 +786,12 @@
             "acrossDistrict": {
               "status": "allowed",
               "method": "weighted_mean_by_landings",
-              "note": "Weighted by the landings behind each value: n_submissions of district_summary at the same district and month."
+              "note": "Weighted by the landings behind each value: n_submissions of district_summary at the same district and month. Landings count every surveyed trip, while an average may leave out the trips missing its value, so the combined figure is close to, not exactly, the average over all trips."
             },
             "acrossTime": {
               "status": "allowed",
               "method": "weighted_mean_by_landings",
-              "note": "Weighted by the landings behind each value: n_submissions of district_summary at the same district and month."
+              "note": "Weighted by the landings behind each value: n_submissions of district_summary at the same district and month. Landings count every surveyed trip, while an average may leave out the trips missing its value, so the combined figure is close to, not exactly, the average over all trips."
             }
           }
         },
@@ -812,12 +817,12 @@
             "acrossDistrict": {
               "status": "allowed",
               "method": "weighted_mean_by_landings",
-              "note": "Weighted by the landings behind each value: n_submissions of district_summary at the same district and month."
+              "note": "Weighted by the landings behind each value: n_submissions of district_summary at the same district and month. Landings count every surveyed trip, while an average may leave out the trips missing its value, so the combined figure is close to, not exactly, the average over all trips."
             },
             "acrossTime": {
               "status": "allowed",
               "method": "weighted_mean_by_landings",
-              "note": "Weighted by the landings behind each value: n_submissions of district_summary at the same district and month."
+              "note": "Weighted by the landings behind each value: n_submissions of district_summary at the same district and month. Landings count every surveyed trip, while an average may leave out the trips missing its value, so the combined figure is close to, not exactly, the average over all trips."
             }
           }
         },
@@ -842,12 +847,12 @@
             "acrossDistrict": {
               "status": "allowed",
               "method": "weighted_mean_by_landings",
-              "note": "Weighted by the landings behind each value: n_submissions of district_summary at the same district and month."
+              "note": "Weighted by the landings behind each value: n_submissions of district_summary at the same district and month. Landings count every surveyed trip, while an average may leave out the trips missing its value, so the combined figure is close to, not exactly, the average over all trips."
             },
             "acrossTime": {
               "status": "allowed",
               "method": "weighted_mean_by_landings",
-              "note": "Weighted by the landings behind each value: n_submissions of district_summary at the same district and month."
+              "note": "Weighted by the landings behind each value: n_submissions of district_summary at the same district and month. Landings count every surveyed trip, while an average may leave out the trips missing its value, so the combined figure is close to, not exactly, the average over all trips."
             }
           }
         },
@@ -1214,17 +1219,17 @@
             "acrossDistrict": {
               "status": "allowed",
               "method": "weighted_mean_by_landings",
-              "note": "Weighted by the landings behind each value: n_submissions of gear_summary_district at the same district, month and gear."
+              "note": "Weighted by the landings behind each value: n_submissions of gear_summary_district at the same district, month and gear. Landings count every surveyed trip, while an average may leave out the trips missing its value, so the combined figure is close to, not exactly, the average over all trips."
             },
             "acrossTime": {
               "status": "allowed",
               "method": "weighted_mean_by_landings",
-              "note": "Weighted by the landings behind each value: n_submissions of gear_summary_district at the same district, month and gear."
+              "note": "Weighted by the landings behind each value: n_submissions of gear_summary_district at the same district, month and gear. Landings count every surveyed trip, while an average may leave out the trips missing its value, so the combined figure is close to, not exactly, the average over all trips."
             },
             "acrossGear": {
               "status": "allowed",
               "method": "weighted_mean_by_landings",
-              "note": "Weighted by the landings behind each value: n_submissions of gear_summary_district at the same district, month and gear."
+              "note": "Weighted by the landings behind each value: n_submissions of gear_summary_district at the same district, month and gear. Landings count every surveyed trip, while an average may leave out the trips missing its value, so the combined figure is close to, not exactly, the average over all trips."
             }
           }
         },
@@ -1251,17 +1256,17 @@
             "acrossDistrict": {
               "status": "allowed",
               "method": "weighted_mean_by_landings",
-              "note": "Weighted by the landings behind each value: n_submissions of gear_summary_district at the same district, month and gear."
+              "note": "Weighted by the landings behind each value: n_submissions of gear_summary_district at the same district, month and gear. Landings count every surveyed trip, while an average may leave out the trips missing its value, so the combined figure is close to, not exactly, the average over all trips."
             },
             "acrossTime": {
               "status": "allowed",
               "method": "weighted_mean_by_landings",
-              "note": "Weighted by the landings behind each value: n_submissions of gear_summary_district at the same district, month and gear."
+              "note": "Weighted by the landings behind each value: n_submissions of gear_summary_district at the same district, month and gear. Landings count every surveyed trip, while an average may leave out the trips missing its value, so the combined figure is close to, not exactly, the average over all trips."
             },
             "acrossGear": {
               "status": "allowed",
               "method": "weighted_mean_by_landings",
-              "note": "Weighted by the landings behind each value: n_submissions of gear_summary_district at the same district, month and gear."
+              "note": "Weighted by the landings behind each value: n_submissions of gear_summary_district at the same district, month and gear. Landings count every surveyed trip, while an average may leave out the trips missing its value, so the combined figure is close to, not exactly, the average over all trips."
             }
           }
         }
@@ -1535,6 +1540,138 @@
       "caveats": [
         "Recorded catch by taxon is the catch of the surveyed landings only, a small part of the total; in Kenya it is the identified sample of each catch.",
         "Some taxa are recorded at family or genus level."
+      ]
+    },
+    "gear_taxa_summaries": {
+      "queryable": true,
+      "lineage": "district",
+      "collection": "gear_taxa_summaries",
+      "grain": [
+        "district",
+        "month",
+        "gear",
+        "taxon"
+      ],
+      "layout": "wide",
+      "timeField": "date",
+      "geographyKey": "gaul_2_name",
+      "pageScopes": [],
+      "access": {
+        "applicationRoute": "public",
+        "dataClassification": "aggregate_non_personal",
+        "classificationStatus": "provisional"
+      },
+      "derivationStatus": "described_by_peskas_data_dictionary",
+      "dimensions": {
+        "district": {
+          "field": "gaul_2_name",
+          "aliases": [
+            "district",
+            "county",
+            "area"
+          ]
+        },
+        "month": {
+          "field": "date",
+          "aliases": [
+            "month",
+            "date",
+            "period"
+          ]
+        },
+        "gear": {
+          "field": "gear",
+          "aliases": [
+            "gear",
+            "fishing gear",
+            "gear type"
+          ]
+        },
+        "taxon": {
+          "field": "catch_taxon",
+          "aliases": [
+            "species",
+            "taxon",
+            "fish",
+            "species group"
+          ]
+        }
+      },
+      "measures": {
+        "catch_kg": {
+          "label": "Recorded catch",
+          "aliases": [
+            "recorded catch",
+            "species catch",
+            "catch composition",
+            "catch kg"
+          ],
+          "kind": "total",
+          "unit": {
+            "value": "kg",
+            "status": "dictionary"
+          },
+          "nativeGrain": [
+            "district",
+            "month",
+            "gear",
+            "taxon"
+          ],
+          "derivationStatus": "recorded",
+          "rollups": {
+            "acrossDistrict": {
+              "status": "allowed",
+              "method": "sum"
+            },
+            "acrossTime": {
+              "status": "allowed",
+              "method": "sum"
+            },
+            "acrossGear": {
+              "status": "allowed",
+              "method": "sum"
+            },
+            "acrossTaxon": {
+              "status": "allowed",
+              "method": "sum"
+            }
+          }
+        }
+      },
+      "bindings": {
+        "TZ": {
+          "database": "portal-prod",
+          "collection": "gear_taxa_summaries",
+          "status": "available",
+          "observedDocuments": 0
+        },
+        "KE": {
+          "database": "portal-prod",
+          "collection": "gear_taxa_summaries",
+          "status": "available",
+          "observedDocuments": 0
+        },
+        "MZ": {
+          "database": "portal-prod",
+          "collection": "gear_taxa_summaries",
+          "status": "available",
+          "observedDocuments": 0
+        }
+      },
+      "queryPolicy": {
+        "maxRows": 20000,
+        "timeFilterStatus": "supported",
+        "canonicalKey": [
+          "district",
+          "month",
+          "gear",
+          "taxon"
+        ],
+        "duplicateResolution": "one_row_per_grain"
+      },
+      "caveats": [
+        "Recorded catch by gear and taxon is the catch of the surveyed landings only, a small part of the total; in Kenya it is the identified sample of each catch.",
+        "Trips (n_trips) do not add up across taxa: a trip that landed several taxa counts in each."
       ]
     },
     "kenya_bmu_monthly": {
@@ -2085,5 +2222,25 @@
         "reason": "BMU-level data are not available for these measures in the Mozambique catalog. Results are independent district-level summaries, NOT estimates for individual BMUs or a BMU-to-district geographic conversion."
       }
     ]
+  },
+  "analysisCapabilities": {
+    "recorded_catch_composition_v1": {
+      "operation": "composition",
+      "dataset": "gear_taxa_summaries",
+      "measure": "catch_kg",
+      "groupBy": "taxon",
+      "partitionBy": "gear",
+      "allowedPartitionDimensions": [
+        "gear",
+        "district",
+        "month"
+      ],
+      "maxPartitionDimensions": 2,
+      "maxPartitions": 96,
+      "positiveOnly": true,
+      "maxTopN": 20,
+      "denominator": "sum_all_matching_positive_values_per_partition_before_top_n",
+      "note": "Each taxon's share of the recorded catch within a gear, district or month (or two of them), out of all the taxa in that group before the top ones are kept. Recorded catch at surveyed landings, not the catch of all boats."
+    }
   }
 }

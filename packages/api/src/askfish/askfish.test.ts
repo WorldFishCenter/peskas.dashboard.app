@@ -8,6 +8,8 @@ import {
   semanticCategoryKey,
 } from "./category-resolution";
 import { handleAskFish } from "./handler";
+import { summariesRouter } from "../router/summaries";
+import { createCallerFactory } from "../trpc";
 import { semanticCatalog, semanticCatalogForCountry } from "./semantic-catalog";
 
 /** The month `ago` complete months back, dated as coasts dates it; month(-1) is this month. */
@@ -15,6 +17,7 @@ function month(ago: number) {
   const now = new Date();
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - ago - 1, 1));
 }
+const summaries = createCallerFactory(summariesRouter)({});
 const day = (ago: number) => month(ago).toISOString().slice(0, 10);
 
 const call = (path: string, body?: unknown, token = "secret") =>
@@ -213,7 +216,7 @@ test("a gear or taxon label resolves to one observed value, or to none", () => {
 });
 
 test("Kenya's BMU sources stay at their own grain, bound to Kenya's app database", () => {
-  expect(semanticCatalog.catalogVersion).toBe("0.7.0");
+  expect(semanticCatalog.catalogVersion).toBe("0.8.0");
   for (const id of ["kenya_bmu_monthly", "kenya_bmu_gear_monthly"]) {
     const dataset = semanticCatalog.datasets[id]!;
     expect(dataset.pageScopes).toEqual([]);
@@ -258,52 +261,67 @@ test("country-scoped alternatives never invent BMU joins or cross-country source
   expect(Object.keys(semanticCatalogForCountry("KE").datasets)).toContain("kenya_bmu_monthly");
 });
 
-// STAGE 4.2.A: preview endpoint uses the existing governed v1 source reader.
-test("gear/taxon composition preview is opt-in and respects canonicalized catch", async () => {
-  const request = {
-    contractVersion: "2.0-preview", countryCode: "TZ", gears: ["Gill Net"], topN: 1,
-    timeRange: { lastMonths: 3 },
-  };
-  delete process.env.ASKFISH_V2_ENABLE_GEAR_TAXA;
-  expect((await call("gear-composition", request)).status).toBe(404);
-  process.env.ASKFISH_V2_ENABLE_GEAR_TAXA = "1";
-  const earlierNodeEnv = process.env.NODE_ENV;
-  process.env.NODE_ENV = "test";
-  try {
-    const collection = (await getDb()).connection.collection("gear_taxa_summaries");
-    await collection.insertMany([
-      { gaul_2_name: "Wete", date: month(0), gear: "Gill Net", catch_taxon: "Taxon A", catch_kg: 10, n_trips: 3, timestamp: new Date("2026-09-01") },
-      { gaul_2_name: "Wete", date: month(0), gear: "Gill Net", catch_taxon: "Taxon A", catch_kg: 30, n_trips: 3, timestamp: new Date("2026-09-02") },
-      { gaul_2_name: "Wete", date: month(0), gear: "Gill Net", catch_taxon: "Taxon B", catch_kg: 20, n_trips: 2, timestamp: new Date("2026-09-02") },
-      { gaul_2_name: "Wete", date: month(0), gear: "Hand Line", catch_taxon: "Taxon C", catch_kg: 40, n_trips: 5, timestamp: new Date("2026-09-02") },
-      { gaul_2_name: "Wete", date: month(0), catch_taxon: "Unknown gear", catch_kg: 100, n_trips: 6, timestamp: new Date("2026-09-02") },
-    ]);
-    const response = await call("gear-composition", request);
-    expect(response.status).toBe(200);
-    const result = await response.json();
-    expect(result.rawRecordCount).toBe(3);
-    expect(result.duplicateRecordCount).toBe(1);
-    expect(result.gears).toHaveLength(1);
-    expect(result.gears[0]).toMatchObject({
-      gear: "Gill Net", totalCatchKg: 50, taxonCount: 2,
-      taxa: [{ taxon: "Taxon A", catchKg: 30, sharePercent: 60 }],
-    });
-    expect(result.caveats).toEqual(expect.arrayContaining([expect.stringMatching(/trip counts/i)]));
-    expect((await call("gear-composition", { ...request, countryCode: "KE" })).status).toBe(400);
-    expect((await call("gear-composition", { ...request, topN: 0 })).status).toBe(400);
-    expect((await call("query", {
-      contractVersion: "1.0", countryCode: "TZ", dataset: "gear_taxa_summaries", measure: "n_trips",
+test("gear-by-species catch is added up as the gear page adds it, and trips are not offered", async () => {
+  await (await getDb()).connection.collection("gear_taxa_summaries").insertMany([
+    {
+      gaul_2_name: "Wete",
+      date: month(0),
+      gear: "Gill Net",
+      catch_taxon: "Taxon A",
+      catch_kg: 10,
+      n_trips: 3,
+    },
+    {
+      gaul_2_name: "Mkoani",
+      date: month(1),
+      gear: "Gill Net",
+      catch_taxon: "Taxon A",
+      catch_kg: 30,
+      n_trips: 3,
+    },
+    {
+      gaul_2_name: "Wete",
+      date: month(0),
+      gear: "Gill Net",
+      catch_taxon: "Taxon B",
+      catch_kg: 20,
+      n_trips: 2,
+    },
+    {
+      gaul_2_name: "Wete",
+      date: month(0),
+      gear: "Hand Line",
+      catch_taxon: "Taxon C",
+      catch_kg: 40,
+      n_trips: 5,
+    },
+  ]);
+  const query = (body: object) =>
+    call("query", {
+      contractVersion: "1.0",
+      countryCode: "TZ",
+      dataset: "gear_taxa_summaries",
+      timeRange: { lastMonths: 3 },
       scope: { mode: "unrestricted", pageId: null, dashboardFilters: null },
-    })).status).toBe(400);
-    expect((await call("query", {
-      contractVersion: "1.0", countryCode: "TZ", dataset: "gear_taxa_summaries", measure: "catch_kg",
-      scope: { mode: "restricted", pageId: "catch", dashboardFilters: { months: 3 } },
-    })).status).toBe(400);
-  } finally {
-    delete process.env.ASKFISH_V2_ENABLE_GEAR_TAXA;
-    if (earlierNodeEnv === undefined) delete process.env.NODE_ENV;
-    else process.env.NODE_ENV = earlierNodeEnv;
+      ...body,
+    });
+  const combined = await (
+    await query({ measure: "catch_kg", aggregateOver: ["district", "time"] })
+  ).json();
+  const { rows } = await summaries.gearComposition({ months: 3 });
+  for (const row of rows) {
+    for (const g of row.groups) {
+      expect(combined.records).toContainEqual({
+        dimensions: { gear: g.group, taxon: row.taxon },
+        value: g.value,
+      });
+    }
   }
+  expect(combined.records).toContainEqual({
+    dimensions: { gear: "Gill Net", taxon: "Taxon A" },
+    value: 40,
+  });
+  expect((await query({ measure: "n_trips" })).status).toBe(400);
 });
 
 test("figures across months come combined by the pages' rules, never as rows to add up", async () => {
@@ -345,5 +363,4 @@ test("figures across months come combined by the pages' rules, never as rows to 
   const refused = await query("taxa_summary_district", "mean_length", ["taxon"]);
   expect(refused.status).toBe(400);
   expect((await refused.json()).error).toBe("'mean_length' does not combine across taxon.");
-
 });

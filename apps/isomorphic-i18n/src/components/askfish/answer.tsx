@@ -1,4 +1,4 @@
-import { useId, useMemo, useState } from "react";
+import { memo, useId, useMemo, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -27,9 +27,10 @@ import {
 } from "@workspace/ui/components/chart";
 import { MessageFooter } from "@workspace/ui/components/message";
 import { Table, TableBody, TableCell, TableRow } from "@workspace/ui/components/table";
-import { METRICS, type MetricKey } from "@repo/domain/metrics";
+import { estimateMethod, type Method, type MetricKey } from "@repo/domain/metrics";
 import type { Answer } from "@/components/askfish/panel";
 import { ChartCard } from "@/components/charts/chart-card";
+import { HeatCell, valueRange } from "@/components/charts/heat-cell";
 import { CHART_HEIGHT, ChartState, RenderGuard } from "@/components/charts/chart-state";
 import { RankedBars } from "@/components/charts/ranked-bars";
 import { TooltipRow } from "@/components/charts/tooltip-row";
@@ -44,7 +45,13 @@ import {
 } from "@/lib/dashboard/format";
 import { formatValue, METHOD_COLOR } from "@/lib/dashboard/metrics";
 import { useSpeciesName } from "@/lib/dashboard/species";
-import { groupedBarRows, pairedEndpointSeries, valueAxisDomain, heatmapGrid, type ChartBarSeries } from "./askfish-chart-data";
+import {
+  groupedBarRows,
+  pairedEndpointSeries,
+  valueAxisDomain,
+  heatmapGrid,
+  type ChartBarSeries,
+} from "./askfish-chart-data";
 
 type Chart = Answer["charts"][number];
 type Format = (value: number) => string;
@@ -61,7 +68,8 @@ const figure = (metric: MetricKey | null, value: number, lang: string) =>
   metric ? formatValue(metric, value, lang) : formatNumber(value, lang);
 
 /** What AskFish found: its words, the figures behind them, its charts, what to keep in mind and the data it read. */
-export function AnswerView({ answer }: { answer: Answer }) {
+// Memoized: each new question would otherwise redraw every earlier answer's charts.
+export const AnswerView = memo(function AnswerView({ answer }: { answer: Answer }) {
   const { t, lang } = useT();
   const [copied, setCopied] = useState(false);
   const copyAnswer = async () => {
@@ -72,13 +80,8 @@ export function AnswerView({ answer }: { answer: Answer }) {
       setCopied(false);
     }
   };
-  // A species goes by its common name, as on the pages, with the scientific one beside it.
   const name = useSpeciesName();
-  // AskFish reads the GPS tracker method's estimates only; the pages show both methods'.
-  const caveats = [
-    ...(answer.estimated ? [t("text-askfish-tracker-only")] : []),
-    ...answer.caveats,
-  ];
+  const caveats = answer.caveats;
 
   return (
     <>
@@ -150,17 +153,16 @@ export function AnswerView({ answer }: { answer: Answer }) {
       )}
     </>
   );
-}
+});
 
 /** One of AskFish's charts in the dashboard's own card, with its rows to download. */
 function AnswerChart({ chart }: { chart: Chart }) {
   const { t, lang } = useT();
   const name = useSpeciesName();
-  const { x, y } = chart.metrics;
+  const { y } = chart.metrics;
   const format: Format = (value) => figure(y, value, lang);
-  // What is drawn from an estimate wears its method's colour, a recorded figure the dashboard's first.
-  const estimated = [x, y].some((m) => m && METRICS[m].estimated);
-  const color = estimated ? METHOD_COLOR.tracker : "var(--chart-1)";
+  const color = chart.method ? METHOD_COLOR[chart.method] : "var(--chart-1)";
+  const named = y ? estimateMethod(y) : chart.method;
   const marks = chart.series.filter((s) => !s.trend);
   const draw = () => {
     if (!marks.some((s) => s.points.length)) return null;
@@ -187,6 +189,7 @@ function AnswerChart({ chart }: { chart: Chart }) {
             series={(endpointSeries ?? marks).map((s) => ({ ...s, name: name(s.name) }))}
             byMonth={chart.byMonth && !endpointSeries}
             format={format}
+            color={color}
           />
         );
       }
@@ -202,9 +205,10 @@ function AnswerChart({ chart }: { chart: Chart }) {
         />
       );
     }
-    if (chart.type === "heatmap") return <Heatmap chart={chart} format={format} />;
-    if (chart.type === "stacked_bar") return <Stacked chart={chart} />;
-    if (chart.type === "bubble") return <BubblePoints chart={chart} />;
+    if (chart.type === "heatmap")
+      return <Heatmap chart={chart} format={format} method={chart.method} />;
+    if (chart.type === "stacked_bar") return <Stacked chart={chart} color={color} />;
+    if (chart.type === "bubble") return <BubblePoints chart={chart} color={color} />;
     if (chart.type === "scatter" || chart.type === "quadrant") {
       return <Points chart={chart} color={color} />;
     }
@@ -220,12 +224,14 @@ function AnswerChart({ chart }: { chart: Chart }) {
       title={chart.title}
       info="info-askfish-chart"
       // The method goes beside the axis it describes: the subtitle names the y axis.
-      description={[chart.yLabel, y && METRICS[y].estimated && t("text-method-tracker")]
-        .filter(Boolean)
-        .join(" · ")}
+      description={[chart.yLabel, named && t(`text-method-${named}`)].filter(Boolean).join(" · ")}
       download={chart.series.flatMap((s) =>
-        s.points.map((p) => ({ series: s.name, [chart.xLabel ?? "x"]: p.x, value: p.y,
-          ...(p.z != null ? { [chart.sizeLabel ?? "size"]: p.z } : {}) })),
+        s.points.map((p) => ({
+          series: s.name,
+          [chart.xLabel ?? "x"]: p.x,
+          value: p.y,
+          ...(p.z != null ? { [chart.sizeLabel ?? "size"]: p.z } : {}),
+        })),
       )}
       footer={chart.note}
     >
@@ -291,10 +297,12 @@ function GroupedBars({
   series,
   byMonth,
   format,
+  color,
 }: {
   series: ChartBarSeries[];
   byMonth: boolean;
   format: Format;
+  color: string;
 }) {
   const { lang } = useT();
   const rows = useMemo(() => groupedBarRows(series), [series]);
@@ -303,8 +311,13 @@ function GroupedBars({
     series.flatMap((_s, i) => (typeof row[`s${i}`] === "number" ? [row[`s${i}`] as number] : [])),
   );
   const domain = valueAxisDomain(values);
+  // Shades of the one colour, the last series in full: no colour per district or species.
+  const shade = (i: number) =>
+    i === series.length - 1
+      ? color
+      : `color-mix(in oklab, ${color} ${Math.round(35 + (50 * i) / Math.max(1, series.length - 1))}%, transparent)`;
   const config = Object.fromEntries(
-    series.map((s, i) => [`s${i}`, { label: s.name, color: `var(--chart-${i % 5 + 1})` }]),
+    series.map((s, i) => [`s${i}`, { label: s.name, color: shade(i) }]),
   );
   return (
     <div className="w-full overflow-x-auto">
@@ -320,9 +333,7 @@ function GroupedBars({
             axisLine={false}
             tickMargin={8}
             interval="preserveStartEnd"
-            tickFormatter={(label: string) =>
-              byMonth ? monthLabel(label, lang, "short") : label
-            }
+            tickFormatter={(label: string) => (byMonth ? monthLabel(label, lang, "short") : label)}
           />
           <YAxis
             domain={domain}
@@ -331,8 +342,7 @@ function GroupedBars({
             width="auto"
             tickFormatter={(value: number) => formatTick(value, lang)}
           />
-          {(domain[0] < 0 || domain[1] === 0) &&
-            <ReferenceLine y={0} stroke="var(--border)" />}
+          {(domain[0] < 0 || domain[1] === 0) && <ReferenceLine y={0} stroke="var(--border)" />}
           <ChartTooltip
             content={
               <ChartTooltipContent
@@ -353,7 +363,7 @@ function GroupedBars({
               key={`${s.name}-${i}`}
               name={s.name}
               dataKey={`s${i}`}
-              fill={`var(--chart-${i % 5 + 1})`}
+              fill={shade(i)}
               maxBarSize={36}
             />
           ))}
@@ -465,57 +475,74 @@ function Multiples({
   );
 }
 
-/** Governed district×month heatmap. Null means no observation, NOT zero catch. */
-function Heatmap({ chart, format }: { chart: Chart; format: Format }) {
+/** Rows by period on the dashboard's heat-table ramp. A dash is no observation, not zero. */
+function Heatmap({
+  chart,
+  format,
+  method,
+}: {
+  chart: Chart;
+  format: Format;
+  method: Method | null;
+}) {
+  const { t, lang } = useT();
   const grid = heatmapGrid(chart.series);
   if (!grid) return <ChartState status="error" />;
-  const span = grid.max - grid.min;
+  const { min, max } = valueRange([grid.min, grid.max]);
   const width = `minmax(8rem, 1.5fr) repeat(${grid.periods.length}, minmax(3.5rem, 1fr))`;
   return (
     <div className="w-full overflow-x-auto" role="table" aria-label={chart.title}>
-      <div className="grid gap-1 text-xs" style={{ gridTemplateColumns: width,
-        minWidth: `${Math.max(350, 125 + grid.periods.length * 58)}px` }}>
-        <div className="sticky left-0 z-10 bg-background p-1 font-medium" role="columnheader">
-          District / month
-        </div>
+      <div
+        className="grid gap-1 text-xs"
+        style={{
+          gridTemplateColumns: width,
+          minWidth: `${Math.max(350, 125 + grid.periods.length * 58)}px`,
+        }}
+      >
+        <div className="sticky left-0 z-10 bg-background p-1" role="columnheader" />
         {grid.periods.map((period) => (
           <div key={period} className="p-1 text-center text-muted-foreground" role="columnheader">
-            {period.slice(0, 7)}
+            {chart.byMonth ? monthLabel(period.slice(0, 7), lang) : period}
           </div>
         ))}
         {grid.rows.map((row) => (
           <div key={row.name} role="row" className="contents">
-            <div role="rowheader" className="sticky left-0 z-10 truncate bg-background p-1 font-medium"
-                 title={row.name}>{row.name}</div>
-            {row.values.map((value, index) => {
-              const fraction = value === null ? 0 : span === 0 ? 0.5 : (value - grid.min) / span;
-              const title = `${row.name} · ${grid.periods[index]}: ${value === null ? "Not observed" : format(value)}`;
-              return (
-                <div key={grid.periods[index]} role="cell" title={title}
-                     aria-label={title}
-                     className="flex min-h-8 items-center justify-center rounded-sm border border-border/40 px-1 text-center tabular-nums"
-                     style={value === null
-                       ? { backgroundColor: "var(--muted)" }
-                       : { backgroundColor: `color-mix(in oklab, var(--chart-1) ${Math.round(15 + fraction * 65)}%, transparent)` }}>
-                  {value === null ? "–" : format(value)}
-                </div>
-              );
-            })}
+            <div
+              role="rowheader"
+              className="sticky left-0 z-10 truncate bg-background p-1 font-medium"
+              title={row.name}
+            >
+              {row.name}
+            </div>
+            {row.values.map((value, index) => (
+              <div
+                key={grid.periods[index]}
+                role="cell"
+                className="flex items-center justify-center"
+              >
+                <HeatCell
+                  value={value}
+                  min={min}
+                  max={max}
+                  label={value === null ? "" : format(value)}
+                  title={`${row.name} · ${grid.periods[index]}`}
+                  dense
+                  method={method ?? undefined}
+                />
+              </div>
+            ))}
           </div>
         ))}
       </div>
-      <p className="mt-2 text-xs text-muted-foreground">
-        Darker cells indicate higher values within this chart. – means no matched observation, not zero.
-      </p>
+      <p className="mt-2 text-xs text-muted-foreground">{t("text-askfish-heatmap-key")}</p>
     </div>
   );
 }
 
 /** Counts stacked per month: how many values AskFish found and how many are missing. */
-function Stacked({ chart }: { chart: Chart }) {
+function Stacked({ chart, color }: { chart: Chart; color: string }) {
   const { lang } = useT();
-  // What was found and what is missing: one bar in two shades of the recorded figures' colour.
-  const colors = ["var(--chart-1)", "color-mix(in oklab, var(--chart-1) 30%, transparent)"];
+  const colors = [color, `color-mix(in oklab, ${color} 30%, transparent)`];
   const rows = xValues(chart.series).map((month) => ({
     month,
     ...Object.fromEntries(
@@ -637,32 +664,48 @@ function Points({ chart, color }: { chart: Chart; color: string }) {
   );
 }
 
-
 /** Three approved measures: X, Y and circle area (Z), joined on exact source keys. */
-function BubblePoints({ chart }: { chart: Chart }) {
+function BubblePoints({ chart, color }: { chart: Chart; color: string }) {
   const { lang } = useT();
   const series = chart.series.map((s) => ({
     name: s.name,
-    rows: s.points.filter((p) => p.z != null && p.z > 0).map((p) => ({
-      x: Number(p.x), y: p.y, z: p.z!, name: p.label ?? s.name,
-    })),
+    rows: s.points
+      .filter((p) => p.z != null && p.z > 0)
+      .map((p) => ({
+        x: Number(p.x),
+        y: p.y,
+        z: p.z!,
+        name: p.label ?? s.name,
+      })),
   }));
   return (
     <ChartContainer
-      config={Object.fromEntries(series.map((s, i) => [
-        `bubble${i}`, { label: s.name, color: `var(--chart-${i % 5 + 1})` },
-      ]))}
+      config={{ y: { label: chart.yLabel ?? "" }, x: { label: chart.xLabel ?? "" } }}
       className={`aspect-auto w-full ${CHART_HEIGHT}`}
     >
       <ScatterChart accessibilityLayer margin={{ top: 16, right: 20, bottom: 28, left: 8 }}>
         <CartesianGrid />
-        <XAxis type="number" dataKey="x" domain={["auto", "auto"]}
+        <XAxis
+          type="number"
+          dataKey="x"
+          domain={["auto", "auto"]}
           tickFormatter={(value: number) => formatTick(value, lang)}
-          label={{ value: chart.xLabel ?? "", position: "insideBottom", offset: -15 }} />
-        <YAxis type="number" dataKey="y" domain={["auto", "auto"]}
-          tickFormatter={(value: number) => formatTick(value, lang)} width="auto" />
-        <ZAxis type="number" dataKey="z" range={[64, 900]}
-          name={chart.sizeLabel ?? "Bubble size"} unit={chart.sizeUnit ?? ""} />
+          label={{ value: chart.xLabel ?? "", position: "insideBottom", offset: -15 }}
+        />
+        <YAxis
+          type="number"
+          dataKey="y"
+          domain={["auto", "auto"]}
+          tickFormatter={(value: number) => formatTick(value, lang)}
+          width="auto"
+        />
+        <ZAxis
+          type="number"
+          dataKey="z"
+          range={[64, 900]}
+          name={chart.sizeLabel ?? "Bubble size"}
+          unit={chart.sizeUnit ?? ""}
+        />
         <ChartTooltip
           cursor={false}
           content={({ active, payload }) => {
@@ -673,18 +716,28 @@ function BubblePoints({ chart }: { chart: Chart }) {
             return (
               <div className="rounded-md border bg-background px-3 py-2 text-xs shadow-md">
                 <p className="font-medium">{item.name}</p>
-                <p>{chart.xLabel}: {formatNumber(item.x, lang)}</p>
-                <p>{chart.yLabel}: {formatNumber(item.y, lang)}</p>
-                <p>{chart.sizeLabel}: {formatNumber(item.z, lang)} {chart.sizeUnit ?? ""}</p>
+                <p>
+                  {chart.xLabel}: {figure(chart.metrics.x, item.x, lang)}
+                </p>
+                <p>
+                  {chart.yLabel}: {figure(chart.metrics.y, item.y, lang)}
+                </p>
+                <p>
+                  {chart.sizeLabel}: {formatNumber(item.z, lang)} {chart.sizeUnit ?? ""}
+                </p>
               </div>
             );
           }}
         />
-        {series.map((s, i) => (
-          <Scatter key={s.name} name={s.name} data={s.rows}
-            fill={`var(--chart-${i % 5 + 1})`} isAnimationActive={false} />
+        {series.map((s) => (
+          <Scatter
+            key={s.name}
+            name={s.name}
+            data={s.rows}
+            fill={color}
+            isAnimationActive={false}
+          />
         ))}
-        <ChartLegend content={<ChartLegendContent />} />
       </ScatterChart>
     </ChartContainer>
   );
