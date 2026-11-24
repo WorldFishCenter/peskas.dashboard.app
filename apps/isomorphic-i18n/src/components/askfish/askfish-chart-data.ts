@@ -96,7 +96,6 @@ export function pairedEndpointSeries(series: ChartBarSeries): ChartBarSeries[] |
   }));
 }
 
-
 /** District-by-month display with explicit missing cells and no arithmetic.
  * Every source observation must have a unique (series, month) key.
  */
@@ -111,16 +110,21 @@ export function heatmapGrid(series: readonly ChartBarSeries[]): HeatmapGrid | nu
     const values = new Map<string, number>();
     for (const point of s.points) {
       const month = String(point.x);
-      if (!/^\d{4}-\d{2}(?:-\d{2})?$/.test(month) ||
-          !Number.isFinite(point.y) || values.has(month)) return null;
+      if (!/^\d{4}-\d{2}(?:-\d{2})?$/.test(month) || !Number.isFinite(point.y) || values.has(month))
+        return null;
       values.set(month, point.y);
       observed.push(point.y);
       monthSet.add(month);
     }
     return values;
   });
-  if (lookups.some((lookup) => lookup === null) || !observed.length || monthSet.size > 36 ||
-      new Set(series.map((s) => s.name)).size !== series.length) return null;
+  if (
+    lookups.some((lookup) => lookup === null) ||
+    !observed.length ||
+    monthSet.size > 36 ||
+    new Set(series.map((s) => s.name)).size !== series.length
+  )
+    return null;
   const periods = [...monthSet].sort();
   return {
     periods,

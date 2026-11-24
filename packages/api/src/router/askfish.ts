@@ -54,37 +54,30 @@ function contextFor({ districts, months, lang }: Filters) {
 
 /** Call AskFish's Peskas API (`/api/integration/peskas/<path>`) and return the `data` of its reply. */
 async function askFish(path: string, body: object): Promise<unknown> {
-  // ASKFISH SHARED TOKEN: Prefer the single common token when configured.
-  // The dashboard server, never the browser, adds the credential.
-  const base = process.env.ASKFISH_URL;
-  if (!base) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "AskFish backend URL is not configured." });
-  const token = process.env.ASKFISH_SHARED_TOKEN || process.env.ASKFISH_BACKEND_TOKEN;
-  if (!token) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "AskFish backend authentication is not configured." });
+  const base = process.env.ASKFISH_URL?.trim();
+  const token = process.env.ASKFISH_SHARED_TOKEN?.trim();
+  if (!base || !token) throw new Error("ASKFISH_URL or ASKFISH_SHARED_TOKEN is not defined");
   const response = await fetch(`${base.replace(/\/$/, "")}/api/integration/peskas/${path}`, {
     method: "POST",
-    // ASKFISH INTEGRATION: Optional shared bearer token protects the public
-    // AskFish backend from unauthenticated direct calls in production.
-    headers: {
-      "content-type": "application/json",
-      authorization: `Bearer ${token}`,
-    },
+    headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
     body: JSON.stringify(body),
-    // Planning a question is one AI call; a minute means AskFish isn't answering.
     signal: AbortSignal.timeout(60_000),
   });
   if (!response.ok) {
-    // Python FastAPI uses {detail} for expected HTTPException failures.
-    // Classify server-side; never send raw upstream bodies to the browser.
-    const issue = describeAskFishFailure(
-      response.status,
-      await response.json().catch(() => null),
-    );
-    // HTTP failure classes are not all legal tRPC error codes.
-    // Preserve the safe explanation while mapping to the supported tRPC vocabulary.
-    const trpcCode =
-      issue.code === "SERVICE_UNAVAILABLE" ? "INTERNAL_SERVER_ERROR" :
-      issue.code === "BAD_GATEWAY" ? "TIMEOUT" : issue.code;
-    throw new TRPCError({ code: trpcCode, message: `AskFish: ${issue.message}` });
+    const text = await response.text();
+    const parsed = (() => {
+      try {
+        return JSON.parse(text) as unknown;
+      } catch {
+        return null;
+      }
+    })();
+    const { code, reason } = describeAskFishFailure(response.status, parsed);
+    throw new TRPCError({
+      code,
+      message: reason ? `askfish:${reason}` : "askfish",
+      cause: new Error(`AskFish ${path} answered ${response.status}: ${text.slice(0, 500)}`),
+    });
   }
   return ((await response.json()) as { data?: unknown }).data;
 }
@@ -92,7 +85,6 @@ async function askFish(path: string, body: object): Promise<unknown> {
 /** A date AskFish sends (`2026-04-01`) as the month key the app formats, `2026-04`. */
 const toMonthKey = (value: unknown) =>
   typeof value === "string" && /^\d{4}-\d{2}/.test(value) ? value.slice(0, 7) : null;
-
 
 /**
  * A statistic's note as words. AskFish sends a group's dimensions as an object, or printed
@@ -108,7 +100,6 @@ function readable(detail: unknown, label: string) {
     said([...inside.matchAll(/: '([^']*)'/g)].map((m) => m[1])),
   );
 }
-
 
 /** What the chat needs of AskFish's reply; its plan, diagnostics and cost stay on the server. */
 const reply = z.object({
@@ -172,8 +163,6 @@ function answer(data: unknown) {
     headline: answer.headline,
     narrative: answer.narrative,
     caveats: answer.caveats,
-    /** It draws on an estimate, which AskFish reads by the GPS tracker method only. */
-    estimated: provenance.some((p) => isMetricKey(p.measure) && METRICS[p.measure].estimated),
     statistics: answer.statistics.map((s) => ({
       label: s.label,
       value: s.value ?? null,
@@ -199,15 +188,24 @@ function answer(data: unknown) {
         /** The metric on each axis, when the axis is one. */
         metrics: {
           x: c.type === "scatter" || c.type === "bubble" ? byLabel(c.xLabel) : null,
-          y: values ? byLabel(c.title) : c.type === "scatter" || c.type === "bubble" ? byLabel(c.yLabel) : null,
+          y: values
+            ? byLabel(c.title)
+            : c.type === "scatter" || c.type === "bubble"
+              ? byLabel(c.yLabel)
+              : null,
         },
         /** Preserve the official estimation method used for chart formatting. */
-        method: values || c.type === "scatter" || c.type === "bubble"
-          ? drawnMethod(
-              c.type === "scatter" || c.type === "bubble" ? byLabel(c.xLabel) : null,
-              values ? byLabel(c.title) : c.type === "scatter" || c.type === "bubble" ? byLabel(c.yLabel) : null,
-            )
-          : answerMethod,
+        method:
+          values || c.type === "scatter" || c.type === "bubble"
+            ? drawnMethod(
+                c.type === "scatter" || c.type === "bubble" ? byLabel(c.xLabel) : null,
+                values
+                  ? byLabel(c.title)
+                  : c.type === "scatter" || c.type === "bubble"
+                    ? byLabel(c.yLabel)
+                    : null,
+              )
+            : answerMethod,
         /** Lines at zero on both axes, for changes up and down. */
         zero: !!c.referenceLines?.length,
         series: c.series.map((s) => ({
@@ -232,7 +230,7 @@ function answer(data: unknown) {
 }
 
 export const askfishRouter = createTRPCRouter({
-  /** Questions AskFish has already checked it can answer for this page and these filters. */
+  /** Questions AskFish has already checked it can answer with the country's data. */
   suggestions: publicProcedure.input(filters).query(async ({ input }) => {
     const data = await askFish("suggestions", contextFor(input));
     return z

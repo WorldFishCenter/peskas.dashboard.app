@@ -77,16 +77,19 @@ export default function Chat({
                           [0, 1, 2].map((i) => <Skeleton key={i} className="h-9 w-3/5 self-end" />)}
                         {suggestions.isError && (
                           <Bubble variant="muted">
-                            <BubbleContent>
-                              Suggested questions are unavailable. You can still ask your own question.
-                            </BubbleContent>
+                            <BubbleContent>{t("text-askfish-suggestions-failed")}</BubbleContent>
                           </Bubble>
                         )}
                         {suggestions.data?.map((s) => (
                           <Bubble key={s.id} variant="tinted">
                             <BubbleContent
                               render={
-                                <button type="button" onClick={() => onAsk({ question: s.question, suggestionId: s.id })} />
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    onAsk({ question: s.question, suggestionId: s.id })
+                                  }
+                                />
                               }
                             >
                               {s.question}
@@ -94,9 +97,13 @@ export default function Chat({
                           </Bubble>
                         ))}
                         {!suggestions.isPending && (
-                          <Button type="button" size="sm" variant="outline"
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
                             disabled={suggestions.isFetching}
-                            onClick={() => void suggestions.refetch()}>
+                            onClick={() => void suggestions.refetch()}
+                          >
                             {t("text-askfish-refresh-suggestions")}
                           </Button>
                         )}
@@ -124,7 +131,13 @@ export default function Chat({
                       ) : turn.failed ? (
                         <>
                           <Bubble variant="destructive">
-                            <BubbleContent>{"failureMessage" in turn && typeof turn.failureMessage === "string" ? turn.failureMessage : t("text-askfish-failed")}</BubbleContent>
+                            <BubbleContent>
+                              {t(
+                                turn.reason
+                                  ? `text-askfish-error-${turn.reason}`
+                                  : "text-askfish-failed",
+                              )}
+                            </BubbleContent>
                           </Bubble>
                           <Button
                             variant="outline"
@@ -164,13 +177,7 @@ export default function Chat({
  * The box to ask the next question and what its answer may draw on. It alone
  * holds the draft, so typing redraws neither the conversation nor its charts.
  */
-function Composer({
-  busy,
-  onAsk,
-}: {
-  busy: boolean;
-  onAsk: (ask: Ask) => void;
-}) {
+function Composer({ busy, onAsk }: { busy: boolean; onAsk: (ask: Ask) => void }) {
   const { t } = useT();
   const [draft, setDraft] = useState("");
   const question = draft.trim();

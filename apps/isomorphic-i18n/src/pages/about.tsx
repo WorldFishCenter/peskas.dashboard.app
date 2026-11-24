@@ -341,7 +341,6 @@ export default function AboutPage() {
               <Linked text={t("methods-species-body")} />
             </p>
             <p>{t("methods-sizes-body")}</p>
-            {survey.meanLengths && <p>{t("methods-sizes-body-means")}</p>}
           </Prose>
           <SizeDiagram />
         </Beside>

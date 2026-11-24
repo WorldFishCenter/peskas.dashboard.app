@@ -15,6 +15,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@workspace/ui/component
 import type { RouterInputs, RouterOutputs } from "@isomorphic/api";
 import { activeCountry } from "@/config/countryConfig";
 import { useT } from "@/i18n/use-lang";
+import { askFishReason } from "@/components/askfish/error-message";
 import { trackEvent } from "@/lib/analytics";
 import { useScope } from "@/store/filters";
 import { api } from "@/trpc/react";
@@ -26,7 +27,13 @@ const Chat = /* @__PURE__ */ lazy(() => import("@/components/askfish/chat"));
 export type AskFishFilters = RouterInputs["askfish"]["suggestions"];
 export type Answer = RouterOutputs["askfish"]["ask"];
 /** A question and what came of it: no answer while AskFish works, `failed` when it couldn't. */
-export type Turn = { id: number; question: string; answer?: Answer; failed?: boolean };
+export type Turn = {
+  id: number;
+  question: string;
+  answer?: Answer;
+  failed?: boolean;
+  reason?: string;
+};
 /** A question to send, typed or a suggestion's; `retry` is the failed turn it repeats. */
 export type Ask = { question: string; suggestionId?: string; retry?: number };
 
@@ -51,7 +58,7 @@ export function AskFish() {
     trackEvent("askfish_ask", { control_source: suggestionId ? "suggestion" : "typed" });
     ask.mutateAsync({ ...filters, question, suggestionId }).then(
       (answer) => settle({ answer }),
-      () => settle({ failed: true }),
+      (error) => settle({ failed: true, reason: askFishReason(error) }),
     );
   };
 
